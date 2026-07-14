@@ -14,3 +14,5 @@ playwright-report/
 test-results/
 .env
 .env.local
+# Cloudflare Pages Functions 로컬 시크릿 (예시는 .dev.vars.example)
+.dev.vars

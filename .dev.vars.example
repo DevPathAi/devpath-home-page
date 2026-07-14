@@ -1,0 +1,6 @@
+# Cloudflare Pages Functions 로컬 개발용 환경변수 예시 (wrangler pages dev)
+# 실제 값은 이 파일을 `.dev.vars`로 복사해 채운다. `.dev.vars`는 커밋 금지(gitignore).
+# 운영 환경은 Cloudflare Pages 대시보드 → Settings → Environment variables 에 등록한다.
+
+# 기존 devpath-landing-page 의 Apps Script Web App 배포 URL (?action=lead|stats 라우팅)
+APPS_SCRIPT_URL=https://script.google.com/macros/s/XXXXXXXXXXXX/exec
