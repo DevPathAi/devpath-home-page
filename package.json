@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node scripts/serve.mjs . 4321",
     "build": "node build.mjs",
+    "gen:og": "node scripts/gen-og.mjs",
     "preview": "npm run build && node scripts/serve.mjs dist 4321",
     "test": "vitest run",
     "test:watch": "vitest",
