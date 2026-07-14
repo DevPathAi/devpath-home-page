@@ -2,9 +2,10 @@
 
 DevPath AI 정식 마케팅 홈페이지. 제품 기능 소개 + 창업자/회사 소개를 한 사이트에서 전달하고, 주 CTA "내 실력 진단받기"로 전환한다.
 
-- **스택:** 바닐라 HTML/CSS/ES모듈 · Vitest(유닛) · Playwright(E2E) · 배포 Cloudflare Pages
-- **상태:** T1~T14 구현 완료(T8 i18n 보류) · 유닛 32 + E2E 4 통과 · T15~T18(디자인 폴리시) 잔여
+- **스택:** 바닐라 HTML/CSS/ES모듈 · Vitest(유닛) · Playwright(E2E) · CI(GitHub Actions) · 배포 Cloudflare Pages
+- **상태:** T1~T18 구현 완료(T8 i18n 보류) · 요금 4단계 · 유닛 32 + E2E 6 통과 · `develop` 반영
 - **플랜:** `docs/plan/plan-master.md` (CEO+Eng+Design 리뷰 + 태스크 T1~T18)
+- **배포 전 후속:** `APPS_SCRIPT_URL` 설정 + `Code.gs` 배포 · 창업자 StockPilot/LearnFlow 링크 연결
 
 ## 개발
 
@@ -14,6 +15,7 @@ npm run dev        # http://127.0.0.1:4321 정적 서버
 npm test           # Vitest 유닛
 npm run test:e2e   # Playwright E2E (자동으로 서버 기동)
 npm run build      # dist/ 배포 산출물 생성
+npm run gen:og     # assets/og-image.png 재생성 (템플릿/카피 변경 시)
 ```
 
 ## 배포 (Cloudflare Pages)
