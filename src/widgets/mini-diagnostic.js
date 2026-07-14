@@ -89,7 +89,12 @@ export function mount(el) {
     body.querySelectorAll('.md-q').forEach((f) => { f.hidden = Number(f.dataset.step) !== n; });
   }
   function finish() {
-    body.innerHTML = resultHtml(sampleRoadmap(answers));
+    try {
+      body.innerHTML = resultHtml(sampleRoadmap(answers));
+    } catch {
+      // ERROR 상태 — '다시' 인라인
+      body.innerHTML = '<p class="md-error">결과를 그리는 중 문제가 생겼어요. <button type="button" class="md-restart">다시 해보기</button></p>';
+    }
     body.querySelector('.md-restart')?.addEventListener('click', () => mount(el));
   }
 
