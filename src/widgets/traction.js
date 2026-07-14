@@ -45,6 +45,16 @@ function statHtml(num, label) {
   return `<div class="traction__stat"><div class="traction__num">${num}</div><div class="traction__label">${label}</div></div>`;
 }
 
+// LOADING 상태 — 스켈레톤(모션은 CSS, reduced-motion 시 정적). 초기 페치 중 CLS 없이 표시.
+export function renderSkeleton(el) {
+  el.innerHTML = `
+    <div class="traction__grid" aria-hidden="true">
+      <div class="traction__stat"><div class="traction__skel traction__skel--num"></div><div class="traction__skel traction__skel--label"></div></div>
+      <div class="traction__stat"><div class="traction__skel traction__skel--num"></div><div class="traction__skel traction__skel--label"></div></div>
+      <div class="traction__stat"><div class="traction__skel traction__skel--num"></div><div class="traction__skel traction__skel--label"></div></div>
+    </div>`;
+}
+
 export function renderTraction(el, decision) {
   if (decision.mode === 'fallback') {
     el.innerHTML = FALLBACK_HTML;
@@ -62,9 +72,10 @@ export function renderTraction(el, decision) {
 export async function mount(el) {
   const minSignups = config.tractionMinSignups;
 
-  // 1) 캐시 우선 렌더(있으면 즉시)
+  // 1) 캐시 우선 렌더(있으면 즉시), 없으면 LOADING 스켈레톤
   const cached = readCache();
   if (cached) renderTraction(el, decideTraction(cached, { minSignups }));
+  else renderSkeleton(el);
 
   // 2) 네트워크 갱신
   let stats = null;
