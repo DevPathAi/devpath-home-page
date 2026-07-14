@@ -26,9 +26,14 @@
   <meta name="twitter:image" content="https://devpath.ai/assets/og-image.png" />
 
   <!-- ── 폰트 (Pretendard 본문/UI · D2Coding 코드) ───────────────────── -->
+  <!-- 논블로킹 로드: 렌더를 막지 않고, 폴백(sans-serif)으로 즉시 렌더 후 Pretendard로 스왑 -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wan2land/d2coding@1.3.2/d2coding.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" media="print" onload="this.media='all'" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wan2land/d2coding@1.3.2/d2coding.css" media="print" onload="this.media='all'" />
+  <noscript>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wan2land/d2coding@1.3.2/d2coding.css" />
+  </noscript>
 
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/assets/styles.css" />
