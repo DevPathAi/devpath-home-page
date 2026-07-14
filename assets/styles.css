@@ -421,18 +421,43 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .traction__skel { animation: none; background: var(--slate-100); }
 }
 
-/* ── 요금 ─────────────────────────────────────────────────────────────── */
-.pricing__inner { max-width: 42rem; }
-.pricing__card { padding: var(--space-5); margin-top: var(--space-4); }
-.pricing__plan { font-weight: 700; color: var(--brand); margin-bottom: var(--space-1); }
-.pricing__price { font-size: 2rem; margin-bottom: var(--space-2); }
-.pricing__trial { color: var(--slate-700); }
+/* ── 요금 (4단계 — 무료 활성, 유료 준비 중) ───────────────────────────── */
+.pricing__lead { color: var(--slate-700); max-width: 60ch; margin-bottom: var(--space-5); }
+.pricing__tiers {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+  margin-top: var(--space-4);
+}
+.pricing__tier {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-4);
+}
+.pricing__tier--active { border-color: var(--indigo-500); border-width: 2px; }
+.pricing__tier--soon { background: var(--slate-50); }
+.pricing__tier--soon .pricing__tier-name,
+.pricing__tier--soon .pricing__tier-price strong { color: var(--text-muted); }
+.pricing__tier-name { font-weight: 700; color: var(--brand); margin-bottom: var(--space-2); }
+.pricing__tier-price { font-size: 1.75rem; margin-bottom: var(--space-2); }
+.pricing__tier-price strong { font-weight: 800; }
+.pricing__per { font-size: 0.95rem; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+.pricing__tier-note { color: var(--slate-700); margin-bottom: var(--space-3); font-size: 0.95rem; }
+.pricing__soon-badge {
+  align-self: flex-start;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;
+  color: var(--text-muted); background: var(--slate-100);
+  border-radius: 999px; padding: 2px 10px; margin-bottom: var(--space-3);
+}
 .pricing__feats {
-  margin: var(--space-3) 0 var(--space-4);
-  padding-left: 1.2em;
-  color: var(--slate-700);
+  margin: var(--space-2) 0 var(--space-4);
+  padding-left: 1.2em; color: var(--slate-700); font-size: 0.95rem;
 }
 .pricing__feats li { margin-bottom: var(--space-2); }
+.pricing__tier .btn { margin-top: auto; } /* CTA 하단 정렬 */
+.pricing__cta-disabled { opacity: 0.55; cursor: not-allowed; }
+.pricing__cta-disabled:hover { background: var(--surface); text-decoration: none; }
 
 /* ── 리드폼 ───────────────────────────────────────────────────────────── */
 .lead__inner { max-width: 42rem; }
@@ -590,11 +615,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .hero__support { max-width: none; }
   .lcs__compare { grid-template-columns: 1fr; }
   .how__steps { grid-template-columns: repeat(2, 1fr); }
+  .pricing__tiers { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 480px) {
   body { font-size: 16px; }
   .how__steps { grid-template-columns: 1fr; }
+  .pricing__tiers { grid-template-columns: 1fr; }
   .section { padding-block: var(--space-6); }
   .feature-row { grid-template-columns: 44px 1fr; gap: var(--space-3); }
-  .lcs, .mini-diagnostic, .pricing__card, .lead-form { padding: var(--space-4); }
+  .lcs, .mini-diagnostic, .lead-form { padding: var(--space-4); }
 }
