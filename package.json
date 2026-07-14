@@ -1,0 +1,21 @@
+{
+  "name": "devpath-home-page",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "DevPath AI 정식 마케팅 홈페이지 (바닐라 ES모듈)",
+  "scripts": {
+    "dev": "node scripts/serve.mjs . 4321",
+    "build": "node build.mjs",
+    "preview": "npm run build && node scripts/serve.mjs dist 4321",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "jsdom": "^25.0.1",
+    "vitest": "^2.1.8"
+  }
+}
