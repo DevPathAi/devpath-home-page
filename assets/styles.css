@@ -228,7 +228,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-left: auto;
 }
 .site-nav a {
-  padding: var(--space-2) var(--space-3);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;              /* 터치 타깃 ≥44px (WCAG 2.5.5) */
+  padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 0.95rem;
@@ -509,7 +512,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .site-footer__brand { font-weight: 800; margin: 0; }
 .site-footer__links { display: flex; gap: var(--space-4); margin-left: auto; }
-.site-footer__links a { color: var(--text-muted); font-size: 0.95rem; }
+.site-footer__links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-muted); font-size: 0.95rem; }
 .site-footer__copy { color: var(--text-muted); font-size: 0.9rem; margin: 0; width: 100%; }
 
 /* =============================================================================
