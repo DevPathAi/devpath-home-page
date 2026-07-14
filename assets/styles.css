@@ -407,6 +407,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .traction__label { color: var(--text-muted); font-size: 0.95rem; }
 
+/* traction LOADING 스켈레톤 (T16) */
+.traction__skel {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--slate-100) 25%, var(--slate-200) 37%, var(--slate-100) 63%);
+  background-size: 400% 100%;
+  animation: skel-shimmer 1.4s ease infinite;
+}
+.traction__skel--num { height: 2.25rem; width: 120px; margin-bottom: var(--space-2); }
+.traction__skel--label { height: 0.95rem; width: 80px; }
+@keyframes skel-shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .traction__skel { animation: none; background: var(--slate-100); }
+}
+
 /* ── 요금 ─────────────────────────────────────────────────────────────── */
 .pricing__inner { max-width: 42rem; }
 .pricing__card { padding: var(--space-5); margin-top: var(--space-4); }
@@ -447,6 +461,11 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .lf-consent input { margin-top: 4px; width: 18px; height: 18px; flex: none; }
 .lf-hint { font-size: 0.9rem; color: var(--danger); margin: var(--space-2) 0 0; }
 .lf-error { color: var(--danger); font-weight: 500; margin-bottom: var(--space-3); }
+/* 필드별 에러 (T16) — 비어 있으면 공간 차지 안 함 */
+.lf-field-error { color: var(--danger); font-size: 0.9rem; margin: var(--space-2) 0 0; }
+.lf-field-error:empty { display: none; }
+.lead-form [aria-invalid="true"] { border-color: var(--danger); }
+.md-error { color: var(--danger); }
 .lf-submit[data-loading] { opacity: 0.7; cursor: progress; }
 .lead-form__success { padding: var(--space-5); margin-top: var(--space-4); border-color: color-mix(in srgb, var(--success) 40%, var(--border)); }
 .lead-form__success h3 { color: var(--success); }
@@ -526,10 +545,49 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .founder__beat.is-beat { opacity: 1; transform: none; transition: none; }
 }
 
+/* =============================================================================
+   디자인 폴리시 (T15 Hero · T17 기능 비대칭 · T18 반응형)
+   ============================================================================= */
+
+/* T15 — Hero: 비대칭 강화 + 미니진단을 '체험 모듈'로 시그널(그림자 없이 상단 액센트) */
+.hero__grid { grid-template-columns: 1.15fr 0.85fr; }
+.hero__headline { font-size: clamp(2.25rem, 5.2vw, 3.25rem); }
+.hero__support { font-size: 1.1875rem; line-height: 1.55; }
+.mini-diagnostic {
+  border-top: 3px solid var(--indigo-500);
+  position: relative;
+}
+.mini-diagnostic__title::before {
+  content: "지금 해보기";
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--brand);
+  background: var(--indigo-50);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin-bottom: var(--space-2);
+}
+
+/* T17 — 기능: LCS 전폭 앵커 시각적 우위 + 보조 블록 비대칭 심화 */
+.lcs { border-top: 3px solid var(--indigo-500); }
+.lcs__title { font-size: 1.75rem; }
+.feature-row { grid-template-columns: 64px 1fr; align-items: start; }
+.feature-row__num { font-size: 1.75rem; line-height: 1; }
+.feature-row h3 { font-size: 1.2rem; }
+/* 첫 블록(진단)을 시작점으로 살짝 강조 — 균등 리듬 탈피 */
+.feature-row:first-of-type h3 { color: var(--brand); }
+
 /* ── 반응형 (모바일 = 의도적 스택, 무성의 스택 금지) ─────────────────── */
+@media (max-width: 1024px) {
+  .hero__grid { gap: var(--space-5); }
+  .container { width: min(var(--container), calc(100% - 2 * var(--space-3))); }
+}
 @media (max-width: 820px) {
   .site-nav { display: none; }
   .hero__grid { grid-template-columns: 1fr; gap: var(--space-5); }
+  .hero__support { max-width: none; }
   .lcs__compare { grid-template-columns: 1fr; }
   .how__steps { grid-template-columns: repeat(2, 1fr); }
 }
@@ -537,4 +595,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
   body { font-size: 16px; }
   .how__steps { grid-template-columns: 1fr; }
   .section { padding-block: var(--space-6); }
+  .feature-row { grid-template-columns: 44px 1fr; gap: var(--space-3); }
+  .lcs, .mini-diagnostic, .pricing__card, .lead-form { padding: var(--space-4); }
 }

@@ -49,7 +49,7 @@ effect 재실행이 반복되고 있어요.
 
 function tabsHtml(active) {
   return PAIRS.map((p, i) =>
-    `<button type="button" class="lcs-tab${i === active ? ' is-active' : ''}" data-i="${i}" role="tab" aria-selected="${i === active}">${p.q}</button>`,
+    `<button type="button" class="lcs-tab${i === active ? ' is-active' : ''}" data-i="${i}" role="tab" aria-selected="${i === active}" tabindex="${i === active ? '0' : '-1'}">${p.q}</button>`,
   ).join('');
 }
 
@@ -83,13 +83,16 @@ export function mount(el) {
   tabs.innerHTML = tabsHtml(active);
   compare.parentNode.insertBefore(tabs, compare);
 
-  function render() {
+  function render(focusActive = false) {
     compare.classList.remove('widget-fallback');
     compare.innerHTML = compareHtml(PAIRS[active]);
-    tabs.querySelectorAll('.lcs-tab').forEach((t, i) => {
+    const tabEls = tabs.querySelectorAll('.lcs-tab');
+    tabEls.forEach((t, i) => {
       t.classList.toggle('is-active', i === active);
       t.setAttribute('aria-selected', String(i === active));
+      t.tabIndex = i === active ? 0 : -1; // roving tabindex
     });
+    if (focusActive) tabEls[active]?.focus();
   }
 
   tabs.addEventListener('click', (e) => {
@@ -97,6 +100,20 @@ export function mount(el) {
     if (!tab) return;
     active = Number(tab.dataset.i);
     render();
+  });
+
+  // 키보드 네비게이션 (WAI-ARIA tabs 패턴)
+  tabs.addEventListener('keydown', (e) => {
+    const last = PAIRS.length - 1;
+    let next = active;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = active === last ? 0 : active + 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = active === 0 ? last : active - 1;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = last;
+    else return;
+    e.preventDefault();
+    active = next;
+    render(true);
   });
 
   render();
