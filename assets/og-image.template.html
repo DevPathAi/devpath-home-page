@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <!-- OG 카드 소스 (1200×630). scripts/gen-og.mjs 가 이 파일을 렌더해 assets/og-image.png 생성 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { width: 1200px; height: 630px; }
+    body {
+      background: #f8fafc; /* slate-50, 솔리드 — 그라디언트 금지 */
+      font-family: 'Pretendard Variable', Pretendard, sans-serif;
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 84px 96px;
+      position: relative;
+      word-break: keep-all;
+    }
+    /* 좌측 인디고 액센트 바 */
+    body::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 12px;
+      background: #6366f1;
+    }
+    .wordmark {
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 40px;
+    }
+    .wordmark .ai { color: #4f46e5; }
+    .headline {
+      font-size: 76px;
+      font-weight: 800;
+      line-height: 1.18;
+      letter-spacing: -0.02em;
+      margin-bottom: 32px;
+    }
+    .headline .hl { color: #4f46e5; }
+    .support {
+      font-size: 30px;
+      color: #334155;
+      line-height: 1.5;
+      max-width: 30ch;
+    }
+    .badge {
+      position: absolute;
+      right: 96px; bottom: 84px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #4f46e5;
+      background: #eef2ff;
+      border-radius: 999px;
+      padding: 10px 22px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wordmark">DevPath<span class="ai"> AI</span></div>
+  <div class="headline">내 수준에 맞는<br /><span class="hl">다음 단계</span>를 AI가 안내</div>
+  <div class="support">적응형 진단 → AI 맞춤 로드맵 → AI 멘토</div>
+  <div class="badge">무료로 진단 시작</div>
+</body>
+</html>
