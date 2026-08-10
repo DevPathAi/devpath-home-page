@@ -15,7 +15,7 @@ test.describe('홈페이지 스모크', () => {
 
   test('페이지 로드 + 핵심 콘텐츠 노출', async ({ page }) => {
     await page.goto('/');
-    await expect(page).toHaveTitle(/DevPath AI/);
+    await expect(page).toHaveTitle(/Leva/);
     await expect(page.locator('h1')).toContainText('다음 단계');
     // 주 CTA 2개(헤더 + Hero) 존재
     await expect(page.getByRole('link', { name: '내 실력 진단받기' }).first()).toBeVisible();
