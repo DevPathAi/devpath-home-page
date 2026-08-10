@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "DevPath AI 정식 마케팅 홈페이지 (바닐라 ES모듈)",
+  "description": "Leva 정식 마케팅 홈페이지 (바닐라 ES모듈)",
   "scripts": {
     "dev": "node scripts/serve.mjs . 4321",
     "build": "node build.mjs",
@@ -17,6 +17,7 @@
   "devDependencies": {
     "@playwright/test": "^1.49.0",
     "jsdom": "^25.0.1",
+    "marked": "^18.0.9",
     "vitest": "^2.1.8"
   }
 }

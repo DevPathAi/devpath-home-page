@@ -2,6 +2,7 @@
 // 테스트가 파일시스템 없이 단언할 수 있게 하기 위해서다.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { marked } from 'marked';
 
 const REQUIRED = ['title', 'description', 'date'];
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -46,4 +47,41 @@ export function collectNotes(dir) {
   // 순서가 빌드마다 흔들리면 sitemap과 인덱스에 무의미한 diff가 생긴다.
   notes.sort((a, b) => (a.date === b.date ? a.slug.localeCompare(b.slug) : b.date.localeCompare(a.date)));
   return notes;
+}
+
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+export function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (ch) => ESCAPES[ch]);
+}
+
+// String.replace의 두 번째 인자를 문자열로 주면 $&·$1 같은 패턴이 치환된다.
+// 원고 본문에 그런 문자열이 있으면 조용히 깨지므로 함수 형태로 넘긴다.
+function fill(template, values) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => {
+    if (!(key in values)) throw new Error(`템플릿 자리표시자 ${key}에 줄 값이 없다`);
+    return values[key];
+  });
+}
+
+export function renderNote(note, template) {
+  const url = `https://leva.ai.kr/notes/${note.slug}`;
+  const jsonld = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: note.title,
+    description: note.description,
+    datePublished: note.date,
+    url,
+    author: { '@type': 'Organization', name: 'Leva' },
+  });
+
+  return fill(template, {
+    title: escapeHtml(note.title),
+    description: escapeHtml(note.description),
+    slug: note.slug,
+    date: note.date,
+    jsonld,
+    body: marked.parse(note.body),
+  });
 }

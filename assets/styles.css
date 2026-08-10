@@ -659,3 +659,40 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .legal__table th { background: var(--slate-50); font-weight: 600; }
 .site-footer__biz { color: var(--slate-500); font-size: 0.8125rem; }
+
+/* ── 개발 기록 아티클 ─────────────────────────────────────────────────── */
+.note pre {
+  overflow-x: auto;
+  background: var(--slate-50);
+  border: 1px solid var(--slate-200);
+  border-radius: 0.5rem;
+  padding: 0.875rem 1rem;
+  margin: 1rem 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+}
+.note :not(pre) > code {
+  background: var(--slate-100);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-size: 0.875em;
+}
+.note blockquote {
+  margin: 1rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--slate-300);
+  color: var(--slate-500);
+}
+.note table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.875rem;
+}
+.note th, .note td {
+  border: 1px solid var(--slate-200);
+  padding: 0.5rem 0.625rem;
+  text-align: left;
+}
+.note th { background: var(--slate-50); font-weight: 600; }
+.note__back { margin-top: 2.5rem; }
