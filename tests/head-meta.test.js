@@ -83,3 +83,23 @@ describe('애드센스 배선', () => {
     expect(html).not.toContain('<ins');
   });
 });
+
+describe('OG 이미지 템플릿', () => {
+  const tpl = readFileSync(
+    fileURLToPath(new URL('../assets/og-image.template.html', import.meta.url)),
+    'utf-8',
+  );
+
+  it('템플릿에 DevPath가 남아 있지 않다', () => {
+    expect(tpl).not.toContain('DevPath');
+  });
+
+  it('템플릿이 Leva를 쓴다', () => {
+    expect(tpl).toContain('Leva');
+  });
+
+  it('워드마크가 한 조각이다 (.ai span 제거)', () => {
+    expect(tpl).toContain('<div class="wordmark">Leva</div>');
+    expect(tpl).not.toContain('class="ai"');
+  });
+});
