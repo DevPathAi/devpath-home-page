@@ -57,3 +57,10 @@ describe('sitemap', () => {
     expect(locs).toEqual(slugs);
   });
 });
+
+// sitemap만으로는 부족하다. 고아 페이지는 색인이 잘 안 된다.
+describe('개발 기록 발견 가능성', () => {
+  it('홈에서 /notes로 가는 링크가 있다', () => {
+    expect(read('index.html')).toContain('href="/notes"');
+  });
+});
