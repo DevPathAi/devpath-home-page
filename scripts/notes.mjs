@@ -85,3 +85,17 @@ export function renderNote(note, template) {
     body: marked.parse(note.body),
   });
 }
+
+export function renderIndex(notes, template) {
+  const items = notes
+    .map((note) => [
+      '      <li class="note-list__item">',
+      `        <a href="/notes/${note.slug}">${escapeHtml(note.title)}</a>`,
+      `        <p class="legal__meta">${note.date}</p>`,
+      `        <p>${escapeHtml(note.description)}</p>`,
+      '      </li>',
+    ].join('\n'))
+    .join('\n');
+
+  return fill(template, { items });
+}

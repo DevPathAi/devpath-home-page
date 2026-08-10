@@ -695,4 +695,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   text-align: left;
 }
 .note th { background: var(--slate-50); font-weight: 600; }
+.note-list { list-style: none; padding-left: 0; margin: 1.5rem 0 0; }
+.note-list__item { margin: 0 0 1.5rem; }
+.note-list__item a { font-size: 1.0625rem; font-weight: 600; }
+.note-list__item p { margin: 0.25rem 0 0; }
 .note__back { margin-top: 2.5rem; }

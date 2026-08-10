@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { escapeHtml, renderNote } from '../scripts/notes.mjs';
+import { escapeHtml, renderNote, renderIndex } from '../scripts/notes.mjs';
 
 const template = readFileSync(
   fileURLToPath(new URL('../templates/note.html', import.meta.url)),
@@ -68,5 +68,39 @@ describe('아티클 조판', () => {
   // 코드블록의 긴 줄이 가로로 넘치면 모바일에서 페이지 전체가 밀린다.
   it('코드블록이 자기 안에서 가로 스크롤된다', () => {
     expect(css).toMatch(/\.note pre\s*\{[^}]*overflow-x:\s*auto/);
+  });
+});
+
+describe('renderIndex', () => {
+  const indexTemplate = readFileSync(
+    fileURLToPath(new URL('../templates/notes-index.html', import.meta.url)),
+    'utf-8',
+  );
+  const NOTES = [
+    { ...NOTE, slug: 'newer', title: '나중 글', date: '2026-08-10' },
+    { ...NOTE, slug: 'older', title: '먼저 글', date: '2026-08-01' },
+  ];
+  const html = renderIndex(NOTES, indexTemplate);
+
+  it('모든 글로 가는 링크가 있다', () => {
+    expect(html).toContain('href="/notes/newer"');
+    expect(html).toContain('href="/notes/older"');
+  });
+
+  it('받은 순서를 그대로 유지한다', () => {
+    expect(html.indexOf('/notes/newer')).toBeLessThan(html.indexOf('/notes/older'));
+  });
+
+  it('canonical이 /notes다', () => {
+    expect(html).toContain('<link rel="canonical" href="https://leva.ai.kr/notes" />');
+  });
+
+  it('애드센스 스크립트는 넣되 광고 슬롯은 넣지 않는다', () => {
+    expect(html).toContain('ca-pub-2785578834914321');
+    expect(html).not.toContain('adsbygoogle"');
+  });
+
+  it('치환하지 못한 자리표시자가 남지 않는다', () => {
+    expect(html).not.toMatch(/\{\{\w+\}\}/);
   });
 });
