@@ -128,10 +128,12 @@ frontmatter 파싱은 자체 구현한다(의존성 추가 없음). 마크다운
 
 - frontmatter에 `title`·`description`·`date` 중 하나라도 없다
 - `date`가 `YYYY-MM-DD` 형식이 아니다
-- 두 원고가 같은 slug를 갖는다
+- 본문에 `#`(h1)이 있다 — 템플릿이 이미 제목을 h1으로 내보낸다
 - `content/notes/`에 원고가 하나도 없다
 
 기존 화이트리스트 복사의 `ENOENT` 관용은 그대로 둔다(`_redirects`·`favicon.ico`가 목록에만 있고 파일이 없는 상태가 의도된 허용이다).
+
+slug는 한 디렉터리의 파일명에서 오므로 중복이 발생할 수 없다. 이 검증은 두지 않는다.
 
 ### 4.6 페이지 구성
 
@@ -168,13 +170,13 @@ sitemap만으로는 부족하다. `index.html` 헤더 내비게이션에 `/notes
 
 `vitest`로 검증한다. 기존 스위트(9파일 85건)를 깨지 않는다.
 
-검증 대상은 `scripts/notes.mjs`의 노출 함수다(§4.1). 실패 경로(필수 키 누락·형식 오류·slug 중복·원고 0개)는 `tests/fixtures/` 아래 **의도적으로 잘못된 픽스처 디렉터리**를 만들어 `collectNotes(dir)`에 넘겨 검증한다. 실제 `content/notes/`를 훼손하지 않는다.
+검증 대상은 `scripts/notes.mjs`의 노출 함수다(§4.1). 실패 경로(필수 키 누락·형식 오류·본문 h1·원고 0개)는 `tests/fixtures/` 아래 **의도적으로 잘못된 픽스처 디렉터리**를 만들어 `collectNotes(dir)`에 넘겨 검증한다. 실제 `content/notes/`를 훼손하지 않는다.
 
 | 대상 | 단언 |
 |---|---|
 | frontmatter 파서 | 필수 키 누락 시 throw · 정상 입력에서 세 값과 본문 분리 |
 | `date` 검증 | `YYYY-MM-DD`가 아니면 throw |
-| slug 중복 | 같은 slug 두 개면 throw |
+| 본문 h1 | 본문에 `#`이 있으면 throw |
 | 원고 0개 | 빌드가 실패한다 |
 | 렌더 | 마크다운 본문이 HTML로 변환돼 레이아웃에 들어간다 |
 | canonical | 각 글이 자기 URL을 가리키고 `.html`을 포함하지 않는다 |
