@@ -627,3 +627,35 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .feature-row { grid-template-columns: 44px 1fr; gap: var(--space-3); }
   .lcs, .mini-diagnostic, .lead-form { padding: var(--space-4); }
 }
+
+/* ── 법적 고지 문서(처리방침 등) ─────────────────────────────────────── */
+.legal {
+  max-width: 46rem;
+  padding-top: 3rem;
+  padding-bottom: 4rem;
+  line-height: 1.7;
+}
+.legal h1 { font-size: 1.75rem; margin-bottom: 0.5rem; }
+.legal h2 {
+  font-size: 1.125rem;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: var(--slate-900);
+}
+.legal p, .legal li { color: var(--slate-700); }
+.legal ul { padding-left: 1.25rem; margin: 0.5rem 0; }
+.legal li { margin: 0.25rem 0; }
+.legal__meta { color: var(--slate-500); font-size: 0.875rem; }
+.legal__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  font-size: 0.9375rem;
+}
+.legal__table th, .legal__table td {
+  border: 1px solid var(--slate-200);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.legal__table th { background: var(--slate-50); font-weight: 600; }
+.site-footer__biz { color: var(--slate-500); font-size: 0.8125rem; }
