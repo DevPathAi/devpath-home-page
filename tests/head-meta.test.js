@@ -36,6 +36,23 @@ describe('index.html <head> 메타', () => {
   it('devpath.ai가 한 곳도 남아 있지 않다', () => {
     expect(html).not.toContain('devpath.ai');
   });
+
+  // 브랜드는 Leva 단독이다. 개별 교체 단언만으로는 "안 고친 게 남았다"를
+  // 못 잡는다 — 앞선 작업에서 이 형태의 단언이 JSON-LD url과 mailto 2곳을
+  // 잡아냈다.
+  it('DevPath가 한 곳도 남아 있지 않다', () => {
+    expect(html).not.toContain('DevPath');
+  });
+
+  it('title과 OG 제목이 Leva를 쓴다', () => {
+    expect(html).toContain('<title>Leva — 내 수준에 맞는 다음 단계를 AI가 안내</title>');
+    expect(html).toContain('<meta property="og:site_name" content="Leva" />');
+  });
+
+  it('워드마크가 Leva 한 조각이다', () => {
+    expect(html).toContain('<a class="wordmark" href="/">Leva</a>');
+    expect(html).not.toContain('wordmark__ai');
+  });
 });
 
 describe('애드센스 배선', () => {
@@ -64,5 +81,25 @@ describe('애드센스 배선', () => {
   it('광고 슬롯(<ins>)은 배치하지 않는다', () => {
     expect(html).not.toContain('adsbygoogle"');
     expect(html).not.toContain('<ins');
+  });
+});
+
+describe('OG 이미지 템플릿', () => {
+  const tpl = readFileSync(
+    fileURLToPath(new URL('../assets/og-image.template.html', import.meta.url)),
+    'utf-8',
+  );
+
+  it('템플릿에 DevPath가 남아 있지 않다', () => {
+    expect(tpl).not.toContain('DevPath');
+  });
+
+  it('템플릿이 Leva를 쓴다', () => {
+    expect(tpl).toContain('Leva');
+  });
+
+  it('워드마크가 한 조각이다 (.ai span 제거)', () => {
+    expect(tpl).toContain('<div class="wordmark">Leva</div>');
+    expect(tpl).not.toContain('class="ai"');
   });
 });
