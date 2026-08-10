@@ -99,3 +99,26 @@ export function renderIndex(notes, template) {
 
   return fill(template, { items });
 }
+
+const SITE = 'https://leva.ai.kr';
+// 원고와 무관하게 항상 존재하는 페이지. 날짜를 고정값으로 둬 빌드마다
+// sitemap이 흔들리지 않게 한다(Date.now를 쓰지 않는 이유).
+const STATIC_PAGES = [
+  { path: '/', lastmod: '2026-08-10' },
+  { path: '/privacy', lastmod: '2026-08-10' },
+];
+
+export function renderSitemap(notes) {
+  const latest = notes.length > 0 ? notes[0].date : '2026-08-10';
+  const entries = [
+    ...STATIC_PAGES.map((p) => ({ loc: `${SITE}${p.path}`, lastmod: p.lastmod })),
+    { loc: `${SITE}/notes`, lastmod: latest },
+    ...notes.map((n) => ({ loc: `${SITE}/notes/${n.slug}`, lastmod: n.date })),
+  ].sort((a, b) => a.loc.localeCompare(b.loc));
+
+  const urls = entries
+    .map((e) => `  <url>\n    <loc>${e.loc}</loc>\n    <lastmod>${e.lastmod}</lastmod>\n  </url>`)
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
+}

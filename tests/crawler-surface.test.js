@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { collectNotes, renderSitemap } from '../scripts/notes.mjs';
 
 const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 const read = (p) => readFileSync(root(p), 'utf-8');
@@ -30,27 +31,29 @@ describe('404 페이지', () => {
   });
 });
 
-// robots.txt가 sitemap을 선언하는데 파일이 없으면, 그 URL마저 index.html을
-// 200으로 돌려준다 — 크롤러에게 깨진 약속이 된다.
-describe('sitemap.xml', () => {
-  it('존재하고 배포 화이트리스트에 있다', () => {
-    expect(existsSync(root('sitemap.xml'))).toBe(true);
-    expect(deployEntries()).toContain('sitemap.xml');
-  });
-
+// sitemap은 이제 생성물이다. 레포에 정적 파일로 두지 않으므로
+// 화이트리스트가 아니라 "원고 집합과 일치하는가"를 단언한다.
+describe('sitemap', () => {
   it('robots.txt가 선언한 URL과 실제 배포 경로가 일치한다', () => {
     const declared = read('robots.txt').match(/^Sitemap:\s*(\S+)$/m)?.[1];
     expect(declared).toBe('https://leva.ai.kr/sitemap.xml');
   });
 
-  it('실제 존재하는 페이지만 담는다', () => {
-    const locs = [...read('sitemap.xml').matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
-    expect(locs).toEqual(['https://leva.ai.kr/', 'https://leva.ai.kr/privacy']);
+  it('정적 파일로 남아 있지 않다', () => {
+    expect(existsSync(root('sitemap.xml'))).toBe(false);
+    expect(deployEntries()).not.toContain('sitemap.xml');
   });
 
-  // Pages가 .html을 떼는 clean URL로 308 리다이렉트하므로, 사이트맵이
-  // /privacy.html을 가리키면 크롤러가 매번 리다이렉트를 한 번 더 탄다.
-  it('리다이렉트되는 .html 경로를 담지 않는다', () => {
-    expect(read('sitemap.xml')).not.toContain('.html');
+  it('원고 파일 집합과 sitemap의 글 URL 집합이 일치한다', () => {
+    const slugs = readdirSync(root('content/notes'))
+      .filter((f) => f.endsWith('.md'))
+      .map((f) => f.replace(/\.md$/, ''))
+      .sort();
+    const notes = collectNotes(root('content/notes'));
+    const locs = [...renderSitemap(notes).matchAll(/<loc>https:\/\/leva\.ai\.kr\/notes\/([^<]+)<\/loc>/g)]
+      .map((m) => m[1])
+      .sort();
+
+    expect(locs).toEqual(slugs);
   });
 });

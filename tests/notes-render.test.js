@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { escapeHtml, renderNote, renderIndex } from '../scripts/notes.mjs';
+import { escapeHtml, renderNote, renderIndex, renderSitemap } from '../scripts/notes.mjs';
 
 const template = readFileSync(
   fileURLToPath(new URL('../templates/note.html', import.meta.url)),
@@ -102,5 +102,32 @@ describe('renderIndex', () => {
 
   it('치환하지 못한 자리표시자가 남지 않는다', () => {
     expect(html).not.toMatch(/\{\{\w+\}\}/);
+  });
+});
+
+describe('renderSitemap', () => {
+  const NOTES = [
+    { ...NOTE, slug: 'newer', date: '2026-08-10' },
+    { ...NOTE, slug: 'older', date: '2026-08-01' },
+  ];
+  const xml = renderSitemap(NOTES);
+  const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+
+  it('고정 경로 셋과 모든 글을 담는다', () => {
+    expect(locs).toEqual([
+      'https://leva.ai.kr/',
+      'https://leva.ai.kr/notes',
+      'https://leva.ai.kr/notes/newer',
+      'https://leva.ai.kr/notes/older',
+      'https://leva.ai.kr/privacy',
+    ]);
+  });
+
+  it('리다이렉트되는 .html 경로를 담지 않는다', () => {
+    expect(xml).not.toContain('.html');
+  });
+
+  it('/notes의 lastmod가 가장 최근 글 날짜다', () => {
+    expect(xml).toMatch(/<loc>https:\/\/leva\.ai\.kr\/notes<\/loc>\s*<lastmod>2026-08-10<\/lastmod>/);
   });
 });
