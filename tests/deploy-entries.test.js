@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
@@ -38,5 +38,32 @@ describe('배포 화이트리스트', () => {
     const txt = readFileSync(root('ads.txt'), 'utf-8');
     expect(txt).toContain('pub-2785578834914321');
     expect(txt).toContain('DIRECT');
+  });
+});
+
+// Pages 프로젝트에 functions/가 있으면 기본적으로 *모든* 요청이 Function을
+// 호출하고, 그게 Workers 무료 한도(100,000 req/일)를 소모한다. 정적 자산
+// 요청은 원래 무제한 무료인데 그 혜택을 잃는다.
+// wrangler가 _routes.json을 자동 생성하지만 외부에서 확인할 수 없으므로
+// 명시적으로 넣어 덮어쓴다.
+describe('Pages 라우팅(_routes.json)', () => {
+  it('_routes.json이 목록에 있고 파일도 존재한다', () => {
+    expect(deployEntries()).toContain('_routes.json');
+    expect(existsSync(root('_routes.json'))).toBe(true);
+  });
+
+  it('Function은 /api/* 에서만 실행된다', () => {
+    const cfg = JSON.parse(readFileSync(root('_routes.json'), 'utf-8'));
+    expect(cfg.version).toBe(1);
+    expect(cfg.include).toEqual(['/api/*']);
+  });
+
+  it('include가 실제 functions 디렉터리와 일치한다', () => {
+    // functions/api/ 아래에만 핸들러가 있다. 다른 최상위 경로가 생기면
+    // _routes.json도 함께 고쳐야 하므로 여기서 어긋남을 잡는다.
+    const cfg = JSON.parse(readFileSync(root('_routes.json'), 'utf-8'));
+    const tops = readdirSync(root('functions'));
+    expect(tops).toEqual(['api']);
+    expect(cfg.include).toEqual(tops.map((t) => `/${t}/*`));
   });
 });
