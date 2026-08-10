@@ -59,8 +59,11 @@ describe('개인정보 처리방침', () => {
     expect(m?.[1]).toContain("'privacy.html'");
   });
 
-  it('푸터 링크가 privacy.html로 연결된다', () => {
-    expect(html).toContain('<a href="/privacy.html">개인정보 처리방침</a>');
+  // Cloudflare Pages는 .html 확장자를 떼는 clean URL로 308 리다이렉트한다.
+  // /privacy.html로 링크하면 불필요한 홉이 한 번 생기므로 정규 경로로 건다.
+  it('푸터 링크가 리다이렉트 없는 /privacy로 연결된다', () => {
+    expect(html).toContain('<a href="/privacy">개인정보 처리방침</a>');
+    expect(html).not.toContain('href="/privacy.html"');
   });
 
   it('index.html에 죽은 링크가 하나도 없다', () => {
@@ -87,6 +90,10 @@ describe('처리방침 내용', () => {
     expect(doc).toContain('796-76-00732');
     expect(doc).toContain('김민구');
     expect(doc).toContain('info@leva.ai.kr');
+  });
+
+  it('canonical이 리다이렉트되지 않는 URL을 가리킨다', () => {
+    expect(doc).toContain('<link rel="canonical" href="https://leva.ai.kr/privacy" />');
   });
 
   it('사업장 주소를 게시하지 않는다', () => {
