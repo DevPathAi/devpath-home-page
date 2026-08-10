@@ -27,7 +27,7 @@ npm run gen:og     # assets/og-image.png 재생성 (템플릿/카피 변경 시)
 - **Apps Script:** `apps-script/Code.gs`를 배포(단일 소스). `?action=stats`는 집계 카운트만 반환(PII 금지, F3)
 
 ### 구성 오버라이드
-`window.DEVPATH_CONFIG = { formEndpoint, statsEndpoint, tractionMinSignups }` 로 런타임 조정 가능.
+`window.LEVA_CONFIG = { formEndpoint, statsEndpoint, tractionMinSignups }` 로 런타임 조정 가능.
 
 ## 문서
 - [`HANDOFF.md`](./HANDOFF.md) — 다음 세션 이관 항목 + 현재 상태
