@@ -34,6 +34,21 @@ test.describe('홈페이지 스모크', () => {
     ).toHaveAttribute('href', 'https://app.leva.ai.kr/');
   });
 
+  // 푸터 링크가 flex-wrap 없이 한 줄로 버티며 320px에서 페이지를 14px 밀고
+  // 있었다. 표를 추가하거나 링크를 늘릴 때 같은 일이 반복되므로 폭으로 잰다.
+  test('좁은 화면에서 본문이 가로로 밀리지 않는다', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 700 });
+
+    for (const path of ['/', '/privacy.html', '/beta.html', '/about.html', '/notes/']) {
+      await page.goto(path);
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+
+      expect(overflow, `${path} 가 가로로 넘친다`).toBe(0);
+    }
+  });
+
   test('리드폼 제출 → 성공 상태', async ({ page }) => {
     await page.goto('/');
     // 리드폼 마운트가 lazy-load 되도록 섹션으로 스크롤
