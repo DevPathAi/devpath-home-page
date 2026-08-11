@@ -50,8 +50,11 @@ describe('renderNote', () => {
     expect(html).not.toContain('adsbygoogle"');
   });
 
-  it('목록으로 돌아가는 링크가 있다', () => {
-    expect(html).toContain('href="/notes"');
+  // Pages는 디렉터리 인덱스를 트레일링 슬래시로 308 리다이렉트한다(실측: /notes → /notes/).
+  // 링크가 /notes면 클릭·크롤 때마다 리다이렉트를 한 번 더 탄다.
+  it('목록 링크가 리다이렉트되지 않는 /notes/를 가리킨다', () => {
+    expect(html).toContain('href="/notes/"');
+    expect(html).not.toContain('href="/notes"');
   });
 
   it('치환하지 못한 자리표시자가 남지 않는다', () => {
@@ -91,8 +94,10 @@ describe('renderIndex', () => {
     expect(html.indexOf('/notes/newer')).toBeLessThan(html.indexOf('/notes/older'));
   });
 
-  it('canonical이 /notes다', () => {
-    expect(html).toContain('<link rel="canonical" href="https://leva.ai.kr/notes" />');
+  // canonical이 308로 리다이렉트되는 URL을 가리키면 안 된다.
+  it('canonical이 /notes/다', () => {
+    expect(html).toContain('<link rel="canonical" href="https://leva.ai.kr/notes/" />');
+    expect(html).toContain('<meta property="og:url" content="https://leva.ai.kr/notes/" />');
   });
 
   it('애드센스 스크립트는 넣되 광고 슬롯은 넣지 않는다', () => {
@@ -116,18 +121,23 @@ describe('renderSitemap', () => {
   it('고정 경로 셋과 모든 글을 담는다', () => {
     expect(locs).toEqual([
       'https://leva.ai.kr/',
-      'https://leva.ai.kr/notes',
+      'https://leva.ai.kr/notes/',
       'https://leva.ai.kr/notes/newer',
       'https://leva.ai.kr/notes/older',
       'https://leva.ai.kr/privacy',
     ]);
   });
 
+  // sitemap의 URL이 리다이렉트되면 크롤러가 매번 홉을 하나 더 탄다.
+  it('리다이렉트되는 무슬래시 /notes를 담지 않는다', () => {
+    expect(locs).not.toContain('https://leva.ai.kr/notes');
+  });
+
   it('리다이렉트되는 .html 경로를 담지 않는다', () => {
     expect(xml).not.toContain('.html');
   });
 
-  it('/notes의 lastmod가 가장 최근 글 날짜다', () => {
-    expect(xml).toMatch(/<loc>https:\/\/leva\.ai\.kr\/notes<\/loc>\s*<lastmod>2026-08-10<\/lastmod>/);
+  it('/notes/의 lastmod가 가장 최근 글 날짜다', () => {
+    expect(xml).toMatch(/<loc>https:\/\/leva\.ai\.kr\/notes\/<\/loc>\s*<lastmod>2026-08-10<\/lastmod>/);
   });
 });
