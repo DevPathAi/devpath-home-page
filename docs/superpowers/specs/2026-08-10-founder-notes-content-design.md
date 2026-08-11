@@ -88,10 +88,12 @@ build.mjs                    복사 빌드 후 scripts/notes.mjs 호출
 | 원고 | dist 산출물 | 라이브 URL |
 |---|---|---|
 | `content/notes/<slug>.md` | `dist/notes/<slug>.html` | `https://leva.ai.kr/notes/<slug>` |
-| (생성) | `dist/notes/index.html` | `https://leva.ai.kr/notes` |
+| (생성) | `dist/notes/index.html` | `https://leva.ai.kr/notes/` |
 | (생성) | `dist/sitemap.xml` | `https://leva.ai.kr/sitemap.xml` |
 
 Cloudflare Pages가 `.html` 확장자를 떼는 clean URL로 308 리다이렉트하므로, 내부 링크·canonical·sitemap은 **모두 확장자 없는 형태**를 쓴다.
+
+**단, 디렉터리 인덱스는 반대 방향으로 308한다** — 라이브 실측에서 `/notes`가 `/notes/`로 리다이렉트됐다(`/notes/index.html`도 마찬가지). 따라서 인덱스를 가리키는 canonical·`og:url`·sitemap `<loc>`·내부 링크는 **트레일링 슬래시가 있는 `/notes/`**를 쓴다. 개별 글은 확장자 없는 `/notes/<slug>`가 그대로 200이다.
 
 ### 4.3 원고 형식
 
@@ -148,7 +150,7 @@ slug는 한 디렉터리의 파일명에서 오므로 중복이 발생할 수 �
 - `<head>`에 애드센스 스크립트 — `index.html`과 **동일한 형태**로 넣는다. 퍼블리셔 ID와 `ads.txt`는 건드리지 않는다. 광고 슬롯(`<ins>`)은 넣지 않는다
 - 본문 상단에 제목·작성일, 하단에 「목록으로」 링크
 
-**인덱스 `/notes`** — 제목·작성일·`description`을 최신순 목록으로. canonical은 `https://leva.ai.kr/notes`. 애드센스 스크립트를 동일하게 포함한다.
+**인덱스 `/notes/`** — 제목·작성일·`description`을 최신순 목록으로. canonical은 `https://leva.ai.kr/notes/`. 애드센스 스크립트를 동일하게 포함한다.
 
 ### 4.7 발견 가능성
 

@@ -112,7 +112,9 @@ export function renderSitemap(notes) {
   const latest = notes.length > 0 ? notes[0].date : '2026-08-10';
   const entries = [
     ...STATIC_PAGES.map((p) => ({ loc: `${SITE}${p.path}`, lastmod: p.lastmod })),
-    { loc: `${SITE}/notes`, lastmod: latest },
+    // Pages는 디렉터리 인덱스를 /notes → /notes/로 308 리다이렉트한다(라이브 실측).
+    // 슬래시 없는 형태를 담으면 크롤러가 홉을 한 번 더 탄다.
+    { loc: `${SITE}/notes/`, lastmod: latest },
     ...notes.map((n) => ({ loc: `${SITE}/notes/${n.slug}`, lastmod: n.date })),
   ].sort((a, b) => a.loc.localeCompare(b.loc));
 

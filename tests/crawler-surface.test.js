@@ -60,7 +60,12 @@ describe('sitemap', () => {
 
 // sitemap만으로는 부족하다. 고아 페이지는 색인이 잘 안 된다.
 describe('개발 기록 발견 가능성', () => {
-  it('홈에서 /notes로 가는 링크가 있다', () => {
-    expect(read('index.html')).toContain('href="/notes"');
+  it('홈에서 /notes/로 가는 링크가 있다', () => {
+    expect(read('index.html')).toContain('href="/notes/"');
+  });
+
+  // 308을 한 번 더 타는 링크가 남아 있으면 안 된다(실측: /notes → /notes/).
+  it('리다이렉트되는 무슬래시 링크를 남기지 않는다', () => {
+    expect(read('index.html')).not.toContain('href="/notes"');
   });
 });
