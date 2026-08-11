@@ -45,3 +45,47 @@ describe('/beta 페이지', () => {
     expect(re.test(html)).toBe(false);
   });
 });
+
+describe('/about 페이지', () => {
+  const html = read('about.html');
+
+  it('canonical이 확장자·슬래시 없는 자기 URL이다', () => {
+    expect(html).toContain('<link rel="canonical" href="https://leva.ai.kr/about" />');
+    expect(html).toContain('<meta property="og:url" content="https://leva.ai.kr/about" />');
+  });
+
+  it('색인을 허용한다', () => {
+    expect(html).toMatch(/<meta name="robots" content="index, follow"/);
+  });
+
+  it('애드센스 스크립트는 넣되 광고 슬롯은 넣지 않는다', () => {
+    expect(html).toContain('ca-pub-2785578834914321');
+    expect(html).not.toContain('adsbygoogle"');
+  });
+
+  it('회사 정보와 연락처를 싣는다', () => {
+    expect(html).toContain('레바');
+    expect(html).toContain('796-76-00732');
+    expect(html).toContain('mailto:info@leva.ai.kr');
+  });
+
+  // 결제 기능이 없어 표시의무가 없다. 실수로 넣지 않도록 막는다.
+  it('사업장 주소를 싣지 않는다', () => {
+    expect(html).not.toMatch(/[가-힣]+시\s+[가-힣]+구/);
+  });
+
+  // 처리방침의 법정 기재는 그대로 두되, 소개 페이지에서는 다루지 않기로 했다.
+  it('창업자 서사에 실명을 쓰지 않는다', () => {
+    expect(html).not.toContain('김민구');
+  });
+
+  it.each(FORBIDDEN)('$name을(를) 담지 않는다', ({ re }) => {
+    expect(re.test(html)).toBe(false);
+  });
+});
+
+describe('홈에서 소개로', () => {
+  it('창업자 섹션이 /about으로 잇는다', () => {
+    expect(read('index.html')).toContain('href="/about"');
+  });
+});

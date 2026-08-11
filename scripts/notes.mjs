@@ -107,6 +107,7 @@ const STATIC_PAGES = [
   { path: '/', lastmod: '2026-08-10' },
   { path: '/privacy', lastmod: '2026-08-10' },
   { path: '/beta', lastmod: '2026-08-11' },
+  { path: '/about', lastmod: '2026-08-11' },
 ];
 
 export function renderSitemap(notes) {

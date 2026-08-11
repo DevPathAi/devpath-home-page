@@ -121,6 +121,7 @@ describe('renderSitemap', () => {
   it('고정 경로 셋과 모든 글을 담는다', () => {
     expect(locs).toEqual([
       'https://leva.ai.kr/',
+      'https://leva.ai.kr/about',
       'https://leva.ai.kr/beta',
       'https://leva.ai.kr/notes/',
       'https://leva.ai.kr/notes/newer',
