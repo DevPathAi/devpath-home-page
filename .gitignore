@@ -16,3 +16,6 @@ test-results/
 .env.local
 # Cloudflare Pages Functions 로컬 시크릿 (예시는 .dev.vars.example)
 .dev.vars
+
+# gstack 도구 산출물
+.gstack/

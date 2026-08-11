@@ -26,3 +26,44 @@ describe('빌드 산출물', () => {
     expect(readFileSync(root('dist/sitemap.xml'), 'utf-8')).toContain('/notes/');
   });
 });
+
+// _headers 가 /assets/* 를 max-age=31536000, immutable 로 선언한다. 그런데
+// 파일명이 styles.css 로 고정이면 내용을 고쳐도 이미 받아 간 브라우저는 1년간
+// 옛 파일을 쓴다 — 선언과 실제가 반대였다. 이름에 내용 해시를 넣어 「불변」을
+// 사실로 만든다.
+describe('자산은 내용이 바뀌면 이름이 바뀐다', () => {
+  const assets = () => readdirSync(root('dist/assets'));
+  const htmlFiles = () => [
+    ...readdirSync(root('dist')).filter((f) => f.endsWith('.html')),
+    ...readdirSync(root('dist/notes')).map((f) => `notes/${f}`),
+  ];
+
+  it('해시 없는 이름은 남지 않는다', () => {
+    expect(assets()).not.toContain('styles.css');
+    expect(assets()).not.toContain('og-image.png');
+  });
+
+  it('해시가 붙은 이름으로 나온다', () => {
+    expect(assets().some((f) => /^styles\.[0-9a-f]{8}\.css$/.test(f))).toBe(true);
+  });
+
+  // 참조가 옛 이름에 남으면 사이트가 통째로 스타일을 잃는다.
+  it('모든 HTML이 해시된 이름을 가리킨다', () => {
+    const hashed = assets().find((f) => /^styles\.[0-9a-f]{8}\.css$/.test(f));
+
+    for (const file of htmlFiles()) {
+      const html = readFileSync(root(`dist/${file}`), 'utf-8');
+      expect(html, `${file} 이 해시 없는 자산을 가리킨다`).not.toMatch(
+        /\/assets\/(styles\.css|og-image\.png|favicon\.svg)/,
+      );
+      expect(html, `${file} 에 스타일시트 참조가 없다`).toContain(`/assets/${hashed}`);
+    }
+  });
+
+  it('내용이 같으면 해시도 같다', () => {
+    const before = assets().find((f) => f.startsWith('styles.'));
+    execFileSync('node', ['build.mjs'], { cwd: root('.'), stdio: 'pipe' });
+
+    expect(assets().find((f) => f.startsWith('styles.'))).toBe(before);
+  });
+});
