@@ -71,7 +71,7 @@ function resultHtml(r) {
     <div class="md-result">
       <p class="md-result__track">추천 트랙: <strong>${r.track}</strong></p>
       <ol class="md-result__steps">${items}</ol>
-      <p class="md-result__cta"><a class="btn btn-primary" href="#lead">정식 진단으로 전체 로드맵 받기</a></p>
+      <p class="md-result__cta"><a class="btn btn-primary" href="https://app.leva.ai.kr/">정식 진단으로 전체 로드맵 받기</a></p>
       <button type="button" class="md-restart">다시 해보기</button>
     </div>`;
 }
