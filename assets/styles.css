@@ -510,7 +510,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   gap: var(--space-4);
 }
 .site-footer__brand { font-weight: 800; margin: 0; }
-.site-footer__links { display: flex; gap: var(--space-4); margin-left: auto; }
+/* wrap이 없으면 좁은 화면에서 링크가 한 줄로 버티며 페이지를 가로로 민다. */
+.site-footer__links { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-left: auto; }
 .site-footer__links a { display: inline-flex; align-items: center; min-height: 44px; color: var(--text-muted); font-size: 0.95rem; }
 .site-footer__copy { color: var(--text-muted); font-size: 0.9rem; margin: 0; width: 100%; }
 
@@ -642,10 +643,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
   margin-bottom: 0.75rem;
   color: var(--slate-900);
 }
+/* h2가 1.125rem이라, 스타일이 없으면 브라우저 기본 h3(약 1.17em)가 상위 제목보다
+   커진다. 하위 제목은 하위로 보여야 한다. */
+.legal h3 {
+  font-size: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--slate-900);
+}
 .legal p, .legal li { color: var(--slate-700); }
 .legal ul { padding-left: 1.25rem; margin: 0.5rem 0; }
 .legal li { margin: 0.25rem 0; }
 .legal__meta { color: var(--slate-500); font-size: 0.875rem; }
+/* 국외이전 표는 법정 고지 항목이 5열이라 좁은 화면에서 넘친다. 본문이 아니라
+   표만 가로로 스크롤한다. */
+.legal__scroll { overflow-x: auto; margin: 0.75rem 0; }
+.legal__scroll .legal__table { margin: 0; }
+.legal__scroll .legal__table th, .legal__scroll .legal__table td { min-width: 7rem; }
 .legal__table {
   width: 100%;
   border-collapse: collapse;
