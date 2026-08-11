@@ -69,3 +69,25 @@ describe('개발 기록 발견 가능성', () => {
     expect(read('index.html')).not.toContain('href="/notes"');
   });
 });
+
+// 요금을 본 직후이자 폼에 닿기 직전이 질문이 가장 많이 생기는 자리다.
+describe('홈 FAQ', () => {
+  const html = read('index.html');
+
+  it('FAQ 섹션이 있다', () => {
+    expect(html).toContain('id="faq"');
+  });
+
+  it('요금과 리드 폼 사이에 놓인다', () => {
+    expect(html.indexOf('id="pricing"')).toBeLessThan(html.indexOf('id="faq"'));
+    expect(html.indexOf('id="faq"')).toBeLessThan(html.indexOf('id="lead"'));
+  });
+
+  it('상세는 /beta로 보낸다', () => {
+    expect(html).toContain('href="/beta"');
+  });
+
+  it('확정되지 않은 초대 기간을 약속하지 않는다', () => {
+    expect(html).not.toMatch(/(며칠|영업일|\d+\s*일)\s*(안에|이내|내로)/);
+  });
+});

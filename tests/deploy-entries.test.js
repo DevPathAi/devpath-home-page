@@ -21,7 +21,7 @@ const CRAWLER_FILES = ['robots.txt', 'ads.txt'];
 describe('배포 화이트리스트', () => {
   // build.mjs는 없는 엔트리를 ENOENT로 조용히 건너뛴다("빌드 초기 단계 허용").
   // 그래서 "목록에 있는데 파일이 없다"가 빌드를 깨지 않고 조용히 배포에서 빠진다.
-  // 실제로 _redirects·favicon.ico는 지금도 목록에만 있고 파일이 없다 — 이는
+  // 실제로 favicon.ico는 지금도 목록에만 있고 파일이 없다 — 이는
   // 의도된 허용이므로 전수 검사는 하지 않고, 크롤러 필수 파일만 단언한다.
   it.each(CRAWLER_FILES)('%s는 목록에 있고 파일도 존재한다', (name) => {
     expect(deployEntries()).toContain(name); // 목록 누락 → dist/로 안 나감
