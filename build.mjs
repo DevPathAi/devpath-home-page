@@ -10,7 +10,7 @@ const root = fileURLToPath(new URL('./', import.meta.url));
 const dist = root + 'dist';
 
 // 배포에 포함할 최상위 엔트리(존재하는 것만 복사).
-const DEPLOY_ENTRIES = ['index.html', 'privacy.html', '404.html', 'src', 'assets', '_headers', '_redirects', '_routes.json', 'robots.txt', 'favicon.ico', 'ads.txt'];
+const DEPLOY_ENTRIES = ['index.html', 'privacy.html', 'beta.html', '404.html', 'src', 'assets', '_headers', '_redirects', '_routes.json', 'robots.txt', 'favicon.ico', 'ads.txt'];
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
