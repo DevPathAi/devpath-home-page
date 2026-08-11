@@ -58,14 +58,21 @@ function doPost(e) {
     // 발송 실패가 접수 자체를 실패로 만들면 안 되므로 삼키되, 무엇이 실제로
     // 일어났는지는 mail_sent로 정직하게 돌려준다 — 화면 문구가 이 값에 종속된다.
     let mailSent = false;
+    let mailError = '';
     if (!rowNumber && payload.action === 'lead') {
       try {
-        mailSent = sendLeadEmails_(merged);
-      } catch (mailError) {
-        mailSent = false;
+        sendLeadEmails_(merged);
+        mailSent = true;
+      } catch (error) {
+        // 사유를 감추면 밖에서는 "안 왔다"는 사실만 남고 원인을 알 수 없다.
+        // 실행 기록과 응답 양쪽에 남긴다.
+        mailError = String((error && error.message) || error).slice(0, 160);
+        Logger.log('lead mail failed: ' + mailError);
       }
     }
-    return json_({ ok: true, lead_id: merged.lead_id, updated: Boolean(rowNumber), mail_sent: mailSent });
+    const result = { ok: true, lead_id: merged.lead_id, updated: Boolean(rowNumber), mail_sent: mailSent };
+    if (mailError) result.mail_error = mailError;
+    return json_(result);
   } catch (error) {
     return json_({ ok: false, error: error.message });
   }
@@ -122,12 +129,13 @@ function adminEmail_() {
   return PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL') || ADMIN_EMAIL_FALLBACK;
 }
 
-// 보냈으면 true. 보내지 못했으면 false를 돌려주고 예외는 호출자가 삼킨다.
+// 보내지 못하는 모든 경우를 사유와 함께 던진다. 호출자가 잡아 기록하고,
+// 접수 자체는 실패시키지 않는다.
 function sendLeadEmails_(lead) {
   const applicant = String(lead.email_normalized || '').trim();
-  if (!applicant) return false;
-  // 일일 쿼터를 넘기면 sendEmail이 던진다. 미리 보고 조용히 건너뛴다.
-  if (MailApp.getRemainingDailyQuota() < 2) return false;
+  if (!applicant) throw new Error('no applicant address');
+  // 일일 쿼터를 넘기면 sendEmail이 던진다. 미리 보고 사유를 분명히 한다.
+  if (MailApp.getRemainingDailyQuota() < 2) throw new Error('daily mail quota exhausted');
 
   const admin = adminEmail_();
   MailApp.sendEmail({
@@ -144,7 +152,6 @@ function sendLeadEmails_(lead) {
     name: 'Leva 리드 알림',
     replyTo: applicant,
   });
-  return true;
 }
 
 function applicantMailBody_(lead, admin) {
