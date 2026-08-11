@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
 
+# Mediapartners-Google은 위의 * 그룹을 무시하고 자기 그룹만 따른다(Google 문서).
+User-agent: Mediapartners-Google
+Allow: /
+
 Sitemap: https://leva.ai.kr/sitemap.xml
