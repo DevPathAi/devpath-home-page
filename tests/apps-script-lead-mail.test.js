@@ -51,17 +51,24 @@ function makeSheet(rows) {
   };
 }
 
-function load({ sheetRows = [HEADERS.slice()], properties = { SHEET_ID: 'sheet-x' }, mailThrows = false } = {}) {
+function load({
+  sheetRows = [HEADERS.slice()],
+  properties = { SHEET_ID: 'sheet-x' },
+  mailThrows = false,
+  quota = 100,
+} = {}) {
   const sent = [];
+  const logged = [];
   const sheet = makeSheet(sheetRows);
 
   const MailApp = {
-    getRemainingDailyQuota: () => 100,
+    getRemainingDailyQuota: () => quota,
     sendEmail: (options) => {
-      if (mailThrows) throw new Error('quota exceeded');
+      if (mailThrows) throw new Error('Authorization is required to perform that action.');
       sent.push(options);
     },
   };
+  const Logger = { log: (...args) => logged.push(args.join(' ')) };
   const SpreadsheetApp = {
     openById: () => ({ getSheetByName: () => sheet, insertSheet: () => sheet }),
     getActiveSpreadsheet: () => ({ getSheetByName: () => sheet, insertSheet: () => sheet }),
@@ -75,11 +82,11 @@ function load({ sheetRows = [HEADERS.slice()], properties = { SHEET_ID: 'sheet-x
   };
 
   const factory = new Function(
-    'MailApp', 'SpreadsheetApp', 'PropertiesService', 'ContentService',
+    'MailApp', 'SpreadsheetApp', 'PropertiesService', 'ContentService', 'Logger',
     `${SOURCE}\nreturn { doPost, doGet };`,
   );
-  const api = factory(MailApp, SpreadsheetApp, PropertiesService, ContentService);
-  return { ...api, sent, sheet };
+  const api = factory(MailApp, SpreadsheetApp, PropertiesService, ContentService, Logger);
+  return { ...api, sent, sheet, logged };
 }
 
 const leadBody = (overrides = {}) => ({
@@ -140,6 +147,40 @@ describe('발송이 실패해도', () => {
     expect(res.ok).toBe(true);
     expect(ctx.sheet.rows).toHaveLength(2);
     expect(res.mail_sent).toBe(false);
+  });
+
+  // 예외를 통째로 삼키면 실행 기록에도 오류가 남지 않아 밖에서 원인을 알 수 없다.
+  // 접수를 실패시키지 않는 것과 원인을 감추는 것은 다른 얘기다.
+  it('실패 사유를 응답에 담는다', () => {
+    const ctx = load({ mailThrows: true });
+
+    expect(parse(ctx.doPost(leadBody())).mail_error).toContain('Authorization');
+  });
+
+  it('실패 사유를 실행 로그에도 남긴다', () => {
+    const ctx = load({ mailThrows: true });
+
+    ctx.doPost(leadBody());
+
+    expect(ctx.logged.join('\n')).toContain('Authorization');
+  });
+
+  it('쿼터가 없으면 그 사실을 사유로 남긴다', () => {
+    const ctx = load({ quota: 0 });
+
+    const res = parse(ctx.doPost(leadBody()));
+
+    expect(res.mail_sent).toBe(false);
+    expect(res.mail_error).toContain('quota');
+  });
+});
+
+describe('발송이 성공하면', () => {
+  it('실패 사유를 붙이지 않는다', () => {
+    const res = parse(load().doPost(leadBody()));
+
+    expect(res.mail_sent).toBe(true);
+    expect(res.mail_error).toBeUndefined();
   });
 });
 
