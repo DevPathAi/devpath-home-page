@@ -17,14 +17,21 @@ test.describe('홈페이지 스모크', () => {
     await page.goto('/');
     await expect(page).toHaveTitle(/Leva/);
     await expect(page.locator('h1')).toContainText('다음 단계');
-    // 주 CTA 2개(헤더 + Hero) 존재
-    await expect(page.getByRole('link', { name: '내 실력 진단받기' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: '가입 없이 진단 시작' })).toBeVisible();
   });
 
-  test('주 CTA → 리드 섹션 이동', async ({ page }) => {
+  // 게스트 진단은 앱에서 가입 없이 시작된다. 예전에는 이 CTA가 #lead(이메일
+  // 폼)로 갔는데, 그건 지금 써볼 수 있는 제품을 대기열 뒤에 숨기는 것이었다.
+  // 외부 링크라 클릭해 이동시키는 대신 목적지를 단언한다.
+  test('주 CTA가 앱 게스트 진단으로 향한다', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: '내 실력 진단받기' }).first().click();
-    await expect(page.locator('#lead')).toBeInViewport({ ratio: 0.1 });
+
+    await expect(
+      page.getByRole('link', { name: '가입 없이 진단 시작' }),
+    ).toHaveAttribute('href', 'https://app.leva.ai.kr/');
+    await expect(
+      page.getByRole('link', { name: '무료로 진단 시작' }).first(),
+    ).toHaveAttribute('href', 'https://app.leva.ai.kr/');
   });
 
   test('리드폼 제출 → 성공 상태', async ({ page }) => {
