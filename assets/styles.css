@@ -660,6 +660,20 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .legal__table th { background: var(--slate-50); font-weight: 600; }
 .site-footer__biz { color: var(--slate-500); font-size: 0.8125rem; }
 
+/* ── 자주 묻는 것 ─────────────────────────────────────────────────────── */
+.faq__list { margin: 1.5rem 0 0; }
+.faq__list dt {
+  font-weight: 600;
+  margin: 1.25rem 0 0.35rem;
+  color: var(--slate-900);
+}
+.faq__list dt:first-child { margin-top: 0; }
+.faq__list dd {
+  margin: 0;
+  color: var(--slate-700);
+  line-height: 1.7;
+}
+
 /* ── 개발 기록 아티클 ─────────────────────────────────────────────────── */
 .note pre {
   overflow-x: auto;
