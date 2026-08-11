@@ -83,7 +83,7 @@ function load({
 
   const factory = new Function(
     'MailApp', 'SpreadsheetApp', 'PropertiesService', 'ContentService', 'Logger',
-    `${SOURCE}\nreturn { doPost, doGet };`,
+    `${SOURCE}\nreturn { doPost, doGet, authorizeMailScope };`,
   );
   const api = factory(MailApp, SpreadsheetApp, PropertiesService, ContentService, Logger);
   return { ...api, sent, sheet, logged };
@@ -172,6 +172,16 @@ describe('발송이 실패해도', () => {
 
     expect(res.mail_sent).toBe(false);
     expect(res.mail_error).toContain('quota');
+  });
+});
+
+// 스코프 미승인이 실제로 발송을 막았고(실측), 원인을 찾는 데 왕복이 여러 번
+// 필요했다. 승인 트리거를 코드에 남겨 다음 사람이 헤매지 않게 한다.
+describe('권한 승인 트리거', () => {
+  it('MailApp을 직접 호출해 동의 팝업을 유발한다', () => {
+    const ctx = load({ quota: 42 });
+
+    expect(ctx.authorizeMailScope()).toBe(42);
   });
 });
 

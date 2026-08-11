@@ -125,6 +125,17 @@ function computeStats_() {
 // ── 메일 발송 ─────────────────────────────────────────────────────────────
 const ADMIN_EMAIL_FALLBACK = 'info@leva.ai.kr';
 
+// 편집기에서 이 함수를 한 번 실행해 메일 권한(script.send_mail)을 승인한다.
+// Apps Script는 "실행한 코드가 실제로 요구하는" 권한만 동의를 묻는다. 그래서
+// MailApp을 건드리지 않는 함수를 실행하면 팝업이 뜨지 않고, 승인 없는 웹앱은
+// 런타임에 거부당한다(실측: "You do not have permission to call MailApp...").
+// 승인 후에는 새 버전으로 배포해야 웹앱에 반영된다.
+function authorizeMailScope() {
+  const remaining = MailApp.getRemainingDailyQuota();
+  Logger.log('mail scope authorized. remaining daily quota: ' + remaining);
+  return remaining;
+}
+
 function adminEmail_() {
   return PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL') || ADMIN_EMAIL_FALLBACK;
 }
