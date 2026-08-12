@@ -868,8 +868,19 @@ CI 가 녹색인 것을 확인하고 머지한다.
 1·2·3·4 가 모두 확인된 뒤에만 실행한다.
 
 1. shared 발행이 끝났는지 확인한다(Task 5 Step 5).
-2. 중앙 마이그레이션 잡을 실행한다.
-3. platform-svc 를 배포한다.
+2. **platform-svc 를 먼저 배포하고** `ConsentType.TERMS` 가 `"v2"` 인 것을 확인한다.
+   - 순서가 중요하다. 마이그레이션이 먼저 돌면 그 순간부터 이용자가 `PENDING` 이 되는데,
+     platform-svc 가 아직 v1 이면 그 사이에 동의한 이용자의 이력에 **`v1` 이 저장된다.**
+     그 이용자는 `consent_status='DONE'` 이 되어 **다시 물을 수 없다.**
+3. 마이그레이션 잡을 실행하기 **직전에** 되돌릴 근거를 파일로 남긴다.
+
+   ```sql
+   SELECT id, consent_status FROM users WHERE consent_status = 'DONE' AND deleted_at IS NULL;
+   ```
+
+   이 UPDATE 는 되돌릴 수 없다. 목록이 없으면 복구할 대상을 특정할 수 없다.
+4. 중앙 마이그레이션 잡을 실행한다.
+5. 영향 행 수를 3에서 남긴 목록과 대조한다. 수가 다르면 멈추고 원인을 확인한다.
 
 - [ ] **Step 6: 재동의가 실제로 걸리는지 확인한다**
 

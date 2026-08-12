@@ -105,7 +105,7 @@ const SITE = 'https://leva.ai.kr';
 // sitemap이 흔들리지 않게 한다(Date.now를 쓰지 않는 이유).
 const STATIC_PAGES = [
   { path: '/', lastmod: '2026-08-10' },
-  { path: '/privacy', lastmod: '2026-08-10' },
+  { path: '/privacy', lastmod: '2026-08-12' },
   { path: '/terms', lastmod: '2026-08-12' },
   { path: '/beta', lastmod: '2026-08-11' },
   { path: '/about', lastmod: '2026-08-11' },
