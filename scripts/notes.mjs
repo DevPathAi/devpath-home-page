@@ -106,6 +106,7 @@ const SITE = 'https://leva.ai.kr';
 const STATIC_PAGES = [
   { path: '/', lastmod: '2026-08-10' },
   { path: '/privacy', lastmod: '2026-08-10' },
+  { path: '/terms', lastmod: '2026-08-12' },
   { path: '/beta', lastmod: '2026-08-11' },
   { path: '/about', lastmod: '2026-08-11' },
 ];

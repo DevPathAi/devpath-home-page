@@ -7,9 +7,9 @@ const read = (p) => readFileSync(root(p), 'utf-8');
 
 // 페이지마다 푸터 링크가 제각각이면, 어떤 페이지에 도착한 사람은
 // 나머지 페이지로 갈 길이 없다. 실제로 privacy에는 /notes 링크가 없었다.
-const PAGES = ['index.html', 'privacy.html', 'beta.html', 'about.html'];
+const PAGES = ['index.html', 'privacy.html', 'terms.html', 'beta.html', 'about.html'];
 const TEMPLATES = ['templates/note.html', 'templates/notes-index.html'];
-const REQUIRED_LINKS = ['/beta', '/about', '/notes/', '/privacy'];
+const REQUIRED_LINKS = ['/beta', '/about', '/notes/', '/privacy', '/terms'];
 
 describe('푸터 내비 일관성', () => {
   it.each([...PAGES, ...TEMPLATES])('%s 푸터가 공통 링크를 담는다', (page) => {

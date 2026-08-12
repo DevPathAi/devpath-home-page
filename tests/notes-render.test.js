@@ -127,6 +127,7 @@ describe('renderSitemap', () => {
       'https://leva.ai.kr/notes/newer',
       'https://leva.ai.kr/notes/older',
       'https://leva.ai.kr/privacy',
+      'https://leva.ai.kr/terms',
     ]);
   });
 
