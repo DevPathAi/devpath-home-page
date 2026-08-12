@@ -85,3 +85,22 @@ describe('위탁과 국외이전은 함께 움직인다', () => {
     }
   });
 });
+
+// 약관은 "가입 시 출생 연도를 확인해 만 14세 미만을 제한한다"고 규정한다.
+// 처리방침이 같은 항목을 「선택」으로 적으면 두 법적 문서가 서로를 반박한다.
+describe('수집 항목의 필수·선택이 실제와 맞는다', () => {
+  it('출생연도가 필수 항목으로 기재된다', () => {
+    const s = text(section('처리하는 개인정보 항목'));
+
+    expect(s).toMatch(/연령 확인\(필수\)/);
+    expect(s).toContain('출생연도');
+  });
+
+  it('출생연도가 선택 항목에 남아 있지 않다', () => {
+    const s = section('처리하는 개인정보 항목');
+    const optional = s.slice(s.indexOf('프로필(선택)'));
+    const nextItem = optional.slice(0, optional.indexOf('</li>'));
+
+    expect(nextItem).not.toContain('출생연도');
+  });
+});
