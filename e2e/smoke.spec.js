@@ -39,7 +39,7 @@ test.describe('홈페이지 스모크', () => {
   test('좁은 화면에서 본문이 가로로 밀리지 않는다', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
 
-    for (const path of ['/', '/privacy.html', '/beta.html', '/about.html', '/notes/']) {
+    for (const path of ['/', '/privacy.html', '/terms.html', '/beta.html', '/about.html', '/notes/']) {
       await page.goto(path);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -88,5 +88,13 @@ test.describe('홈페이지 스모크', () => {
     await tabs.nth(1).click();
     await expect(page.locator('.lcs__compare')).toContainText('useEffect');
     await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('약관 페이지가 열리고 사업자 정보를 담는다', async ({ page }) => {
+    await page.goto('/terms.html');
+
+    await expect(page).toHaveTitle(/서비스 이용약관/);
+    await expect(page.locator('h1')).toContainText('서비스 이용약관');
+    await expect(page.locator('body')).toContainText('796-76-00732');
   });
 });
