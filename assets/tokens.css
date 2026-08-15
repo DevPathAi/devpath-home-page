@@ -1,0 +1,172 @@
+/*
+ * Leva semantic design-token mirror.
+ * Contract: DpSemanticTokenManifest 1.0.0
+ * Semantic values come from DpSemanticTokenManifest; layout widths come from
+ * AppTokens.standard and breakpoints from src/layout/dp_window_class.dart.
+ * This file is the only place where the Landing may assign semantic token values.
+ */
+
+:root {
+  --dp-token-manifest-version: "1.0.0";
+
+  /* Color — DpColors.light. Primary is fill-only; use primary-text for text/focus. */
+  --dp-color-primary: #B45309;
+  --dp-color-primary-text: #92400E;
+  --dp-color-primary-text-strong: #78350F;
+  --dp-color-on-primary: #FFFFFF;
+  --dp-color-accent-soft: #FDF1E0;
+  --dp-color-accent-line: #F2D0A0;
+  --dp-color-bg: #FAF9F7;
+  --dp-color-surface: #FFFFFF;
+  --dp-color-surface-muted: #F2F0EC;
+  --dp-color-border: #E2DED7;
+  --dp-color-text-primary: #1A1815;
+  --dp-color-text-secondary: #615C54;
+  --dp-color-text-faint: #918B81;
+  --dp-color-rail-bg: #1A1815;
+  --dp-color-rail-text: #F2F0EC;
+  --dp-color-rail-muted: #A9A298;
+  --dp-color-rail-faint: #9C958B;
+  --dp-color-rail-active: #2F2B24;
+  --dp-color-rail-border: #2B2823;
+  --dp-color-success: #15803D;
+  --dp-color-warning: #A16207;
+  --dp-color-danger: #B91C1C;
+  --dp-color-tag-bg: #F2F0EC;
+  --dp-color-tag-text: #524D45;
+  --dp-color-chart1: #1D4ED8;
+  --dp-color-chart2: #BE185D;
+  --dp-color-chart3: #7E22CE;
+  --dp-color-chart4: #0F766E;
+  --dp-color-chart5: #8B857D;
+  --dp-color-code-editor-bg: #1E1E1E;
+  --dp-color-code-log-bg: #0D1117;
+  --dp-color-code-text: #D4D4D4;
+
+  /* Spacing and shape — DpSpacing, DpRadius, AppTokens.standard. */
+  --dp-space-xs: 4px;
+  --dp-space-sm: 8px;
+  --dp-space-md: 12px;
+  --dp-space-lg: 16px;
+  --dp-space-xl: 24px;
+  --dp-space-xxl: 32px;
+  --dp-space-xxxl: 48px;
+  --dp-radius-chip: 12px;
+  --dp-radius-button: 8px;
+  --dp-radius-panel: 10px;
+  --dp-radius-input: 8px;
+  --dp-radius-dialog: 12px;
+
+  /* Motion — DpDurations. Components must remove non-essential motion for reduced motion. */
+  --dp-duration-stage-reveal: 200ms;
+  --dp-duration-skeleton-crossfade: 150ms;
+  --dp-duration-hover: 120ms;
+  --dp-duration-select: 180ms;
+  --dp-duration-panel-expand: 220ms;
+
+  /* Typography — exact CSS projection of DpTypography TextStyle slots. */
+  --dp-type-display-small: 400 36px/44px "Pretendard";
+  --dp-type-headline-small: 600 24px/32px "Pretendard";
+  --dp-type-title-large: 700 20px/28px "Pretendard";
+  --dp-type-title-medium: 600 16px/24px "Pretendard";
+  --dp-type-title-small: 600 14px/20px "Pretendard";
+  --dp-type-body-large: 400 16px/25.6px "Pretendard";
+  --dp-type-body-medium: 400 14px/22.4px "Pretendard";
+  --dp-type-body-small: 400 13px/20px "Pretendard";
+  --dp-type-label-large: 600 14px/20px "Pretendard";
+  --dp-type-label-medium: 600 12px/16px "Pretendard";
+  --dp-type-label-small: 500 11px/16px "Pretendard";
+  --dp-type-code: 400 14px/21px "D2Coding";
+
+  --dp-layout-content-max: 1440px;
+  --dp-layout-readable-max: 880px;
+  --dp-layout-rail: 256px;
+  --dp-layout-rail-collapsed: 72px;
+  --dp-breakpoint-medium: 600px;
+  --dp-breakpoint-expanded: 840px;
+  --dp-breakpoint-large: 1240px;
+
+  /* Interaction-state projection — foreground/background/border are never inferred by features. */
+  --dp-state-default-background: #FFFFFF;
+  --dp-state-default-foreground: #1A1815;
+  --dp-state-default-border: #E2DED7;
+  --dp-state-hover-background: #F2F0EC;
+  --dp-state-hover-foreground: #1A1815;
+  --dp-state-hover-border: #E2DED7;
+  --dp-state-pressed-background: #F2F0EC;
+  --dp-state-pressed-foreground: #1A1815;
+  --dp-state-pressed-border: #78350F;
+  --dp-state-focus-background: #FFFFFF;
+  --dp-state-focus-foreground: #1A1815;
+  --dp-state-focus-border: #E2DED7;
+  --dp-state-focus-ring: #92400E;
+  --dp-state-focus-ring-width: 2px;
+  --dp-state-selected-background: #FDF1E0;
+  --dp-state-selected-foreground: #78350F;
+  --dp-state-selected-border: #F2D0A0;
+  --dp-state-disabled-background: #F2F0EC;
+  --dp-state-disabled-foreground: #615C54;
+  --dp-state-disabled-border: #E2DED7;
+  --dp-state-disabled-opacity: 0.56;
+  --dp-state-error-background: #FFFFFF;
+  --dp-state-error-foreground: #B91C1C;
+  --dp-state-error-border: #B91C1C;
+}
+
+[data-theme="dark"] {
+  --dp-color-primary: #F59E0B;
+  --dp-color-primary-text: #FBBF24;
+  --dp-color-primary-text-strong: #FCD34D;
+  --dp-color-on-primary: #1A1200;
+  --dp-color-accent-soft: #2E2007;
+  --dp-color-accent-line: #5C400E;
+  --dp-color-bg: #0F0E0C;
+  --dp-color-surface: #1A1815;
+  --dp-color-surface-muted: #231F1B;
+  --dp-color-border: #332E28;
+  --dp-color-text-primary: #EAE7E2;
+  --dp-color-text-secondary: #A09991;
+  --dp-color-text-faint: #6F6961;
+  --dp-color-rail-bg: #221E1A;
+  --dp-color-rail-text: #EAE7E2;
+  --dp-color-rail-muted: #A09991;
+  --dp-color-rail-faint: #9A938A;
+  --dp-color-rail-active: #332E28;
+  --dp-color-rail-border: #3A342D;
+  --dp-color-success: #4ADE80;
+  --dp-color-warning: #FCD34D;
+  --dp-color-danger: #F87171;
+  --dp-color-tag-bg: #231F1B;
+  --dp-color-tag-text: #A09991;
+  --dp-color-chart1: #60A5FA;
+  --dp-color-chart2: #F472B6;
+  --dp-color-chart3: #D8B4FE;
+  --dp-color-chart4: #2DD4BF;
+  --dp-color-chart5: #8B857D;
+  --dp-color-code-editor-bg: #1E1E1E;
+  --dp-color-code-log-bg: #0D1117;
+  --dp-color-code-text: #C9D1D9;
+
+  --dp-state-default-background: #1A1815;
+  --dp-state-default-foreground: #EAE7E2;
+  --dp-state-default-border: #332E28;
+  --dp-state-hover-background: #231F1B;
+  --dp-state-hover-foreground: #EAE7E2;
+  --dp-state-hover-border: #332E28;
+  --dp-state-pressed-background: #231F1B;
+  --dp-state-pressed-foreground: #EAE7E2;
+  --dp-state-pressed-border: #FCD34D;
+  --dp-state-focus-background: #1A1815;
+  --dp-state-focus-foreground: #EAE7E2;
+  --dp-state-focus-border: #332E28;
+  --dp-state-focus-ring: #FBBF24;
+  --dp-state-selected-background: #2E2007;
+  --dp-state-selected-foreground: #FCD34D;
+  --dp-state-selected-border: #5C400E;
+  --dp-state-disabled-background: #231F1B;
+  --dp-state-disabled-foreground: #A09991;
+  --dp-state-disabled-border: #332E28;
+  --dp-state-error-background: #1A1815;
+  --dp-state-error-foreground: #F87171;
+  --dp-state-error-border: #F87171;
+}
