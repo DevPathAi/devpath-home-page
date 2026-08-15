@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:release": "playwright test --config=playwright.release.config.js",
+    "test:release:list": "playwright test --config=playwright.release.config.js --list",
     "test:all": "vitest run && playwright test"
   },
   "devDependencies": {

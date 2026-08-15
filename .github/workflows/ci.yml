@@ -28,6 +28,9 @@ jobs:
       - name: Unit tests (Vitest)
         run: npm test
 
+      - name: Discover release journeys (deterministic, no external execution)
+        run: npm run test:release:list
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 

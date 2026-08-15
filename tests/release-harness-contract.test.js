@@ -1,0 +1,645 @@
+import { createHash } from 'node:crypto';
+import {
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { afterEach, describe, expect, it } from 'vitest';
+
+import {
+  assertLiveReleaseContext,
+  createListOnlyReleaseContext,
+  loadReleaseContext,
+} from '../e2e/release/support/release-context.js';
+import {
+  REQUIRED_CAPABILITIES,
+  StagingControl,
+  assertAnalyticsSequence,
+} from '../e2e/release/support/staging-control.js';
+import {
+  SanitizedEvidence,
+  evidenceRoute,
+} from '../e2e/release/support/sanitized-evidence.js';
+
+const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
+const temporaryDirectories = [];
+
+function temporaryDirectory() {
+  const directory = mkdtempSync(join(tmpdir(), 'leva-release-harness-'));
+  temporaryDirectories.push(directory);
+  return directory;
+}
+
+function validCandidateSpec(overrides = {}) {
+  const digest = (character) => `sha256:${character.repeat(64)}`;
+  const component = (repository, name, sourceCharacter, digestCharacter) => ({
+    repository,
+    source_sha: sourceCharacter.repeat(40),
+    image_repository: `ghcr.io/devpathai/${name}`,
+    image_digest: digest(digestCharacter),
+  });
+  return {
+    $schema: '../../../../release-manifests/schema-v1.json',
+    schema_version: 1,
+    document_type: 'candidate-spec',
+    release_id: 'ms-20990101-contract-fixture',
+    created_at: '2099-01-01T00:00:00Z',
+    gitops: {
+      repository: 'DevPathAi/devpath-gitops',
+      base_sha: '1'.repeat(40),
+      base_web_digest: digest('c'),
+      web_kustomization: 'apps/devpath-web/base/kustomization.yaml',
+    },
+    services: {
+      'devpath-admin': component('DevPathAi/devpath-frontend', 'devpath-admin', '2', '1'),
+      'devpath-ai-svc': component('DevPathAi/devpath-ai-svc', 'devpath-ai-svc', '3', '2'),
+      'devpath-community-svc': component('DevPathAi/devpath-community-svc', 'devpath-community-svc', '4', '3'),
+      'devpath-gateway': component('DevPathAi/devpath-gateway', 'devpath-gateway', '5', '4'),
+      'devpath-lcs-svc': component('DevPathAi/devpath-lcs-svc', 'devpath-lcs-svc', '6', '5'),
+      'devpath-learning-svc': component('DevPathAi/devpath-learning-svc', 'devpath-learning-svc', '7', '6'),
+      'devpath-notification-svc': component('DevPathAi/devpath-notification-svc', 'devpath-notification-svc', '8', '7'),
+      'devpath-platform-svc': component('DevPathAi/devpath-platform-svc', 'devpath-platform-svc', '9', '8'),
+      'devpath-sandbox-svc': component('DevPathAi/devpath-sandbox-svc', 'devpath-sandbox-svc', 'a', '9'),
+    },
+    shared_migration: {
+      repository: 'DevPathAi/devpath-shared',
+      source_sha: 'b'.repeat(40),
+      image_repository: 'ghcr.io/devpathai/devpath-migration',
+      image_digest: digest('d'),
+      flyway_target: '202608161011',
+      required_migration: 'V202608161011__validate_lcs_mentor_snapshot_contract.sql',
+      rollback_policy: 'additive-retained',
+    },
+    frontend: {
+      repository: 'DevPathAi/devpath-frontend',
+      source_sha: '2'.repeat(40),
+      app_version: 'ms-20990101-contract-fixture',
+      analytics_contract_version: 'mission-spine.analytics.v1',
+      flag_contract_version: 'mission-spine.flag.v1',
+      mission_off: {
+        tag: `${'2'.repeat(40)}-mission-off`,
+        image_digest: digest('a'),
+      },
+      mission_on: {
+        tag: `${'2'.repeat(40)}-mission-on`,
+        image_digest: digest('b'),
+      },
+      selected_on_digest: digest('b'),
+      rollback: {
+        mission_off_digest: digest('a'),
+        prior_digest: digest('c'),
+        final_target: 'prior',
+      },
+    },
+    home: {
+      repository: 'DevPathAi/devpath-home-page',
+      source_sha: '21caf102d947c77e38164bf2f7deac9f6f36ef01',
+      dist_sha256: 'd'.repeat(64),
+      cloudflare_account_id: '0123456789abcdef0123456789abcdef',
+      cloudflare_project: 'devpath-home-page',
+      candidate_deployment_id: '11111111-1111-1111-1111-111111111111',
+      prior_production_deployment_id: '22222222-2222-2222-2222-222222222222',
+    },
+    analytics_privacy: {
+      collection_mode: 'explicit-consent',
+      region: 'EU',
+      project_identity: 'posthog-eu-mission-spine',
+      retention_days: 90,
+      access_owner: 'devpathai/privacy-owners',
+      deletion_runbook: 'documents/privacy/posthog-deletion-v1',
+    },
+    ai_release_eval_config: {
+      primary_model: 'claude-sonnet-release',
+      fallback_models: ['qwen-release-fallback'],
+      prompt_sha256: '3'.repeat(64),
+      fixture_revision: 'mentor-eval.v1',
+      fixture_sha256: '4'.repeat(64),
+    },
+    environments: {
+      staging: {
+        github_environment: 'mission-spine-staging',
+        kubernetes_context: 'devpath-staging',
+        namespace: 'devpath',
+        web_deployment: 'devpath-web',
+        web_container: 'devpath-web',
+        web_origin: 'https://staging-app.leva.ai.kr',
+        landing_origin: 'https://staging.leva.ai.kr',
+      },
+      production: {
+        github_environment: 'mission-spine-production',
+        kubernetes_context: 'devpath-production',
+        namespace: 'devpath',
+        web_deployment: 'devpath-web',
+        web_container: 'devpath-web',
+        web_origin: 'https://app.leva.ai.kr',
+        landing_origin: 'https://leva.ai.kr',
+      },
+    },
+    journey_harness: {
+      landing_origin: 'https://leva.ai.kr',
+      app_origin: 'https://app.leva.ai.kr',
+      control_origin: 'https://release-control.staging.leva.ai.kr',
+      oauth_origin: 'https://oauth.staging.leva.ai.kr',
+      analytics_spy_origin: 'https://analytics-spy.staging.leva.ai.kr',
+      dns_overrides: [
+        { hostname: 'leva.ai.kr', address: '10.24.0.10' },
+        { hostname: 'app.leva.ai.kr', address: '10.24.0.11' },
+      ],
+    },
+    rollout: {
+      sync_timeout_seconds: 300,
+      canary_seconds: 900,
+      rollback_budget_seconds: 600,
+      production_order: [
+        'shared-migration',
+        'additive-services',
+        'frontend-mission-off',
+        'compatibility-smoke',
+        'frontend-mission-on',
+        'canary',
+        'landing-last',
+      ],
+      rollback_order: [
+        'landing-prior',
+        'frontend-mission-off',
+        'frontend-prior',
+        'retain-additive-services-and-schema',
+      ],
+    },
+    ...overrides,
+  };
+}
+
+function writePinnedCandidateSpec(candidateSpec = validCandidateSpec()) {
+  const directory = temporaryDirectory();
+  const path = join(directory, 'candidate-spec.json');
+  const bytes = `${JSON.stringify(candidateSpec, null, 2)}\n`;
+  writeFileSync(path, bytes);
+  return {
+    path,
+    sha256: createHash('sha256').update(bytes).digest('hex'),
+    evidenceDirectory: join(directory, 'evidence'),
+  };
+}
+
+function validEnvironment(candidateSpec = validCandidateSpec()) {
+  const pinned = writePinnedCandidateSpec(candidateSpec);
+  return {
+    MISSION_CANDIDATE_SPEC_PATH: pinned.path,
+    MISSION_CANDIDATE_SPEC_SHA256: pinned.sha256,
+    MISSION_RELEASE_CONTROL_TOKEN: 'ephemeral-staging-control-credential',
+    MISSION_RELEASE_EVIDENCE_DIR: pinned.evidenceDirectory,
+  };
+}
+
+afterEach(() => {
+  for (const directory of temporaryDirectories.splice(0)) {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+describe('release context fail-closed contract', () => {
+  it('loads one out-of-band hash-pinned immutable canonical candidate-spec', () => {
+    const context = loadReleaseContext(validEnvironment());
+
+    expect(context.mode).toBe('live');
+    expect(context.releaseId).toBe('ms-20990101-contract-fixture');
+    expect(context.landingOrigin).toBe('https://leva.ai.kr');
+    expect(context.appOrigin).toBe('https://app.leva.ai.kr');
+    expect(context.chromiumHostResolverRules).toBe(
+      'MAP app.leva.ai.kr 10.24.0.11,MAP leva.ai.kr 10.24.0.10',
+    );
+    expect(context.web.offDigest).not.toBe(context.web.onDigest);
+    expect(context.web.selectedOnDigest).toBe(context.web.onDigest);
+    expect(context.candidateSpec.document_type).toBe('candidate-spec');
+    expect(context.candidateSpecSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(assertLiveReleaseContext(context)).toBe(context);
+  });
+
+  it.each([
+    'MISSION_CANDIDATE_SPEC_PATH',
+    'MISSION_CANDIDATE_SPEC_SHA256',
+    'MISSION_RELEASE_CONTROL_TOKEN',
+    'MISSION_RELEASE_EVIDENCE_DIR',
+  ])('rejects missing live environment input %s', (name) => {
+    const environment = validEnvironment();
+    delete environment[name];
+    expect(() => loadReleaseContext(environment)).toThrow(/required/i);
+  });
+
+  it('rejects an unpinned or modified candidate-spec', () => {
+    const environment = validEnvironment();
+    environment.MISSION_CANDIDATE_SPEC_SHA256 = '0'.repeat(64);
+    expect(() => loadReleaseContext(environment)).toThrow(/sha256/i);
+  });
+
+  it.each([
+    [
+      'non-TLS app origin',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.journey_harness.app_origin = 'http://app.leva.ai.kr';
+        return candidate;
+      },
+    ],
+    [
+      'non-production app hostname',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.journey_harness.app_origin = 'https://app.staging.leva.ai.kr';
+        candidate.journey_harness.dns_overrides[1].hostname = 'app.staging.leva.ai.kr';
+        return candidate;
+      },
+    ],
+    [
+      'missing production DNS override',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.journey_harness.dns_overrides.pop();
+        return candidate;
+      },
+    ],
+    [
+      'loopback DNS override',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.journey_harness.dns_overrides[1].address = '127.0.0.1';
+        return candidate;
+      },
+    ],
+    [
+      'OFF/ON digest collision',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.frontend.mission_on.image_digest = candidate.frontend.mission_off.image_digest;
+        candidate.frontend.selected_on_digest = candidate.frontend.mission_off.image_digest;
+        return candidate;
+      },
+    ],
+    [
+      'rebuilt selected ON digest',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.frontend.selected_on_digest = `sha256:${'e'.repeat(64)}`;
+        return candidate;
+      },
+    ],
+    [
+      'post-execution output injected into candidate input',
+      () => ({ ...validCandidateSpec(), journeys: {} }),
+    ],
+    [
+      'final release-manifest used as browser input',
+      () => ({ ...validCandidateSpec(), document_type: 'release-manifest' }),
+    ],
+  ])('rejects %s', (_, candidateFactory) => {
+    expect(() => loadReleaseContext(validEnvironment(candidateFactory())))
+      .toThrow();
+  });
+
+  it('permits deterministic --list discovery but cannot execute in that mode', () => {
+    const context = createListOnlyReleaseContext();
+    expect(context.mode).toBe('list-only');
+    expect(() => assertLiveReleaseContext(context)).toThrow(/list-only/i);
+  });
+});
+
+describe('staging control contract', () => {
+  it('requires OAuth, analytics spy, durable service and fault controls', async () => {
+    const candidateSpecSha256 = 'e'.repeat(64);
+    const responseBody = {
+      schema_version: 'mission-spine.staging-control.v1',
+      candidate_spec_sha256: candidateSpecSha256,
+      ready: true,
+      capabilities: [...REQUIRED_CAPABILITIES['mission-spine-workspace']],
+    };
+    const requests = [];
+    const request = {
+      async get(url, options) {
+        requests.push({ url, options });
+        return {
+          ok: () => true,
+          status: () => 200,
+          json: async () => responseBody,
+        };
+      },
+    };
+    const control = new StagingControl({
+      request,
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256,
+    });
+
+    await expect(control.assertPrerequisites('mission-spine-workspace'))
+      .resolves.toEqual(responseBody);
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe(
+      'https://release-control.staging.leva.ai.kr/v1/release/prerequisites/mission-spine-workspace',
+    );
+    expect(requests[0].options.headers.authorization).toBe('Bearer not-for-evidence');
+    expect(requests[0].options.headers['x-candidate-spec-sha256'])
+      .toBe(candidateSpecSha256);
+    expect(requests[0].options.headers).not.toHaveProperty('x-release-manifest-sha256');
+  });
+
+  it('fails closed when a prerequisite, spy, or candidate pin is absent', async () => {
+    const capabilities = [...REQUIRED_CAPABILITIES['mission-spine-onboarding']];
+    capabilities.pop();
+    const request = {
+      async get() {
+        return {
+          ok: () => true,
+          status: () => 200,
+          json: async () => ({
+            schema_version: 'mission-spine.staging-control.v1',
+            candidate_spec_sha256: 'f'.repeat(64),
+            ready: true,
+            capabilities,
+          }),
+        };
+      },
+    };
+    const control = new StagingControl({
+      request,
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256: 'f'.repeat(64),
+    });
+
+    await expect(control.assertPrerequisites('mission-spine-onboarding'))
+      .rejects.toThrow(/capabilit/i);
+  });
+
+  it.each(['deterministic-oauth', 'analytics-spy'])(
+    'fails closed when required capability %s is missing',
+    async (missingCapability) => {
+      const candidateSpecSha256 = 'c'.repeat(64);
+      const request = {
+        async get() {
+          return {
+            ok: () => true,
+            json: async () => ({
+              schema_version: 'mission-spine.staging-control.v1',
+              candidate_spec_sha256: candidateSpecSha256,
+              ready: true,
+              capabilities: REQUIRED_CAPABILITIES['mission-spine-onboarding']
+                .filter((capability) => capability !== missingCapability),
+            }),
+          };
+        },
+      };
+      const control = new StagingControl({
+        request,
+        origin: 'https://release-control.staging.leva.ai.kr',
+        credential: 'not-for-evidence',
+        candidateSpecSha256,
+      });
+
+      await expect(control.assertPrerequisites('mission-spine-onboarding'))
+        .rejects.toThrow(/capabilit/i);
+    },
+  );
+
+  it('rejects a staging response bound to any other candidate-spec', async () => {
+    const request = {
+      async get() {
+        return {
+          ok: () => true,
+          json: async () => ({
+            schema_version: 'mission-spine.staging-control.v1',
+            candidate_spec_sha256: 'd'.repeat(64),
+            ready: true,
+            capabilities: [...REQUIRED_CAPABILITIES['mission-spine-workspace']],
+          }),
+        };
+      },
+    };
+    const control = new StagingControl({
+      request,
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256: 'e'.repeat(64),
+    });
+
+    await expect(control.assertPrerequisites('mission-spine-workspace'))
+      .rejects.toThrow(/pin mismatch/i);
+  });
+
+  it('binds the run only to canonical browser origins', async () => {
+    const candidateSpecSha256 = 'e'.repeat(64);
+    const control = new StagingControl({
+      request: { async get() {} },
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256,
+    });
+    let handler;
+    const page = {
+      async route(pattern, routeHandler) {
+        expect(pattern).toBe('**/*');
+        handler = routeHandler;
+      },
+    };
+    await control.bindBrowserRun(page, 'A'.repeat(22), {
+      landingOrigin: 'https://leva.ai.kr',
+      appOrigin: 'https://app.leva.ai.kr',
+      oauthOrigin: 'https://oauth.staging.leva.ai.kr',
+      analyticsSpyOrigin: 'https://analytics-spy.staging.leva.ai.kr',
+    });
+
+    const continued = [];
+    const routedRequest = (url) => ({
+      request: () => ({
+        url: () => url,
+        headers: () => ({ accept: 'text/html' }),
+      }),
+      continue: async (options) => continued.push(options),
+    });
+    await handler(routedRequest('https://app.leva.ai.kr/dashboard'));
+    await handler(routedRequest('https://fonts.example.net/font.woff2'));
+
+    expect(continued[0].headers).toMatchObject({
+      accept: 'text/html',
+      'x-candidate-spec-sha256': candidateSpecSha256,
+      'x-release-run-key': 'A'.repeat(22),
+    });
+    expect(continued[1]).toBeUndefined();
+  });
+
+  it('accepts only an exact ordered, deduplicated analytics allowlist', () => {
+    const common = {
+      contract_version: 'mission-spine.analytics.v1',
+      occurred_at: '2026-08-16T00:00:00.000Z',
+      environment: 'production',
+      app_version: 'b8ccff1f662f4a46b292486d99f4928faf19649c',
+      session_id: 'AQIDBAUGBwgJCgsMDQ4PEA',
+      journey_id: 'EREREREREREREREREREREQ',
+    };
+    const entry = (event, properties) => ({
+      event,
+      properties: { ...common, ...properties },
+    });
+    const events = [
+      entry('landing_viewed', { page_view_id: 'ISEhISEhISEhISEhISEhIQ' }),
+      entry('landing_diagnostic_cta_clicked', {
+        page_view_id: 'ISEhISEhISEhISEhISEhIQ', cta_location: 'hero',
+      }),
+      entry('diagnostic_started', {
+        track: 'BACKEND_SPRING', guest_id: '123e4567-e89b-42d3-a456-426614174000',
+      }),
+      entry('diagnostic_completed', {
+        assessment_id: 11, diagnosed_level: 'MID', duration_ms: 12_000,
+      }),
+      entry('result_claimed', {
+        guest_id: '123e4567-e89b-42d3-a456-426614174000', assessment_id: 11,
+        user_id: '101', claim_outcome: 'new_path_eligible',
+      }),
+      entry('path_generated', { path_id: 21, assessment_id: 11, user_id: '101' }),
+      entry('path_first_viewed', {
+        user_id: '101', path_id: 21,
+        originating_session_id: 'AQIDBAUGBwgJCgsMDQ4PEA',
+      }),
+      entry('first_mission_started', {
+        user_id: '101', path_id: 21, week_num: 1, task_id: 31, first_open: true,
+      }),
+    ];
+    expect(() => assertAnalyticsSequence(events, events.map((entry) => entry.event)))
+      .not.toThrow();
+    expect(() => assertAnalyticsSequence([...events, events.at(-1)], events.map((entry) => entry.event)))
+      .toThrow(/duplicate/i);
+    expect(() => assertAnalyticsSequence([
+      ...events.slice(0, -1),
+      entry('first_mission_started', {
+        user_id: '101', path_id: 21, week_num: 1, task_id: 31,
+        first_open: true, prompt: 'forbidden',
+      }),
+    ], events.map((entry) => entry.event))).toThrow(/banned/i);
+    expect(() => assertAnalyticsSequence([
+      ...events.slice(0, -1),
+      entry('first_mission_started', {
+        user_id: '101', path_id: 21, week_num: 1, task_id: 31,
+        first_open: true, invented: 'not-allowlisted',
+      }),
+    ], events.map((item) => item.event))).toThrow(/contract/i);
+  });
+});
+
+describe('sanitized evidence contract', () => {
+  it('writes only route, step, result, duration, and candidate-spec SHA', () => {
+    const directory = temporaryDirectory();
+    const candidateSpecSha256 = 'a'.repeat(64);
+    const evidence = new SanitizedEvidence({
+      directory,
+      journey: 'mission-spine-onboarding',
+      candidateSpecSha256,
+    });
+    evidence.record({
+      route: '/diagnostic',
+      step: 'guest-preview',
+      result: 'passed',
+      durationMs: 42,
+    });
+    evidence.close();
+
+    expect(readdirSync(directory)).toEqual(['mission-spine-onboarding']);
+    const journeyDirectory = join(directory, 'mission-spine-onboarding');
+    expect(readdirSync(journeyDirectory)).toEqual(['evidence.json']);
+    const rows = JSON.parse(readFileSync(join(journeyDirectory, 'evidence.json'), 'utf8'));
+    expect(rows).toHaveLength(1);
+    expect(Object.keys(rows[0])).toEqual([
+      'route',
+      'step',
+      'result',
+      'duration_ms',
+      'candidate_spec_sha256',
+    ]);
+    expect(rows[0]).toEqual({
+      route: '/diagnostic',
+      step: 'guest-preview',
+      result: 'passed',
+      duration_ms: 42,
+      candidate_spec_sha256: candidateSpecSha256,
+    });
+  });
+
+  it('removes query and fragment data from observed URLs', () => {
+    expect(evidenceRoute('https://app.leva.ai.kr/diagnostic?journeyId=secret#preview'))
+      .toBe('/diagnostic');
+    expect(evidenceRoute('about:blank')).toBe('/');
+    expect(evidenceRoute('not a URL')).toBe('/');
+  });
+
+  it.each([
+    { route: '/diagnostic?token=secret', step: 'preview', result: 'passed', durationMs: 1 },
+    { route: '/diagnostic', step: 'raw prompt', result: 'passed', durationMs: 1 },
+    { route: '/diagnostic', step: 'preview', result: 'skipped', durationMs: 1 },
+    { route: '/diagnostic', step: 'preview', result: 'passed', durationMs: -1 },
+  ])('rejects unsafe evidence row %#', (row) => {
+    const directory = temporaryDirectory();
+    const evidence = new SanitizedEvidence({
+      directory,
+      journey: 'mission-spine-onboarding',
+      candidateSpecSha256: 'b'.repeat(64),
+    });
+    expect(() => evidence.record(row)).toThrow();
+    evidence.close();
+  });
+});
+
+describe('release suite topology and CI isolation', () => {
+  it('contains exactly the two approved cross-service specs with no skip path', () => {
+    const specDirectory = root('e2e/release');
+    const specs = readdirSync(specDirectory)
+      .filter((name) => name.endsWith('.spec.js'))
+      .sort();
+    expect(specs).toEqual([
+      'mission-spine-onboarding.spec.js',
+      'mission-spine-workspace.spec.js',
+    ]);
+    for (const spec of specs) {
+      const source = readFileSync(join(specDirectory, spec), 'utf8');
+      expect(source).not.toMatch(/\b(?:test|describe)\.(?:skip|fixme)\b/);
+      expect(source).toContain('assertLiveReleaseContext');
+      expect(source).toContain('activateFlutterSemantics');
+      expect(source).toContain('candidateSpecSha256: context.candidateSpecSha256');
+      expect(source).not.toContain('manifestSha256');
+    }
+  });
+
+  it('disables sensitive Playwright artifacts and keeps TLS verification on', () => {
+    const config = readFileSync(root('playwright.release.config.js'), 'utf8');
+    expect(config).toContain("trace: 'off'");
+    expect(config).toContain("screenshot: 'off'");
+    expect(config).toContain("video: 'off'");
+    expect(config).toContain('ignoreHTTPSErrors: false');
+    expect(config).toContain('--host-resolver-rules=');
+    expect(config).not.toContain('webServer:');
+  });
+
+  it('keeps credentialed release specs out of the ordinary source/dist suite', () => {
+    const ordinaryConfig = readFileSync(root('playwright.config.js'), 'utf8');
+    expect(ordinaryConfig).toContain("testIgnore: '**/release/**'");
+  });
+
+  it('lists but never executes live release journeys in Home PR CI', () => {
+    const workflow = readFileSync(root('.github/workflows/ci.yml'), 'utf8');
+    const packageJson = JSON.parse(readFileSync(root('package.json'), 'utf8'));
+    expect(packageJson.scripts['test:release']).toBe(
+      'playwright test --config=playwright.release.config.js',
+    );
+    expect(packageJson.scripts['test:release:list']).toBe(
+      'playwright test --config=playwright.release.config.js --list',
+    );
+    expect(workflow).toContain('npm run test:release:list');
+    expect(workflow).not.toContain('npm run test:release\n');
+    expect(workflow).not.toContain('MISSION_RELEASE_CONTROL_TOKEN');
+    expect(workflow).not.toContain('MISSION_CANDIDATE_SPEC_PATH');
+  });
+});
