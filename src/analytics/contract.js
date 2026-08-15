@@ -170,7 +170,7 @@ const TRACKS = new Set([
   'FULLSTACK',
   'PYTHON_BACKEND',
 ]);
-const CTA_LOCATIONS = new Set(['header', 'hero', 'mini_diagnostic', 'pricing']);
+const CTA_LOCATIONS = new Set(['header', 'hero', 'mini_diagnostic', 'pricing', 'final']);
 const DIAGNOSED_LEVELS = new Set(['JUNIOR', 'MID', 'SENIOR']);
 const ISO_UTC_MILLIS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;

@@ -56,10 +56,13 @@ export function renderSkeleton(el) {
 }
 
 export function renderTraction(el, decision) {
+  const heading = el.closest('.traction')?.querySelector('.traction__title');
   if (decision.mode === 'fallback') {
+    if (heading) heading.textContent = '베타 진행 상황';
     el.innerHTML = FALLBACK_HTML;
     return;
   }
+  if (heading) heading.textContent = '숫자로 보는 지금';
   const s = decision.stats;
   const parts = [
     statHtml(`${s.signups.toLocaleString('ko-KR')}명`, '진단 신청'),

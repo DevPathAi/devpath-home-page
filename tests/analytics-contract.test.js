@@ -180,6 +180,14 @@ describe('Mission Spine analytics contract', () => {
     expect(schemaOnly).toEqual(expectedSpecs);
   });
 
+  it('accepts the final diagnostic CTA as an allowlisted landing location', () => {
+    expect(validateAnalyticsEvent('landing_diagnostic_cta_clicked', {
+      ...common,
+      page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+      cta_location: 'final',
+    }).valid).toBe(true);
+  });
+
   it('declares consent and timestamp semantics for every event', () => {
     for (const spec of Object.values(ANALYTICS_EVENT_SPECS)) {
       expect(spec.consent_requirement).toBe('analytics_permission');

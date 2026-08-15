@@ -6,6 +6,7 @@ function ctaLocation(link) {
   if (link.closest('.site-header')) return 'header';
   if (link.closest('#mini-diagnostic')) return 'mini_diagnostic';
   if (link.closest('#pricing')) return 'pricing';
+  if (link.closest('.final-cta')) return 'final';
   if (link.closest('.hero')) return 'hero';
   return null;
 }

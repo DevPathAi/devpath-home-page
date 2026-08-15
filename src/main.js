@@ -13,9 +13,9 @@ import {
   getOrCreateOpaqueId,
 } from './analytics/journey-id.js';
 import { instrumentLandingJourney } from './analytics/landing.js';
+import { mountMobileNavigation } from './mobile-navigation.js';
 
 const WIDGET_LOADERS = {
-  'mini-diagnostic': () => import('./widgets/mini-diagnostic.js'),
   'lcs-demo': () => import('./widgets/lcs-demo.js'),
   'traction': () => import('./widgets/traction.js'),
   'scrollytelling': () => import('./widgets/scrollytelling.js'),
@@ -99,9 +99,11 @@ function initLandingAnalytics() {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     initLandingAnalytics();
+    mountMobileNavigation(document);
     initLazyWidgets();
   }, { once: true });
 } else {
   initLandingAnalytics();
+  mountMobileNavigation(document);
   initLazyWidgets();
 }

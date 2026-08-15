@@ -70,12 +70,13 @@ describe('Landing instrumentation-only hook', () => {
     stop();
   });
 
-  it('decorates all five handoffs but emits clicks only for four primary CTAs', () => {
+  it('decorates all handoffs and classifies every diagnostic CTA location', () => {
     document.body.innerHTML = `
       <header class="site-header"><a href="https://app.leva.ai.kr/">header</a></header>
       <section class="hero"><a href="https://app.leva.ai.kr/">hero</a></section>
       <aside id="mini-diagnostic"><a href="https://app.leva.ai.kr/">mini</a></aside>
       <section id="pricing"><a href="https://app.leva.ai.kr/">pricing</a></section>
+      <section class="final-cta"><a href="https://app.leva.ai.kr/">final</a></section>
       <section id="lead"><a href="https://app.leva.ai.kr/">lead</a></section>`;
     const analytics = { capture: vi.fn() };
     const stop = instrumentLandingJourney({
@@ -94,7 +95,7 @@ describe('Landing instrumentation-only hook', () => {
       link.href.includes('journeyId='))).toBe(true);
     expect(analytics.capture.mock.calls.slice(1).map(([, props]) =>
       props.cta_location)).toEqual([
-      'header', 'hero', 'mini_diagnostic', 'pricing',
+      'header', 'hero', 'mini_diagnostic', 'pricing', 'final',
     ]);
     stop();
   });

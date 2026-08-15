@@ -8,7 +8,7 @@
   <title>Leva — 내 수준에 맞는 다음 단계를 AI가 안내</title>
   <meta name="description" content="적응형 진단으로 내 실력을 파악하고, AI가 만든 맞춤 로드맵과 AI 멘토로 개발 학습의 다음 단계를 안내합니다. 무료로 진단을 시작하세요." />
   <link rel="canonical" href="https://leva.ai.kr/" />
-  <meta name="theme-color" content="#f8fafc" />
+  <meta name="theme-color" content="#FAF9F7" />
 
   <!-- ── 구글 애드센스 ───────────────────────────────────────────────── -->
   <!-- 퍼블리셔 ID는 공개 값이다. 심사 크롤러가 <head>에서 스크립트를 찾아야
@@ -42,6 +42,7 @@
   </noscript>
 
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/assets/tokens.css" />
   <link rel="stylesheet" href="/assets/styles.css" />
 
   <!-- 구조화 데이터 -->
@@ -66,49 +67,81 @@
     <div class="container site-header__inner">
       <a class="wordmark" href="/">Leva</a>
       <nav class="site-nav" aria-label="주요">
-        <a href="#features">기능</a>
-        <a href="/beta">베타 안내</a>
+        <a href="#how">작동 방식</a>
+        <a href="#path-preview">실제 경로</a>
+        <a href="#pricing">요금</a>
         <a href="/notes/">개발 기록</a>
         <a href="/about">소개</a>
-        <a href="#pricing">요금</a>
       </nav>
-      <a class="btn btn-primary site-header__cta" href="https://app.leva.ai.kr/">무료로 진단 시작</a>
+      <a class="btn btn-primary site-header__cta" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
+      <details class="mobile-nav">
+        <summary class="mobile-nav__toggle">
+          <span class="visually-hidden">메뉴</span>
+          <span class="mobile-nav__icon" aria-hidden="true"></span>
+        </summary>
+        <nav class="mobile-nav__panel" aria-label="모바일 보조">
+          <a href="#how">작동 방식</a>
+          <a href="#path-preview">실제 경로</a>
+          <a href="#pricing">요금</a>
+          <a href="/notes/">개발 기록</a>
+          <a href="/about">소개</a>
+          <a href="/beta">베타 안내</a>
+        </nav>
+      </details>
     </div>
   </header>
 
   <main id="main">
 
-    <!-- ── 1. Hero (에디토리얼 + 인라인 미니진단) ───────────────────────── -->
+    <!-- ── 1. Hero + 앱 구조를 따르는 결과 예시 ──────────────────────────── -->
     <section class="hero section" id="diagnose">
       <div class="container hero__grid">
         <div class="hero__lead">
-          <p class="eyebrow">AI 개발자 학습 플랫폼</p>
-          <h1 class="hero__headline">내 수준에 맞는<br />다음 단계를 AI가 안내</h1>
+          <p class="eyebrow">한국 백엔드 개발자를 위한 AI 학습 사수</p>
+          <h1 class="hero__headline">막힌 순간을 기억하고<br />다음 미션을 바꿉니다.</h1>
           <p class="hero__support">
-            뭘 얼마나 아는지 20초 진단으로 파악하고, 지금 당신에게 필요한 다음 한 걸음을
-            AI가 로드맵으로 그려줍니다. 막히면 학습 맥락을 아는 AI 멘토가 답합니다.
+            15문항 진단으로 현재 수준을 확인하고, 12주 학습 경로와 오늘의 미션을 받으세요.
+            가입 없이 시작하고 결과를 저장할 때만 로그인합니다.
           </p>
           <div class="hero__actions">
-            <!-- 게스트 진단은 앱에서 로그인 없이 바로 시작된다. 이메일 폼 뒤에
-                 숨기지 않고 1차 CTA를 진단으로 직결한다. -->
-            <a class="btn btn-primary" href="https://app.leva.ai.kr/">가입 없이 진단 시작</a>
-            <a class="btn btn-secondary" href="#lcs">LCS 데모 보기</a>
+            <a class="btn btn-primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
+            <a class="btn btn-secondary" href="#path-preview">실제 12주 경로 보기</a>
           </div>
-          <p class="hero__note">가입도 결제도 없습니다. 아래에서 20초 미니 진단을 먼저 해봐도 좋아요.</p>
+          <p class="hero__note">결제 정보는 받지 않습니다 · 진단 결과를 먼저 확인합니다</p>
         </div>
 
-        <!-- 미니진단 위젯 마운트 (T5). JS 꺼짐 시 아래 정적 폴백이 그대로 노출 -->
-        <aside class="mini-diagnostic surface" id="mini-diagnostic" data-widget="mini-diagnostic" aria-label="무가입 미니 진단">
-          <div class="widget-fallback">
-            <h2 class="mini-diagnostic__title">20초 미니 진단</h2>
-            <p>세 가지만 고르면 당신 수준에 맞는 로드맵의 첫 조각을 보여드립니다.</p>
-            <ol class="mini-diagnostic__preview">
-              <li>지금 어느 단계인가요? (입문 / 학습 중 / 취업 준비)</li>
-              <li>주로 쓰는 스택은? (아직 없음 / 프론트 / 백엔드)</li>
-              <li>가장 막히는 지점은? (뭘 배울지 / 어떻게 깊이 / 실전 적용)</li>
-            </ol>
-            <a class="btn btn-primary" href="https://app.leva.ai.kr/">진단하고 로드맵 받기</a>
-          </div>
+        <aside class="outcome-preview surface" id="mini-diagnostic" aria-labelledby="outcome-preview-title" data-fixture-schema="learning-path.v1">
+          <header class="outcome-preview__head" id="path-preview">
+            <p class="outcome-preview__sample">예시 결과</p>
+            <h2 id="outcome-preview-title">진단 후 받는 것</h2>
+            <p>실제 앱의 진단·학습 경로 필드로 구성한 예시입니다.</p>
+          </header>
+          <ol class="outcome-preview__spine">
+            <li class="outcome-preview__step" data-field="diagnosis.diagnosedLevel">
+              <span class="outcome-preview__label">진단 결과</span>
+              <strong>중급 · 비동기와 트랜잭션 보강</strong>
+            </li>
+            <li class="outcome-preview__step" data-field="milestones[0]">
+              <span class="outcome-preview__label">이번 주</span>
+              <strong>1주차 · 비동기 기초</strong>
+              <small>Future와 Stream을 작은 기능에 적용합니다.</small>
+            </li>
+            <li class="outcome-preview__step outcome-preview__step--current" data-field="milestones[0].tasks[2]">
+              <span class="outcome-preview__label">오늘의 미션</span>
+              <strong>에러 처리 패턴 적용</strong>
+              <small>첫 번째 미완료 과제를 앱 순서대로 보여줍니다.</small>
+            </li>
+            <li class="outcome-preview__step" data-field="context">
+              <span class="outcome-preview__label">학습 맥락</span>
+              <dl class="outcome-preview__context">
+                <div><dt>현재 목표</dt><dd>백엔드 · 비동기 API 안정화</dd></div>
+                <div><dt>최근 학습</dt><dd>Stream 구독 실습 완료</dd></div>
+              </dl>
+            </li>
+          </ol>
+          <p class="outcome-preview__action">
+            <a href="https://app.leva.ai.kr/diagnostic">이 예시와 같은 결과 받기</a>
+          </p>
         </aside>
       </div>
     </section>
@@ -132,12 +165,12 @@
     <!-- ── 3. 핵심 기능 + 차별화(LCS 전폭 앵커) ─────────────────────────── -->
     <section class="section features" id="features">
       <div class="container">
-        <h2 class="features__title">주장하지 않고, 보여줍니다</h2>
+        <h2 class="features__title">현재 목표와 최근 학습을 함께 전달</h2>
 
         <!-- LCS = 전폭 시각 앵커 (3열 균등 카드 금지) -->
-        <div class="lcs surface" id="lcs" data-widget="lcs-demo" aria-label="학습 맥락 첨부(LCS) 데모">
+        <div class="lcs surface" id="lcs" data-widget="lcs-demo" aria-label="학습 맥락 비교 데모">
           <div class="lcs__head">
-            <h3 class="lcs__title">학습 맥락을 아는 답변, LCS</h3>
+            <h3 class="lcs__title">학습 맥락(LCS)이 답을 바꾸는 방식</h3>
             <p class="lcs__desc">
               같은 질문이라도 지금 무엇을 배우는지 아는 상태에서 물으면 답의 쓸모가 달라집니다.
               아래는 <strong>맥락 없음</strong>과 <strong>맥락 첨부</strong>를 나란히 놓은 실제 예시입니다.
@@ -173,7 +206,7 @@ Order를 목록 조회할 때 Member가 지연 로딩이라
             <div class="feature-row__num" aria-hidden="true">01</div>
             <div>
               <h3>적응형 진단</h3>
-              <p>정답 수가 아니라 “무엇을 알고 무엇이 비었는지”를 문항이 적응하며 좁혀 찾습니다. 몇 분이면 내 현재 좌표가 나옵니다.</p>
+              <p>15문항이 정답 수뿐 아니라 “무엇을 알고 무엇이 비었는지”를 좁혀 현재 좌표를 찾습니다.</p>
             </div>
           </article>
           <article class="feature-row">
@@ -187,7 +220,7 @@ Order를 목록 조회할 때 Member가 지연 로딩이라
             <div class="feature-row__num" aria-hidden="true">03</div>
             <div>
               <h3>AI 멘토</h3>
-              <p>지금 배우는 맥락(LCS)을 붙여 질문하니, 일반론이 아니라 “당신의 다음 걸음”에 맞는 답이 옵니다.</p>
+              <p>현재 목표와 최근 학습을 포함한 학습 맥락(LCS)을 붙여, 일반론보다 다음 미션에 맞는 답을 받습니다.</p>
             </div>
           </article>
         </div>
@@ -236,7 +269,7 @@ Order를 목록 조회할 때 Member가 지연 로딩이라
     <!-- ── 6. 신뢰 / traction (라이브 티커 T4) ─────────────────────────── -->
     <section class="section traction" id="traction">
       <div class="container">
-        <h2 class="traction__title">숫자로 보는 지금</h2>
+        <h2 class="traction__title">베타 진행 상황</h2>
         <!-- 위젯 마운트 (T4). 정적 폴백 = 베타 안내(F1 하한/실패 시와 동일 톤) -->
         <div class="traction__ticker" data-widget="traction" aria-live="polite" aria-label="실시간 지표">
           <p class="traction__fallback widget-fallback">
@@ -263,7 +296,7 @@ Order를 목록 조회할 때 Member가 지연 로딩이라
               <li>적응형 진단</li>
               <li>맞춤 로드맵 미리보기</li>
             </ul>
-            <a class="btn btn-primary" href="https://app.leva.ai.kr/">무료로 진단 시작</a>
+            <a class="btn btn-primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
           </div>
 
           <!-- 유료 (준비 중 — 비활성) -->
@@ -292,8 +325,8 @@ Order를 목록 조회할 때 Member가 지연 로딩이라
           <dt>무엇을 쓸 수 있나요?</dt>
           <dd>적응형 진단과 맞춤 로드맵, 학습 맥락을 붙여 묻는 AI 멘토, 커뮤니티 Q&amp;A를 쓸 수 있습니다. <a href="/beta">베타 안내에서 자세히 보기</a></dd>
 
-          <dt>진단은 얼마나 걸리나요?</dt>
-          <dd>가입 없이 해보는 미니 진단은 20초입니다. 적응형 진단은 문항이 적응하며 좁혀 들어가 몇 분이면 끝납니다.</dd>
+          <dt>진단은 몇 문항인가요?</dt>
+          <dd>현재 진단은 15문항입니다. 가입 없이 결과를 확인하고, 12주 학습 경로를 저장할 때 로그인합니다.</dd>
 
           <dt>개인정보는 어떻게 다루나요?</dt>
           <dd>수집 항목과 보유 기간, 정보주체의 권리를 <a href="/privacy">개인정보 처리방침</a>에 공개하고 있습니다.</dd>
@@ -304,21 +337,31 @@ Order를 목록 조회할 때 Member가 지연 로딩이라
       </div>
     </section>
 
-    <!-- ── 8. 리드 캡처 (T3) ───────────────────────────────────────────── -->
+    <!-- ── 8. 최종 진단 행동 ───────────────────────────────────────────── -->
+    <section class="section final-cta" aria-labelledby="final-cta-title">
+      <div class="container final-cta__inner">
+        <div>
+          <p class="eyebrow">다음 행동</p>
+          <h2 id="final-cta-title">오늘 시작할 한 가지 미션을 확인하세요.</h2>
+          <p>15문항 진단 결과와 12주 학습 경로 미리보기를 먼저 보여드립니다.</p>
+        </div>
+        <a class="btn btn-primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
+      </div>
+    </section>
+
+    <!-- ── 9. 보조 리드 캡처 (T3) ──────────────────────────────────────── -->
     <section class="section lead" id="lead">
       <div class="container lead__inner">
-        <h2>베타 소식 받기</h2>
-        <!-- 진단은 앱에서 가입 없이 바로 된다. 이 폼은 그다음 단계(베타 초대·
-             업데이트 안내)를 위한 것이므로 진단을 여기서 약속하지 않는다. -->
+        <h2>베타 업데이트 받기</h2>
         <p class="lead__intro">
-          진단은 <a href="https://app.leva.ai.kr/">가입 없이 지금 해볼 수 있습니다</a>.
-          이메일을 남기시면 베타 초대와 업데이트 소식을 보내드립니다. 코드·비밀값은 넣지 말아주세요.
+          진단과 별개로 베타 초대와 업데이트 소식을 받고 싶을 때만 이메일을 남겨주세요.
+          코드·비밀값은 넣지 말아주세요.
         </p>
         <!-- 폼 마운트 (T3). JS 하이드레이트 시 아래 폴백을 인터랙티브 폼으로 대체 -->
         <div id="lead-form-root" data-widget="lead-form">
           <div class="widget-fallback lead-form__fallback surface">
             <p>이메일로 진단 초대와 로드맵 안내를 보내드립니다.</p>
-            <a class="btn btn-primary" href="mailto:info@leva.ai.kr?subject=Leva%20진단%20초대%20신청&body=현재%20단계와%20관심%20스택을%20적어주시면%20안내드릴게요.">이메일로 초대 신청</a>
+            <a class="btn btn-secondary" href="mailto:info@leva.ai.kr?subject=Leva%20진단%20초대%20신청&body=현재%20단계와%20관심%20스택을%20적어주시면%20안내드릴게요.">이메일로 초대 신청</a>
           </div>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 const read = (p) => readFileSync(root(p), 'utf-8');
 
-const APP = 'https://app.leva.ai.kr/';
+const APP = 'https://app.leva.ai.kr/diagnostic';
 
 // 게스트 진단은 앱에서 이미 동작한다(로그인 없이 앱을 열면 진단 화면이 뜬다).
 // 그런데 랜딩의 모든 CTA가 이메일 폼으로 향해, 지금 써볼 수 있는 제품을
@@ -36,9 +36,10 @@ describe('진단 CTA는 앱으로 보낸다', () => {
     expect(pricing).toContain(`href="${APP}"`);
   });
 
-  // 미니진단을 막 끝낸 사람이 「정식 진단」을 누르는 순간이 가장 의도가 강하다.
-  it('미니진단 결과 CTA가 앱으로 간다', () => {
-    expect(read('src/widgets/mini-diagnostic.js')).toContain(APP);
+  it('최종 진단 CTA가 앱으로 간다', () => {
+    const finalCta = html.slice(html.indexOf('final-cta'), html.indexOf('id="lead"'));
+
+    expect(finalCta).toContain(`href="${APP}"`);
   });
 });
 
