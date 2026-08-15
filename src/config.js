@@ -11,6 +11,8 @@ export const config = {
   statsEndpoint: overrides.statsEndpoint || '/api/stats',
   consentVersion: overrides.consentVersion || undefined,
   landingVariant: overrides.landingVariant || 'home-v1',
+  appVersion: overrides.appVersion || 'dev',
+  analyticsEnvironment: overrides.analyticsEnvironment || 'development',
   // traction 하한 임계값(F1) — 가입 수가 이 미만이면 fallback 노출
   tractionMinSignups: overrides.tractionMinSignups ?? 20,
 };

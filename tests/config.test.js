@@ -19,5 +19,19 @@ describe('런타임 설정 오버라이드', () => {
 
     expect(config.formEndpoint).toBe('/api/lead');
     expect(config.statsEndpoint).toBe('/api/stats');
+    expect(config.appVersion).toBe('dev');
+    expect(config.analyticsEnvironment).toBe('development');
+  });
+
+  it('production analytics identity must be explicitly supplied together', async () => {
+    window.LEVA_CONFIG = {
+      appVersion: 'abc123',
+      analyticsEnvironment: 'production',
+    };
+
+    const { config } = await import('../src/config.js');
+
+    expect(config.appVersion).toBe('abc123');
+    expect(config.analyticsEnvironment).toBe('production');
   });
 });
