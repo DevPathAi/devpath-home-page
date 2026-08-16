@@ -440,11 +440,29 @@ describe('staging control contract', () => {
       credential: 'not-for-evidence',
       candidateSpecSha256,
     });
-    let handler;
+    let pausedHandler;
+    let closed = false;
+    const sent = [];
+    const session = {
+      on(event, handler) {
+        expect(event).toBe('Fetch.requestPaused');
+        pausedHandler = handler;
+      },
+      async send(method, parameters) {
+        sent.push({ method, parameters });
+      },
+    };
+    const browserContext = {
+      async newCDPSession(target) {
+        expect(target).toBe(page);
+        return session;
+      },
+    };
     const page = {
-      async route(pattern, routeHandler) {
-        expect(pattern).toBe('**/*');
-        handler = routeHandler;
+      context: () => browserContext,
+      async close(options) {
+        expect(options).toEqual({ runBeforeUnload: false });
+        closed = true;
       },
     };
     await control.bindBrowserRun(page, 'A'.repeat(22), {
@@ -454,23 +472,69 @@ describe('staging control contract', () => {
       analyticsSpyOrigin: 'https://analytics-spy.staging.leva.ai.kr',
     });
 
-    const continued = [];
-    const routedRequest = (url) => ({
-      request: () => ({
-        url: () => url,
-        headers: () => ({ accept: 'text/html' }),
-      }),
-      continue: async (options) => continued.push(options),
+    expect(sent).toEqual([{
+      method: 'Fetch.enable',
+      parameters: { patterns: [{ urlPattern: '*', requestStage: 'Request' }] },
+    }]);
+    const pausedRequest = (requestId, url, redirectedRequestId) => ({
+      requestId,
+      request: { url, headers: { accept: 'text/html' } },
+      ...(redirectedRequestId ? { redirectedRequestId } : {}),
     });
-    await handler(routedRequest('https://app.leva.ai.kr/dashboard'));
-    await handler(routedRequest('https://fonts.example.net/font.woff2'));
+    await pausedHandler(pausedRequest('allowed', 'https://app.leva.ai.kr/dashboard'));
+    await pausedHandler(pausedRequest('external', 'https://fonts.example.net/font.woff2'));
 
-    expect(continued[0].headers).toMatchObject({
+    const allowedContinue = sent[1];
+    expect(allowedContinue.method).toBe('Fetch.continueRequest');
+    expect(Object.fromEntries(allowedContinue.parameters.headers.map(({ name, value }) => [
+      name.toLowerCase(), value,
+    ]))).toMatchObject({
       accept: 'text/html',
       'x-candidate-spec-sha256': candidateSpecSha256,
       'x-release-run-key': 'A'.repeat(22),
     });
-    expect(continued[1]).toBeUndefined();
+    expect(sent[2]).toEqual({
+      method: 'Fetch.continueRequest',
+      parameters: { requestId: 'external' },
+    });
+
+    await pausedHandler(pausedRequest(
+      'redirect-target',
+      'https://fonts.example.net/redirected.woff2',
+      'allowed',
+    ));
+    expect(sent[3]).toEqual({
+      method: 'Fetch.failRequest',
+      parameters: { requestId: 'redirect-target', errorReason: 'BlockedByClient' },
+    });
+    expect(closed).toBe(true);
+  });
+
+  it('arms review failure before a UI action, retains evidence, then retries in the browser', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
+    const start = source.indexOf("step: 'outbox-review-durable'");
+    const end = source.indexOf("step: 'private-context-preview-commit'", start);
+    const reviewStep = source.slice(start, end);
+    const orderedOperations = [
+      "'fail-next-review'",
+      'triggerReviewProducingRun(page)',
+      "'partial-review-retains-run-and-review'",
+      "'clear-faults'",
+      'retryReviewInBrowser(page)',
+      "'kafka-outbox-review-correlated'",
+    ];
+    const positions = orderedOperations.map((operation) => reviewStep.indexOf(operation));
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(positions.every((position) => position >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    expect(source).toMatch(
+      /async function triggerReviewProducingRun[\s\S]*getByRole\('button', \{ name: '다시 실행'/,
+    );
+    expect(source).toMatch(
+      /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '리뷰 다시 시도'/,
+    );
   });
 
   it('accepts only an exact ordered, deduplicated analytics allowlist', () => {
@@ -615,12 +679,19 @@ describe('release suite topology and CI isolation', () => {
 
   it('disables sensitive Playwright artifacts and keeps TLS verification on', () => {
     const config = readFileSync(root('playwright.release.config.js'), 'utf8');
+    const transport = readFileSync(
+      root('e2e/release/support/staging-control.js'),
+      'utf8',
+    );
     expect(config).toContain("trace: 'off'");
     expect(config).toContain("screenshot: 'off'");
     expect(config).toContain("video: 'off'");
     expect(config).toContain('ignoreHTTPSErrors: false');
     expect(config).toContain('--host-resolver-rules=');
     expect(config).not.toContain('webServer:');
+    expect(transport).toContain("session.send('Fetch.continueRequest'");
+    expect(transport).not.toContain('route.fetch(');
+    expect(transport).not.toContain('route.continue(');
   });
 
   it('keeps credentialed release specs out of the ordinary source/dist suite', () => {

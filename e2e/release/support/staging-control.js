@@ -133,6 +133,125 @@ function browserRunOrigins(value) {
   return new Set(origins);
 }
 
+const RUN_HEADER_NAMES = new Set([
+  'x-candidate-spec-sha256',
+  'x-release-run-key',
+]);
+const MAX_TRACKED_BROWSER_REQUESTS = 4_096;
+
+function requestHeadersForHop(headers, candidateSpecSha256, runKey) {
+  const entries = Object.entries(headers ?? {})
+    .filter(([name]) => !RUN_HEADER_NAMES.has(name.toLowerCase()))
+    .map(([name, value]) => ({ name, value: String(value) }));
+  entries.push(
+    { name: 'x-candidate-spec-sha256', value: candidateSpecSha256 },
+    { name: 'x-release-run-key', value: runKey },
+  );
+  return entries;
+}
+
+// Fetch.continueRequest header overrides are scoped to one network hop. This
+// keeps Chromium's own DNS/TLS stack in use while every redirect is rechecked.
+export async function installHostBoundRunHeaders(page, {
+  allowedOrigins,
+  candidateSpecSha256,
+  runKey,
+}) {
+  if (!page || typeof page.context !== 'function' || typeof page.close !== 'function') {
+    throw new Error('Chromium DevTools session is required');
+  }
+  const browserContext = page.context();
+  if (!browserContext || typeof browserContext.newCDPSession !== 'function') {
+    throw new Error('Chromium DevTools session is required');
+  }
+  if (
+    !(allowedOrigins instanceof Set)
+    || allowedOrigins.size === 0
+    || [...allowedOrigins].some((origin) => {
+      if (typeof origin !== 'string') return true;
+      try {
+        return new URL(origin).origin !== origin;
+      } catch {
+        return true;
+      }
+    })
+  ) {
+    throw new Error('validated browser run origins are required');
+  }
+  if (typeof candidateSpecSha256 !== 'string' || !SHA256.test(candidateSpecSha256)) {
+    throw new Error('browser run candidate-spec SHA256 is invalid');
+  }
+  requireRunKey(runKey);
+
+  const session = await browserContext.newCDPSession(page);
+  const requests = new Map();
+  let closingForViolation = false;
+
+  const failClosed = async (requestId) => {
+    if (closingForViolation) return;
+    closingForViolation = true;
+    try {
+      await session.send('Fetch.failRequest', {
+        requestId,
+        errorReason: 'BlockedByClient',
+      });
+    } finally {
+      await page.close({ runBeforeUnload: false });
+    }
+  };
+
+  const handlePausedRequest = async (event) => {
+    const { requestId, redirectedRequestId, request } = event;
+    let origin;
+    try {
+      origin = new URL(request.url).origin;
+    } catch {
+      await failClosed(requestId);
+      return;
+    }
+
+    const source = redirectedRequestId
+      ? requests.get(redirectedRequestId)
+      : undefined;
+    if (redirectedRequestId && !source) {
+      await failClosed(requestId);
+      return;
+    }
+
+    const bound = allowedOrigins.has(origin);
+    if (source && source.bound !== bound) {
+      await failClosed(requestId);
+      return;
+    }
+    if (requests.size >= MAX_TRACKED_BROWSER_REQUESTS) {
+      await failClosed(requestId);
+      return;
+    }
+    requests.set(requestId, { origin, bound });
+
+    await session.send('Fetch.continueRequest', {
+      requestId,
+      ...(bound
+        ? { headers: requestHeadersForHop(request.headers, candidateSpecSha256, runKey) }
+        : {}),
+    });
+  };
+
+  session.on('Fetch.requestPaused', (event) => (
+    handlePausedRequest(event).catch(async () => {
+      try {
+        await failClosed(event.requestId);
+      } catch {
+        // The page is already closing; no request is allowed to resume.
+      }
+    })
+  ));
+
+  await session.send('Fetch.enable', {
+    patterns: [{ urlPattern: '*', requestStage: 'Request' }],
+  });
+}
+
 function responseObject(value) {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('staging control returned an invalid response');
@@ -355,30 +474,11 @@ export class StagingControl {
 
   async bindBrowserRun(page, runKey, origins) {
     requireRunKey(runKey);
-    if (!page || typeof page.route !== 'function') {
-      throw new Error('Playwright page routing is required');
-    }
     const allowedOrigins = browserRunOrigins(origins);
-    await page.route('**/*', async (route) => {
-      const browserRequest = route.request();
-      let origin;
-      try {
-        origin = new URL(browserRequest.url()).origin;
-      } catch {
-        await route.continue();
-        return;
-      }
-      if (!allowedOrigins.has(origin)) {
-        await route.continue();
-        return;
-      }
-      await route.continue({
-        headers: {
-          ...browserRequest.headers(),
-          'x-candidate-spec-sha256': this.#candidateSpecSha256,
-          'x-release-run-key': runKey,
-        },
-      });
+    await installHostBoundRunHeaders(page, {
+      allowedOrigins,
+      candidateSpecSha256: this.#candidateSpecSha256,
+      runKey,
     });
   }
 }

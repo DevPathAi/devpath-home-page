@@ -49,6 +49,17 @@ async function explicitlySelectCurrentContent(page) {
   await page.getByRole('button', { name: '완료', exact: true }).click();
 }
 
+async function triggerReviewProducingRun(page) {
+  await page.getByRole('button', { name: '다시 실행', exact: true }).click();
+  await expect(page.getByText(/실행 중입니다/)).toBeVisible();
+  await expect(page.getByText(/실행 완료/)).toBeVisible({ timeout: 45_000 });
+  await page.getByRole('button', { name: '리뷰 확인', exact: true }).click();
+}
+
+async function retryReviewInBrowser(page) {
+  await page.getByRole('button', { name: '리뷰 다시 시도', exact: true }).click();
+}
+
 test.beforeAll(() => {
   assertLiveReleaseContext(releaseContext);
 });
@@ -138,15 +149,20 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     });
 
     await evidence.step({ page, step: 'outbox-review-durable' }, async () => {
-      await page.getByRole('button', { name: '리뷰 확인', exact: true }).click();
-      await expect(page.getByText('잘한 점', { exact: true })).toBeVisible({
-        timeout: 45_000,
-      });
-      await control.checkpoint(JOURNEY, prepared.runKey, 'kafka-outbox-review-correlated');
       await control.command(JOURNEY, prepared.runKey, 'fail-next-review');
-      await control.checkpoint(JOURNEY, prepared.runKey, 'partial-review-retains-run-and-review');
+      await triggerReviewProducingRun(page);
+      const reviewFailure = page.getByText(
+        /부분 리뷰|리뷰 일부|리뷰 생성.*실패|받은 리뷰는 그대로|리뷰 다시 시도/,
+      ).first();
+      await expect(reviewFailure).toBeVisible({ timeout: 45_000 });
+      await expect(page.getByText(/실행 완료/)).toBeVisible();
       await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
+      await control.checkpoint(JOURNEY, prepared.runKey, 'partial-review-retains-run-and-review');
       await control.command(JOURNEY, prepared.runKey, 'clear-faults');
+      await retryReviewInBrowser(page);
+      await expect(reviewFailure).toBeHidden({ timeout: 45_000 });
+      await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
+      await control.checkpoint(JOURNEY, prepared.runKey, 'kafka-outbox-review-correlated');
     });
 
     await evidence.step({ page, step: 'private-context-preview-commit' }, async () => {

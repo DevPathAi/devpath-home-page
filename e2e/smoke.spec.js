@@ -1,6 +1,23 @@
+import { createServer } from 'node:http';
 import { test, expect } from '@playwright/test';
+import { installHostBoundRunHeaders } from './release/support/staging-control.js';
 
 const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
+
+async function listenOnLoopback(server) {
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  return `http://127.0.0.1:${address.port}`;
+}
+
+async function closeServer(server) {
+  await new Promise((resolve, reject) => {
+    server.close((error) => (error ? reject(error) : resolve()));
+  });
+}
 
 test.describe('Mission Spine 랜딩 스모크', () => {
   test.beforeEach(async ({ page }) => {
@@ -206,4 +223,54 @@ test.describe('Mission Spine 랜딩 스모크', () => {
     await expect(page.locator('h1')).toContainText('서비스 이용약관');
     await expect(page.locator('body')).toContainText('796-76-00732');
   });
+});
+
+test('run binding이 허용 origin의 302를 다른 origin까지 따라가지 않는다', async ({ browser }) => {
+  const disallowedRequests = [];
+  const allowedRequests = [];
+  const disallowedServer = createServer((request, response) => {
+    disallowedRequests.push({
+      url: request.url,
+      candidate: request.headers['x-candidate-spec-sha256'] ?? null,
+      runKey: request.headers['x-release-run-key'] ?? null,
+    });
+    response.writeHead(200, { 'content-type': 'text/plain' });
+    response.end('redirect target');
+  });
+  const disallowedOrigin = await listenOnLoopback(disallowedServer);
+  const allowedServer = createServer((request, response) => {
+    allowedRequests.push({
+      candidate: request.headers['x-candidate-spec-sha256'] ?? null,
+      runKey: request.headers['x-release-run-key'] ?? null,
+    });
+    response.writeHead(302, { location: `${disallowedOrigin}/target?mutation=forbidden` });
+    response.end();
+  });
+  const allowedOrigin = await listenOnLoopback(allowedServer);
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const candidateSpecSha256 = 'e'.repeat(64);
+  const runKey = 'A'.repeat(22);
+
+  try {
+    await installHostBoundRunHeaders(page, {
+      allowedOrigins: new Set([allowedOrigin]),
+      candidateSpecSha256,
+      runKey,
+    });
+    let navigationError;
+    try {
+      await page.goto(`${allowedOrigin}/start`, { waitUntil: 'domcontentloaded' });
+    } catch (error) {
+      navigationError = error;
+    }
+
+    expect(allowedRequests).toEqual([{ candidate: candidateSpecSha256, runKey }]);
+    expect(disallowedRequests).toEqual([]);
+    expect(String(navigationError)).toMatch(/ERR_BLOCKED_BY_CLIENT/);
+  } finally {
+    await context.close();
+    await closeServer(allowedServer);
+    await closeServer(disallowedServer);
+  }
 });
