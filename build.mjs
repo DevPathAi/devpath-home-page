@@ -44,14 +44,19 @@ console.log(`rendered ${notes.length} notes`);
 // styles.css 로 고정이면 내용을 고쳐도 이미 받아 간 브라우저는 1년간 옛 파일을 쓴다 —
 // 선언이 사실이 아니었다. 이름에 내용 해시를 넣어 「불변」을 사실로 만든다.
 const ASSET_SOURCES_ONLY = ['og-image.template.html']; // OG 이미지 생성용, 배포 대상 아님
+const CSS_ENTRY = 'styles.css';
 const assetDir = dist + '/assets';
 const renamed = new Map();
 
-for (const name of await readdir(assetDir)) {
+const assetNames = await readdir(assetDir);
+for (const name of assetNames) {
   if (ASSET_SOURCES_ONLY.includes(name)) {
     await rm(assetDir + '/' + name);
     continue;
   }
+  // styles.css는 tokens.css의 해시 이름을 내용에 반영한 다음 그 최종 내용으로
+  // 해시해야 한다. 먼저 이름을 정하면 content-addressed immutable 계약이 거짓이 된다.
+  if (name === CSS_ENTRY) continue;
   const body = await readFile(assetDir + '/' + name);
   const hash = createHash('sha256').update(body).digest('hex').slice(0, 8);
   const dot = name.lastIndexOf('.');
@@ -59,6 +64,17 @@ for (const name of await readdir(assetDir)) {
   await rename(assetDir + '/' + name, assetDir + '/' + hashed);
   renamed.set(name, hashed);
 }
+
+let styles = await readFile(assetDir + '/' + CSS_ENTRY, 'utf-8');
+for (const [from, to] of renamed) {
+  styles = styles.split(`./${from}`).join(`./${to}`);
+  styles = styles.split(`/assets/${from}`).join(`/assets/${to}`);
+}
+await writeFile(assetDir + '/' + CSS_ENTRY, styles);
+const stylesHash = createHash('sha256').update(styles).digest('hex').slice(0, 8);
+const hashedStyles = `styles.${stylesHash}.css`;
+await rename(assetDir + '/' + CSS_ENTRY, assetDir + '/' + hashedStyles);
+renamed.set(CSS_ENTRY, hashedStyles);
 
 // 참조가 옛 이름에 남으면 사이트가 통째로 스타일을 잃으므로, 렌더된 글까지 포함해
 // dist 안의 모든 HTML 을 훑는다.

@@ -47,6 +47,25 @@ npm run gen:og     # assets/og-image.png 재생성 (템플릿/카피 변경 시)
 - [`docs/plan/plan-master.md`](./docs/plan/plan-master.md) — 마스터 플랜
 - [`docs/plan/design-doc.md`](./docs/plan/design-doc.md) — 설계 문서
 - [`docs/plan/test-plan.md`](./docs/plan/test-plan.md) — 테스트 플랜
+- [`docs/visual-a11y-evidence.md`](./docs/visual-a11y-evidence.md) — production-dist 시각/접근성 증거 v2와 baseline 승인 절차
+
+### 릴리스 candidate 결합
+
+일반 CI와 로컬 진단은 저장소의 Home 전용 candidate fixture를 사용하며,
+이 산출물은 전역 릴리스 seal 입력이 아니다. GitOps 릴리스 검증은 exact Home
+SHA를 checkout한 뒤 외부 raw candidate의 절대 경로와 별도 채널에서 얻은
+64자리 소문자 SHA-256을 함께 주입해 동일한 고정 Docker wrapper를 실행한다.
+
+```bash
+MISSION_CANDIDATE_SPEC_PATH='/absolute/path/to/candidate-spec.raw.json' \
+MISSION_CANDIDATE_SPEC_SHA256='<out-of-band-sha256>' \
+npm run visual:evidence:docker
+```
+
+wrapper는 둘 중 하나만 있거나 raw 바이트 해시가 다르면 렌더 전에 실패한다.
+성공 시 GitOps가 수집할 sanitize된 manifest는
+`test-results/visual-a11y/manifests/*.json`에 생성된다. 상세 mount·digest·검증
+계약은 [`docs/visual-a11y-evidence.md`](./docs/visual-a11y-evidence.md)를 따른다.
 
 ## 브랜치 전략
 `master` 보호(릴리스). `develop` 통합 브랜치. 작업은 `feat/*`·`fix/*` → `develop` PR, 릴리스 시 `develop` → `master` PR.

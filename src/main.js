@@ -2,8 +2,20 @@
 // 각 위젯 모듈은 `export function mount(element)` 를 제공한다.
 // JS 실패/미로드 시에도 각 마운트의 정적 폴백(.widget-fallback)이 그대로 남는다.
 
+import { config } from './config.js';
+import {
+  JourneyAnalyticsAdapter,
+  shouldExcludeAnalyticsTraffic,
+} from './analytics/journey-analytics.js';
+import {
+  ANALYTICS_SESSION_STORAGE_KEY,
+  getOrCreateJourneyId,
+  getOrCreateOpaqueId,
+} from './analytics/journey-id.js';
+import { instrumentLandingJourney } from './analytics/landing.js';
+import { mountMobileNavigation } from './mobile-navigation.js';
+
 const WIDGET_LOADERS = {
-  'mini-diagnostic': () => import('./widgets/mini-diagnostic.js'),
   'lcs-demo': () => import('./widgets/lcs-demo.js'),
   'traction': () => import('./widgets/traction.js'),
   'scrollytelling': () => import('./widgets/scrollytelling.js'),
@@ -48,8 +60,50 @@ function initLazyWidgets() {
   mounts.forEach((el) => observer.observe(el));
 }
 
+function initLandingAnalytics() {
+  // main.js is shared with /beta. Only the funnel Landing owns these events.
+  if (window.location.pathname !== '/') return;
+  try {
+    const storage = window.sessionStorage;
+    const journeyId = getOrCreateJourneyId({ storage });
+    const sessionId = getOrCreateOpaqueId({
+      storage,
+      key: ANALYTICS_SESSION_STORAGE_KEY,
+    });
+    const analytics = new JourneyAnalyticsAdapter({
+      context: {
+        environment: config.analyticsEnvironment,
+        appVersion: config.appVersion,
+        sessionId,
+        journeyId,
+        now: () => new Date(),
+      },
+      // Privacy mode has not been approved yet. No SDK is initialized or called.
+      optedOut: true,
+      excluded: shouldExcludeAnalyticsTraffic({
+        environment: config.analyticsEnvironment,
+        appVersion: config.appVersion,
+        userAgent: window.navigator.userAgent,
+      }),
+    });
+    instrumentLandingJourney({
+      root: document,
+      analytics,
+      storage,
+    });
+  } catch (_) {
+    // Analytics capability cannot make the Landing unavailable.
+  }
+}
+
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initLazyWidgets, { once: true });
+  document.addEventListener('DOMContentLoaded', () => {
+    initLandingAnalytics();
+    mountMobileNavigation(document);
+    initLazyWidgets();
+  }, { once: true });
 } else {
+  initLandingAnalytics();
+  mountMobileNavigation(document);
   initLazyWidgets();
 }

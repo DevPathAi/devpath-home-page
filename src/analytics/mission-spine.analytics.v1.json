@@ -1,0 +1,160 @@
+{
+  "version": "mission-spine.analytics.v1",
+  "privacyPolicyVersion": "mission-spine.analytics-privacy.v1",
+  "valuePolicyVersion": "mission-spine.analytics-values.v1",
+  "commonProperties": [
+    "contract_version",
+    "occurred_at",
+    "environment",
+    "app_version",
+    "session_id",
+    "journey_id"
+  ],
+  "bannedProperties": [
+    "email",
+    "name",
+    "full_name",
+    "display_name",
+    "nickname",
+    "github_handle",
+    "provider_subject",
+    "oauth_code",
+    "oauth_state",
+    "access_token",
+    "refresh_token",
+    "guest_token",
+    "password",
+    "code",
+    "editor_code",
+    "output",
+    "stdout",
+    "stderr",
+    "error",
+    "prompt",
+    "answer",
+    "answers",
+    "context_snapshot",
+    "lcs_snapshot"
+  ],
+  "events": {
+    "landing_viewed": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["page_view_id"],
+      "required": ["page_view_id"],
+      "requiredAny": [],
+      "dedupe": [["session_id", "page_view_id"]]
+    },
+    "landing_diagnostic_cta_clicked": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["page_view_id", "cta_location"],
+      "required": ["page_view_id", "cta_location"],
+      "requiredAny": [],
+      "dedupe": [["page_view_id", "cta_location"]]
+    },
+    "diagnostic_started": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["track", "guest_id", "assessment_id"],
+      "required": ["track"],
+      "requiredAny": [["guest_id", "assessment_id"]],
+      "dedupe": [["guest_id"], ["assessment_id"]]
+    },
+    "diagnostic_completed": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["guest_id", "assessment_id", "diagnosed_level", "duration_ms"],
+      "required": ["diagnosed_level", "duration_ms"],
+      "requiredAny": [["guest_id", "assessment_id"]],
+      "dedupe": [["guest_id"], ["assessment_id"]]
+    },
+    "result_claimed": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["guest_id", "assessment_id", "user_id", "claim_outcome"],
+      "required": ["guest_id", "user_id", "claim_outcome"],
+      "requiredAny": [],
+      "dedupe": [["assessment_id"], ["guest_id", "user_id"]]
+    },
+    "path_generated": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["path_id", "assessment_id", "user_id"],
+      "required": ["path_id", "assessment_id", "user_id"],
+      "requiredAny": [],
+      "dedupe": [["path_id"]]
+    },
+    "existing_path_continued": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["user_id", "path_id", "assessment_id", "guest_id"],
+      "required": ["user_id", "path_id"],
+      "requiredAny": [["assessment_id", "guest_id"]],
+      "dedupe": [
+        ["user_id", "path_id", "assessment_id"],
+        ["user_id", "path_id", "guest_id"]
+      ]
+    },
+    "path_first_viewed": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["user_id", "path_id", "originating_session_id"],
+      "required": ["user_id", "path_id", "originating_session_id"],
+      "requiredAny": [],
+      "dedupe": [["user_id", "path_id"]]
+    },
+    "first_mission_started": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": ["user_id", "path_id", "week_num", "task_id", "first_open"],
+      "required": ["user_id", "path_id", "week_num", "task_id", "first_open"],
+      "requiredAny": [],
+      "dedupe": [["user_id", "task_id", "first_open"]]
+    },
+    "first_practice_succeeded": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": [
+        "user_id",
+        "path_id",
+        "task_id",
+        "content_id",
+        "run_id",
+        "first_successful_run"
+      ],
+      "required": [
+        "user_id",
+        "path_id",
+        "task_id",
+        "content_id",
+        "run_id",
+        "first_successful_run"
+      ],
+      "requiredAny": [],
+      "dedupe": [["user_id", "task_id", "first_successful_run"]]
+    },
+    "contextual_review_viewed": {
+      "consent_requirement": "analytics_permission",
+      "timestamp_source": "client_event_time",
+      "allowed": [
+        "user_id",
+        "task_id",
+        "review_id",
+        "approved_context_field_count",
+        "next_action_outcome",
+        "first_view"
+      ],
+      "required": [
+        "user_id",
+        "task_id",
+        "review_id",
+        "approved_context_field_count",
+        "next_action_outcome",
+        "first_view"
+      ],
+      "requiredAny": [],
+      "dedupe": [["user_id", "task_id", "review_id", "first_view"]]
+    }
+  }
+}

@@ -1,0 +1,187 @@
+---
+# Immutable action pins and authenticated artifact URLs exceed 80 columns.
+# yamllint disable rule:line-length
+# yamllint disable rule:truthy
+name: Mission Spine Home Distribution
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_id:
+        description: Immutable release identifier from the canonical candidate
+        required: true
+        type: string
+      candidate_spec_sha256:
+        description: SHA-256 of the exact raw canonical candidate-spec bytes
+        required: true
+        type: string
+      home_source_sha:
+        description: Exact protected master Home source SHA from the candidate
+        required: true
+        type: string
+      dist_sha256:
+        description: Expected canonical dist.tar.gz SHA-256 from the candidate
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: mission-spine-home-dist-${{ inputs.release_id }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  package-home-dist:
+    name: Package exact Home distribution
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803  # v6.1.0
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Reject source, candidate, and rerun ambiguity
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SPEC_SHA256: ${{ inputs.candidate_spec_sha256 }}
+          HOME_SOURCE_SHA: ${{ inputs.home_source_sha }}
+          EXPECTED_DIST_SHA256: ${{ inputs.dist_sha256 }}
+        run: |
+          set -euo pipefail
+          test "${GITHUB_RUN_ATTEMPT}" = 1 || {
+            echo 'Home distribution retries require a fresh workflow_dispatch' >&2
+            exit 1
+          }
+          test "${GITHUB_EVENT_NAME}" = workflow_dispatch
+          test "${GITHUB_REPOSITORY}" = DevPathAi/devpath-home-page
+          test "${GITHUB_REF}" = refs/heads/master
+          [[ "${RELEASE_ID}" =~ ^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$ ]]
+          [[ "${CANDIDATE_SPEC_SHA256}" =~ ^[0-9a-f]{64}$ ]]
+          test "${CANDIDATE_SPEC_SHA256}" != "$(printf '0%.0s' {1..64})"
+          [[ "${HOME_SOURCE_SHA}" =~ ^[0-9a-f]{40}$ ]]
+          test "${HOME_SOURCE_SHA}" != "$(printf '0%.0s' {1..40})"
+          [[ "${EXPECTED_DIST_SHA256}" =~ ^[0-9a-f]{64}$ ]]
+          test "${EXPECTED_DIST_SHA256}" != "$(printf '0%.0s' {1..64})"
+          test "${GITHUB_SHA}" = "${HOME_SOURCE_SHA}"
+          test "$(git rev-parse HEAD)" = "${HOME_SOURCE_SHA}"
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4.4.0
+        with:
+          node-version: '24.12.0'
+          cache: npm
+
+      - name: Authenticate current protected master run and workflow bytes
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          node scripts/mission-spine-home-dist.mjs authenticate-run \
+            --repository-root=. \
+            --source-sha="${GITHUB_SHA}" \
+            --run-id="${GITHUB_RUN_ID}" \
+            --run-attempt="${GITHUB_RUN_ATTEMPT}"
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Build deterministic Home dist tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          test -z "$(git status --porcelain=v1 --untracked-files=all)"
+
+      - name: Package and validate exact canonical Home archive
+        shell: bash
+        env:
+          RELEASE_ID: ${{ inputs.release_id }}
+          CANDIDATE_SPEC_SHA256: ${{ inputs.candidate_spec_sha256 }}
+          HOME_SOURCE_SHA: ${{ inputs.home_source_sha }}
+          EXPECTED_DIST_SHA256: ${{ inputs.dist_sha256 }}
+          PACKAGE_ROOT: ${{ runner.temp }}/mission-spine-home-dist/package
+        run: |
+          set -euo pipefail
+          mkdir -p "$(dirname "${PACKAGE_ROOT}")"
+          node scripts/mission-spine-home-dist.mjs package-home-dist \
+            --release-id="${RELEASE_ID}" \
+            --dist-root=dist \
+            --package-root="${PACKAGE_ROOT}" \
+            --candidate-spec-sha256="${CANDIDATE_SPEC_SHA256}" \
+            --home-source-sha="${HOME_SOURCE_SHA}" \
+            --expected-dist-sha256="${EXPECTED_DIST_SHA256}" \
+            --producer-run-id="${GITHUB_RUN_ID}" \
+            --producer-run-attempt="${GITHUB_RUN_ATTEMPT}"
+          node scripts/mission-spine-home-dist.mjs validate-home-dist \
+            --release-id="${RELEASE_ID}" \
+            --dist-root=dist \
+            --package-root="${PACKAGE_ROOT}" \
+            --candidate-spec-sha256="${CANDIDATE_SPEC_SHA256}" \
+            --home-source-sha="${HOME_SOURCE_SHA}" \
+            --expected-dist-sha256="${EXPECTED_DIST_SHA256}" \
+            --producer-run-id="${GITHUB_RUN_ID}" \
+            --producer-run-attempt="${GITHUB_RUN_ATTEMPT}"
+
+      - name: Upload exact run-scoped Home package
+        id: upload
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        with:
+          name: ${{ inputs.release_id }}-home-dist-run-${{ github.run_id }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mission-spine-home-dist/package
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: false
+          include-hidden-files: false
+          retention-days: 30
+
+      - name: Re-authenticate uploaded ZIP envelope and package bytes
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ inputs.release_id }}
+          HOME_SOURCE_SHA: ${{ inputs.home_source_sha }}
+          ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.upload.outputs.artifact-digest }}
+          PACKAGE_ROOT: ${{ runner.temp }}/mission-spine-home-dist/package
+          VERIFY_ROOT: ${{ runner.temp }}/mission-spine-home-dist/upload-verification
+        run: |
+          set -euo pipefail
+          [[ "${ARTIFACT_ID}" =~ ^[1-9][0-9]*$ ]]
+          [[ "${ARTIFACT_DIGEST}" =~ ^(sha256:)?[0-9a-f]{64}$ ]]
+          artifact_name="${RELEASE_ID}-home-dist-run-${GITHUB_RUN_ID}-attempt-1"
+          test ! -e "${VERIFY_ROOT}"
+          mkdir "${VERIFY_ROOT}"
+          curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 1 --remove-on-error \
+            --proto '=https' --proto-redir '=https' \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            --max-filesize 1048576 \
+            "https://api.github.com/repos/DevPathAi/devpath-home-page/actions/artifacts/${ARTIFACT_ID}" \
+            --output "${VERIFY_ROOT}/artifact.json"
+          node scripts/mission-spine-home-dist.mjs validate-artifact-metadata \
+            --metadata="${VERIFY_ROOT}/artifact.json" \
+            --artifact-id="${ARTIFACT_ID}" \
+            --artifact-name="${artifact_name}" \
+            --artifact-digest="${ARTIFACT_DIGEST}" \
+            --run-id="${GITHUB_RUN_ID}" \
+            --source-sha="${HOME_SOURCE_SHA}"
+          curl --fail --silent --show-error --location \
+            --retry 5 --retry-all-errors --retry-delay 1 --remove-on-error \
+            --proto '=https' --proto-redir '=https' \
+            -H 'Accept: application/vnd.github+json' \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            --max-filesize 110100480 \
+            "https://api.github.com/repos/DevPathAi/devpath-home-page/actions/artifacts/${ARTIFACT_ID}/zip" \
+            --output "${VERIFY_ROOT}/artifact.zip"
+          node scripts/mission-spine-home-dist.mjs validate-artifact-zip \
+            --zip="${VERIFY_ROOT}/artifact.zip" \
+            --package-root="${PACKAGE_ROOT}" \
+            --expected-zip-sha256="${ARTIFACT_DIGEST}"

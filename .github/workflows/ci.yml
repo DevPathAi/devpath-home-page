@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [develop, master, 'feat/**', 'fix/**', 'chore/**']
@@ -15,9 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
           cache: npm
@@ -27,6 +33,9 @@ jobs:
 
       - name: Unit tests (Vitest)
         run: npm test
+
+      - name: Discover release journeys (deterministic, no external execution)
+        run: npm run test:release:list
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
@@ -39,8 +48,59 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  visual-a11y:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Trust the checked-out workspace inside the pinned container
+        run: |
+          set -eu
+          test -n "${GITHUB_WORKSPACE}"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          test "$(git rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Validate visual and accessibility contracts
+        run: npm run visual:contracts
+
+      - name: Prepare hash-pinned local fonts
+        run: npm run visual:fonts
+
+      - name: Verify hash-pinned local fonts
+        run: npm run visual:fonts:verify
+
+      - name: Production-dist visual and accessibility evidence
+        run: npm run test:visual
+
+      - name: Validate sanitized schema-v2 evidence
+        run: npm run visual:evidence:validate
+
+      - name: Upload sanitized evidence manifests
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: home-visual-a11y-evidence
+          path: test-results/visual-a11y/manifests/*.json
+          if-no-files-found: error
+          retention-days: 14

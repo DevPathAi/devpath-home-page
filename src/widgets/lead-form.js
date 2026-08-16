@@ -62,7 +62,7 @@ function formMarkup() {
         <p class="lf-field-error" id="lf-consent-err" role="alert"></p>
       </div>
       <p class="lf-error" id="lf-error" role="alert" hidden></p>
-      <button class="btn btn-primary lf-submit" type="submit">진단 초대받기</button>
+      <button class="btn btn-secondary lf-submit" type="submit">진단 초대받기</button>
     </form>
     <div class="lead-form__success surface" id="lf-success" tabindex="-1" hidden>
       <h3>신청이 접수됐어요 ✓</h3>

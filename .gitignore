@@ -12,6 +12,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.visual-cache/
 .env
 .env.local
 # Cloudflare Pages Functions 로컬 시크릿 (예시는 .dev.vars.example)
