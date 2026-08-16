@@ -889,6 +889,7 @@ textarea {
   display: flex;
   gap: var(--dp-space-sm);
   align-items: flex-start;
+  min-height: 44px;
   font: var(--dp-type-body-medium);
 }
 
@@ -1173,6 +1174,8 @@ textarea {
   .site-nav a {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    min-width: 44px;
     min-height: 44px;
     padding-inline: var(--dp-space-sm);
     color: var(--dp-color-text-secondary);
