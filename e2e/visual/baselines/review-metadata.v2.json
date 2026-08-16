@@ -2,13 +2,14 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "pending_external_review",
-  "review_id": "et13-audit-refresh",
+  "review_id": "et13-final-audit-refresh",
   "reviewer": "codex-unapproved",
-  "reason": "Audit-strengthened-light-baseline-candidate-awaiting-external-review",
+  "reason": "Final-audit-responsive-and-product-tree-baseline-candidate-awaiting-external-review",
   "reviewed_at": null,
-  "rendered_product_sha": "be9e34881fcf3aca686481f231372f9377a02544",
-  "candidate_spec_sha256": "099cb7fda35be198e1a241b12a80c446bdc10ee9bb815cc20218b3a984f64148",
-  "case_catalog_sha256": "54e7830425e8f185d8be5a6608926089ee9ec749fcea26af8238ae9f31f27411",
+  "rendered_product_sha": "084ab218698b0411f9bdea7c7c32c45fce87fd18",
+  "rendered_product_tree_sha256": "9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25",
+  "candidate_spec_sha256": "6edee25e58b1c07d0f1a30863415306586426cd25d29c4847502de7432df20e5",
+  "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
@@ -16,15 +17,15 @@
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "5d7c024a8d68a9893f915097485e7b44c1b0b6fc250a411526fcad62ac2211ef"
+      "sha256": "d9a440c006e442d883de76b6f2ce2a1d27af6eac3b0f7279985a8dead38efa98"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "aebfec63c470a82ffaba816b1a14dd0e840db1770a722fefd960cfc45563f321"
+      "sha256": "6298f5a43dc094e435820124847513f5d7dc7560b9072ddac28bc9a46067e53b"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "64f0fa7a2c7576f9809d2576fa8e022ba3d041a8417190419d4e3fc4ce7e38a0"
+      "sha256": "ecd571a2d26636faea786229a98aaf607eedda15fa4d086891df7893f24798aa"
     }
   ]
 }

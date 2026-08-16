@@ -22,6 +22,7 @@ import {
   sha256File,
   validateBaselineReview,
   validateCandidateSpec,
+  validateProductRuntimeProvenance,
 } from './visual-evidence.mjs';
 
 const SAFE_ID = /^[a-z0-9]+(?:[a-z0-9._-]*[a-z0-9])?$/;
@@ -45,6 +46,12 @@ function baselineFiles() {
 function existingReviewStatus() {
   if (!existsSync(BASELINE_REVIEW_PATH)) return null;
   const value = JSON.parse(readFileSync(BASELINE_REVIEW_PATH, 'utf8'));
+  if (!Object.hasOwn(value, 'rendered_product_tree_sha256')) {
+    return validateBaselineReview({
+      ...value,
+      rendered_product_tree_sha256: '0'.repeat(64),
+    }).status;
+  }
   return validateBaselineReview(value).status;
 }
 
@@ -91,6 +98,8 @@ function rollbackGuard(paths) {
 }
 
 export function updateVisualBaselines() {
+  const candidate = validateCandidateSpec(JSON.parse(readFileSync(CANDIDATE_SPEC_PATH, 'utf8')));
+  const provenance = validateProductRuntimeProvenance({ candidate });
   const files = baselineFiles();
   const existingCount = files.filter((entry) => existsSync(entry.path)).length;
   if (existingCount !== 0 && existingCount !== files.length) {
@@ -103,7 +112,6 @@ export function updateVisualBaselines() {
   const reviewedAt = status === 'approved'
     ? required('HOME_VISUAL_BASELINE_REVIEWED_AT', /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/, 24)
     : null;
-  const candidate = validateCandidateSpec(JSON.parse(readFileSync(CANDIDATE_SPEC_PATH, 'utf8')));
   const rollback = rollbackGuard([...files.map((entry) => entry.path), BASELINE_REVIEW_PATH]);
   let complete = false;
 
@@ -135,6 +143,7 @@ export function updateVisualBaselines() {
       reason,
       reviewed_at: reviewedAt,
       rendered_product_sha: candidate.surface.rendered_product_sha,
+      rendered_product_tree_sha256: provenance.rendered_product_tree_sha256,
       candidate_spec_sha256: candidateSpecSha256(),
       case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
       artifacts: files.map((entry) => ({ case_id: entry.id, sha256: sha256File(entry.path) })),

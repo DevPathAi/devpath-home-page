@@ -11,8 +11,9 @@ evidence manifests.
   plus the open 320 menu, true 200% text reflow with exact computed-size checks
   and a synthetic long Korean identifier, complete keyboard focus order/rings/
   activation/trap exit, heading order, one primary action per section, every
-  independent 44×44 px target with explicit inline-text exceptions, reduced
-  motion, and mobile-menu Escape/focus return.
+  independent 44×44 px target at 320/600/840/1240 with explicit inline-text
+  exceptions, reduced motion, mobile-menu Escape/focus return, and the complete
+  open compact-menu Tab/ring/activation/trap-exit journey.
 - Deterministic runtime: Chromium/Playwright 1.61.1, `ko-KR`, UTC, DPR 1,
   light color scheme, reduced motion, frozen clock, one worker, animation-off
   screenshots, and loopback-only browser requests.
@@ -28,18 +29,51 @@ dark tokens must not be activated only for a hidden test screenshot.
 
 ## Canonical verification
 
-The single authoritative local command is the pinned-Docker wrapper:
+The single authoritative local diagnostic command is the pinned-Docker wrapper:
 
 ```bash
 npm run visual:evidence:docker
 ```
 
+Release sealing uses the same wrapper, but the orchestrator must supply both an
+absolute path to the canonical global candidate's raw bytes and its independently
+transported expected hash:
+
+```bash
+MISSION_CANDIDATE_SPEC_PATH='/absolute/path/to/candidate-spec.raw.json' \
+MISSION_CANDIDATE_SPEC_SHA256='<64-lowercase-hex-out-of-band-sha256>' \
+npm run visual:evidence:docker
+```
+
+The pair is atomic: either value without the other is rejected, uppercase or
+malformed hashes are rejected, and the raw file is hashed before Docker starts.
+The wrapper mounts only that file read-only at `/mission-candidate/spec.raw`,
+passes the fixed container path plus expected hash into the pinned container,
+and the evidence generator verifies the same raw bytes again. The sanitized
+outputs are always `test-results/visual-a11y/manifests/visual-evidence.v2.json`
+and `test-results/visual-a11y/manifests/a11y-evidence.v2.json`.
+
 It uses the exact multi-architecture image digest in `baseline_policy.platform`,
 isolates Linux `node_modules` in a disposable Docker volume, and runs the full
-contract/font/production-dist/manifest sequence. It refuses a dirty worktree so
+contract/font/production-dist/manifest sequence. A read-only common Git metadata
+mount lets the container independently resolve both committed trees,
+including from a linked Windows worktree. It refuses a dirty worktree so
 the evidence-producer SHA names the exact committed implementation. Direct host
 runs on Windows or macOS are useful for iteration but are **non-authoritative**
 for visual evidence.
+
+When the external pair is absent, the committed Home candidate is used only as
+a Home-local diagnostic/ordinary-CI preflight binding. That fallback artifact is
+not a global release-seal input. The GitOps release workflow owns the canonical
+candidate path and out-of-band hash and must never replace them with the Home
+fixture hash.
+
+Before rendering, the gate resolves the candidate's rendered-product commit,
+hashes every committed non-evidence tree entry, and requires the producer's
+corresponding product tree to be byte-identical. Only the explicit evidence
+allowlist (visual specs, schemas, baselines, validators, and their documentation)
+may differ between those commits. A dirty tree, a producer SHA other than HEAD,
+an uncommitted SHA, or any runtime/build-source drift is rejected before build.
 
 For a non-authoritative quick host check only:
 
@@ -53,9 +87,11 @@ npm run visual:evidence:validate
 
 The generated `visual-evidence.v2.json` and `a11y-evidence.v2.json` distinguish
 the rendered-product Git SHA from the evidence-producer Git SHA and also bind
-the candidate-spec, catalog, and font-manifest SHA-256 values. A release harness can override the local candidate-spec binding with
-`MISSION_CANDIDATE_SPEC_SHA256`; the value must be exactly 64 lowercase hex
-characters. Manifests allow only aggregate status/count/hash fields—no HTML,
+the verified rendered-product tree, candidate-spec, catalog, and font-manifest
+SHA-256 values. A release harness binds the global candidate only with the
+verified `MISSION_CANDIDATE_SPEC_PATH`/`MISSION_CANDIDATE_SPEC_SHA256` pair;
+a hash by itself is never trusted. Manifests allow only aggregate
+status/count/hash fields—no HTML,
 selectors, URLs, screenshot paths, form values, logs, or authored content.
 Passing automated cases produce `release_ready`, except a passing visual set
 with unapproved baselines is `diagnostic_pending_review`. Any missing or failed
@@ -86,8 +122,9 @@ An initial candidate or an already-pending candidate may stay
 `pending_external_review` only with `HOME_VISUAL_BASELINE_BOOTSTRAP=true`; this
 does not claim approval. An approved baseline can never be downgraded to
 pending, and its replacement requires approved metadata and a timestamp. The
-review file binds the rendered product, candidate spec, ordered catalog, and
-the verified on-disk PNG hashes. Baseline images may enforce regression before
+review file binds the rendered product commit and verified product-tree hash,
+candidate spec, ordered catalog, and the verified on-disk PNG hashes. Baseline
+images may enforce regression before
 approval, but `pending_external_review` is not release approval.
 
 ## External release evidence

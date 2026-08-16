@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import {
   existsSync,
   readFileSync,
@@ -23,6 +23,18 @@ const SHA256 = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[a-z0-9]+(?:[a-z0-9._-]*[a-z0-9])?$/;
 const CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PNG_SIGNATURE = '89504e470d0a1a0a';
+const EVIDENCE_ONLY_PATHS = Object.freeze([
+  { exact: 'README.md' },
+  { exact: 'docs/visual-a11y-evidence.md' },
+  { prefix: 'e2e/visual/' },
+  { exact: 'playwright.visual.config.js' },
+  { exact: 'scripts/run-visual-evidence-docker.mjs' },
+  { exact: 'scripts/update-visual-baselines.mjs' },
+  { exact: 'scripts/visual-evidence.mjs' },
+  { exact: 'tests/visual-evidence-audit-contract.test.js' },
+  { exact: 'tests/visual-evidence-contract.test.js' },
+  { exact: 'tests/visual-evidence-release-binding.test.js' },
+]);
 const EXPECTED_CASES = Object.freeze([
   { id: 'home-light-compact-320', kind: 'visual', width: 320, height: 900, checkCount: 3 },
   { id: 'home-light-medium-600', kind: 'visual', width: 600, height: 900, checkCount: 3 },
@@ -32,9 +44,13 @@ const EXPECTED_CASES = Object.freeze([
   { id: 'home-reflow-200-long-ko', kind: 'a11y', width: 320, height: 900, checkCount: 6 },
   { id: 'home-keyboard-focus', kind: 'a11y', width: 1240, height: 900, checkCount: 7 },
   { id: 'home-heading-primary', kind: 'a11y', width: 1240, height: 900, checkCount: 3 },
-  { id: 'home-targets-44', kind: 'a11y', width: 320, height: 900, checkCount: 4 },
+  { id: 'home-targets-44-320', kind: 'a11y', width: 320, height: 900, checkCount: 4 },
+  { id: 'home-targets-44-600', kind: 'a11y', width: 600, height: 900, checkCount: 4 },
+  { id: 'home-targets-44-840', kind: 'a11y', width: 840, height: 900, checkCount: 4 },
+  { id: 'home-targets-44-1240', kind: 'a11y', width: 1240, height: 900, checkCount: 4 },
   { id: 'home-reduced-motion', kind: 'a11y', width: 1240, height: 900, checkCount: 2 },
   { id: 'home-mobile-menu-escape', kind: 'a11y', width: 320, height: 900, checkCount: 3 },
+  { id: 'home-mobile-menu-keyboard', kind: 'a11y', width: 320, height: 900, checkCount: 6 },
 ]);
 const EXPECTED_FONT_FILES = Object.freeze([
   {
@@ -143,6 +159,140 @@ export function candidateSpecSha256() {
   return sha256File(CANDIDATE_SPEC_PATH);
 }
 
+export function resolveEvidenceCandidateBinding(environment = process.env) {
+  const configuredPath = environment.MISSION_CANDIDATE_SPEC_PATH;
+  const configuredSha256 = environment.MISSION_CANDIDATE_SPEC_SHA256;
+  const hasPath = configuredPath !== undefined;
+  const hasSha256 = configuredSha256 !== undefined;
+  if (hasPath !== hasSha256) {
+    throw new Error('MISSION_CANDIDATE_SPEC_PATH and MISSION_CANDIDATE_SPEC_SHA256 must be provided together');
+  }
+  if (!hasPath) {
+    if (environment.HOME_VISUAL_CANDIDATE_SPEC_SHA256 !== undefined) {
+      throw new Error('a candidate SHA override requires the external MISSION_CANDIDATE_SPEC_PATH/SHA256 pair');
+    }
+    return {
+      mode: 'home_local_diagnostic',
+      path: CANDIDATE_SPEC_PATH,
+      sha256: candidateSpecSha256(),
+    };
+  }
+
+  exactString(configuredPath, 'MISSION_CANDIDATE_SPEC_PATH', undefined, 4096);
+  if (/[\0\r\n,]/.test(configuredPath)) {
+    throw new Error('MISSION_CANDIDATE_SPEC_PATH is not safe for an exact read-only bind mount');
+  }
+  exactString(
+    configuredSha256,
+    'MISSION_CANDIDATE_SPEC_SHA256 (lowercase SHA-256)',
+    SHA256,
+    64,
+  );
+  const candidatePath = resolve(ROOT, configuredPath);
+  if (candidatePath === CANDIDATE_SPEC_PATH) {
+    throw new Error('external release binding cannot point to the Home-local diagnostic candidate fixture');
+  }
+  if (!existsSync(candidatePath) || !statSync(candidatePath).isFile()) {
+    throw new Error('MISSION_CANDIDATE_SPEC_PATH must name a readable regular file');
+  }
+  const actualSha256 = sha256File(candidatePath);
+  if (actualSha256 !== configuredSha256) {
+    throw new Error('external candidate raw SHA-256 does not match the out-of-band expected hash');
+  }
+  return {
+    mode: 'external_release',
+    path: candidatePath,
+    sha256: configuredSha256,
+  };
+}
+
+function isEvidenceOnlyPath(path) {
+  return EVIDENCE_ONLY_PATHS.some((rule) => (
+    rule.exact === path || (rule.prefix && path.startsWith(rule.prefix))
+  ));
+}
+
+function ensureCommit(sha, path) {
+  exactString(sha, path, SHA40, 40);
+  const result = spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`${path} does not name a committed Git tree`);
+}
+
+export function productRuntimeTreeSha256(commitSha) {
+  ensureCommit(commitSha, 'rendered product SHA');
+  const raw = execFileSync('git', ['ls-tree', '-r', '-z', '--full-tree', commitSha], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  const productEntries = raw.split('\0').filter(Boolean).filter((entry) => {
+    const separator = entry.indexOf('\t');
+    if (separator === -1) throw new Error('Git tree entry is malformed');
+    return !isEvidenceOnlyPath(entry.slice(separator + 1));
+  });
+  return sha256Bytes(Buffer.from(`${productEntries.join('\0')}\0`, 'utf8'));
+}
+
+export function validateProductRuntimeProvenance({
+  candidate = validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH)),
+  environment = process.env,
+  evidenceProducerSha = currentEvidenceProducerSha(environment),
+  requireClean = true,
+} = {}) {
+  candidate = validateCandidateSpec(candidate);
+  const renderedProductSha = candidate.surface.rendered_product_sha;
+  ensureCommit(renderedProductSha, 'candidate rendered product SHA');
+  ensureCommit(evidenceProducerSha, 'evidence producer SHA');
+
+  const ancestor = spawnSync(
+    'git',
+    ['merge-base', '--is-ancestor', renderedProductSha, evidenceProducerSha],
+    { cwd: ROOT, encoding: 'utf8' },
+  );
+  if (ancestor.error) throw ancestor.error;
+  if (ancestor.status !== 0) {
+    throw new Error('rendered product commit must be an ancestor of the evidence producer');
+  }
+
+  if (requireClean) {
+    const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }).trim().toLowerCase();
+    if (headSha !== evidenceProducerSha) {
+      throw new Error('evidence producer SHA must equal the checked-out HEAD');
+    }
+    const status = execFileSync(
+      'git',
+      ['status', '--porcelain=v1', '--untracked-files=all'],
+      { cwd: ROOT, encoding: 'utf8' },
+    ).trim();
+    if (status) throw new Error('product render provenance requires a clean Git worktree');
+  }
+
+  const renderedTreeSha256 = productRuntimeTreeSha256(renderedProductSha);
+  if (renderedTreeSha256 !== candidate.surface.rendered_product_tree_sha256) {
+    throw new Error('candidate rendered product tree hash does not match its Git commit');
+  }
+  const producerTreeSha256 = productRuntimeTreeSha256(evidenceProducerSha);
+  if (producerTreeSha256 !== renderedTreeSha256) {
+    const driftedPaths = execFileSync(
+      'git',
+      ['diff', '--name-only', renderedProductSha, evidenceProducerSha],
+      { cwd: ROOT, encoding: 'utf8' },
+    ).split(/\r?\n/).filter(Boolean).filter((path) => !isEvidenceOnlyPath(path));
+    throw new Error(`product runtime drifted from rendered commit: ${driftedPaths.join(', ')}`);
+  }
+  return {
+    rendered_product_sha: renderedProductSha,
+    evidence_producer_sha: evidenceProducerSha,
+    rendered_product_tree_sha256: renderedTreeSha256,
+  };
+}
+
 export function validateCandidateSpec(value) {
   exactKeys(value, ['$schema', 'schema_version', 'document_type', 'surface', 'runtime', 'inputs'], 'candidate-spec');
   if (value.schema_version !== 2 || value.document_type !== 'home-visual-a11y-candidate-spec') {
@@ -151,7 +301,7 @@ export function validateCandidateSpec(value) {
   exactString(value.$schema, 'candidate-spec.$schema', /^\.\/schema\/candidate-spec-v2\.schema\.json$/);
   exactKeys(
     value.surface,
-    ['repository', 'route', 'build', 'rendered_product_sha'],
+    ['repository', 'route', 'build', 'rendered_product_sha', 'rendered_product_tree_sha256'],
     'candidate-spec.surface',
   );
   if (
@@ -166,6 +316,12 @@ export function validateCandidateSpec(value) {
     'candidate-spec.surface.rendered_product_sha',
     SHA40,
     40,
+  );
+  exactString(
+    value.surface.rendered_product_tree_sha256,
+    'candidate-spec.surface.rendered_product_tree_sha256',
+    SHA256,
+    64,
   );
   exactKeys(value.runtime, [
     'browser',
@@ -444,6 +600,7 @@ export function validateEvidenceManifest(
   exactKeys(value.binding, [
     'repository',
     'rendered_product_sha',
+    'rendered_product_tree_sha256',
     'evidence_producer_sha',
     'candidate_spec_sha256',
     'case_catalog_sha256',
@@ -451,14 +608,25 @@ export function validateEvidenceManifest(
   ], 'evidence.binding');
   if (value.binding.repository !== 'DevPathAi/devpath-home-page') throw new Error('evidence repository is not canonical');
   exactString(value.binding.rendered_product_sha, 'evidence.binding.rendered_product_sha', SHA40, 40);
+  exactString(
+    value.binding.rendered_product_tree_sha256,
+    'evidence.binding.rendered_product_tree_sha256',
+    SHA256,
+    64,
+  );
   exactString(value.binding.evidence_producer_sha, 'evidence.binding.evidence_producer_sha', SHA40, 40);
   for (const field of ['candidate_spec_sha256', 'case_catalog_sha256', 'font_manifest_sha256']) {
     exactString(value.binding[field], `evidence.binding.${field}`, SHA256, 64);
   }
   if (enforceBindings) {
     const candidate = validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
+    const renderedTreeSha256 = productRuntimeTreeSha256(candidate.surface.rendered_product_sha);
+    if (candidate.surface.rendered_product_tree_sha256 !== renderedTreeSha256) {
+      throw new Error('candidate rendered product tree hash does not match its Git commit');
+    }
     const expectedBinding = {
       rendered_product_sha: renderedProductSha(candidate, environment),
+      rendered_product_tree_sha256: renderedTreeSha256,
       evidence_producer_sha: currentEvidenceProducerSha(environment),
       candidate_spec_sha256: evidenceCandidateSha(environment),
       case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
@@ -561,7 +729,7 @@ export function validateEvidenceManifest(
 }
 
 export function validateBaselineReview(value, { enforceBindings = false } = {}) {
-  exactKeys(value, ['schema_version', 'document_type', 'status', 'review_id', 'reviewer', 'reason', 'reviewed_at', 'rendered_product_sha', 'candidate_spec_sha256', 'case_catalog_sha256', 'artifacts'], 'baseline-review');
+  exactKeys(value, ['schema_version', 'document_type', 'status', 'review_id', 'reviewer', 'reason', 'reviewed_at', 'rendered_product_sha', 'rendered_product_tree_sha256', 'candidate_spec_sha256', 'case_catalog_sha256', 'artifacts'], 'baseline-review');
   if (value.schema_version !== 2 || value.document_type !== 'home-visual-baseline-review') {
     throw new Error('baseline review must be schema v2');
   }
@@ -575,6 +743,12 @@ export function validateBaselineReview(value, { enforceBindings = false } = {}) 
     throw new Error('pending baseline review must not claim a review timestamp');
   }
   exactString(value.rendered_product_sha, 'baseline-review.rendered_product_sha', SHA40, 40);
+  exactString(
+    value.rendered_product_tree_sha256,
+    'baseline-review.rendered_product_tree_sha256',
+    SHA256,
+    64,
+  );
   exactString(value.candidate_spec_sha256, 'baseline-review.candidate_spec_sha256', SHA256, 64);
   exactString(value.case_catalog_sha256, 'baseline-review.case_catalog_sha256', SHA256, 64);
   if (!Array.isArray(value.artifacts) || value.artifacts.length !== 4) throw new Error('baseline review requires four artifacts');
@@ -588,6 +762,15 @@ export function validateBaselineReview(value, { enforceBindings = false } = {}) 
     const catalog = loadCaseCatalog();
     if (value.rendered_product_sha !== candidate.surface.rendered_product_sha) {
       throw new Error('baseline rendered product source does not match candidate-spec');
+    }
+    if (value.rendered_product_tree_sha256 !== candidate.surface.rendered_product_tree_sha256) {
+      throw new Error('baseline rendered product tree does not match candidate-spec');
+    }
+    if (
+      value.rendered_product_tree_sha256
+      !== productRuntimeTreeSha256(candidate.surface.rendered_product_sha)
+    ) {
+      throw new Error('baseline rendered product tree does not match the committed product');
     }
     if (value.candidate_spec_sha256 !== candidateSpecSha256()) {
       throw new Error('baseline candidate-spec hash does not match');
@@ -677,11 +860,7 @@ function renderedProductSha(candidate, environment = process.env) {
 }
 
 function evidenceCandidateSha(environment = process.env) {
-  const configured = environment.MISSION_CANDIDATE_SPEC_SHA256
-    || environment.HOME_VISUAL_CANDIDATE_SPEC_SHA256;
-  return configured
-    ? exactString(configured.toLowerCase(), 'candidate-spec SHA256', SHA256, 64)
-    : candidateSpecSha256();
+  return resolveEvidenceCandidateBinding(environment).sha256;
 }
 
 function baselineReviewSummary(environment = process.env) {
@@ -717,6 +896,7 @@ export function generateEvidenceManifests({ recordsDirectory, outputDirectory, e
   const binding = {
     repository: 'DevPathAi/devpath-home-page',
     rendered_product_sha: renderedProductSha(candidate, environment),
+    rendered_product_tree_sha256: candidate.surface.rendered_product_tree_sha256,
     evidence_producer_sha: currentEvidenceProducerSha(environment),
     candidate_spec_sha256: evidenceCandidateSha(environment),
     case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
@@ -799,10 +979,13 @@ function cli() {
     validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
     loadCaseCatalog();
     loadFontManifest();
+    resolveEvidenceCandidateBinding();
+    validateProductRuntimeProvenance();
     process.stdout.write('visual/a11y contracts valid\n');
     return;
   }
   if (command === 'generate') {
+    validateProductRuntimeProvenance();
     const recordsDirectory = resolve(argument('--records') || join(ROOT, 'test-results', 'visual-a11y'));
     const outputDirectory = resolve(argument('--out') || join(recordsDirectory, 'manifests'));
     const result = generateEvidenceManifests({ recordsDirectory, outputDirectory });
@@ -813,6 +996,7 @@ function cli() {
     return;
   }
   if (command === 'validate' || command === 'validate-diagnostic') {
+    validateProductRuntimeProvenance();
     const directory = resolve(argument('--dir') || join(ROOT, 'test-results', 'visual-a11y', 'manifests'));
     for (const name of ['visual-evidence.v2.json', 'a11y-evidence.v2.json']) {
       validateEvidenceManifest(readJson(join(directory, name)), {

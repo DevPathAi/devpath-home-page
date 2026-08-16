@@ -1,9 +1,14 @@
 import { defineConfig } from '@playwright/test';
 
-import { validateCandidateSpec, CANDIDATE_SPEC_PATH } from './scripts/visual-evidence.mjs';
+import {
+  CANDIDATE_SPEC_PATH,
+  validateCandidateSpec,
+  validateProductRuntimeProvenance,
+} from './scripts/visual-evidence.mjs';
 import { readFileSync } from 'node:fs';
 
 const candidate = validateCandidateSpec(JSON.parse(readFileSync(CANDIDATE_SPEC_PATH, 'utf8')));
+validateProductRuntimeProvenance({ candidate });
 const PORT = 4333;
 
 if (process.env.CI && process.env.HOME_VISUAL_BASELINE_UPDATE === '1') {

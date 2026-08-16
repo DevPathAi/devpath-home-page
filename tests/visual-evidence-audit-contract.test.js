@@ -13,14 +13,17 @@ import { describe, expect, it } from 'vitest';
 import {
   generateEvidenceManifests,
   loadCaseCatalog,
+  productRuntimeTreeSha256,
   validateBaselineReview,
   validateCaseCatalog,
   validateEvidenceManifest,
   validateFontManifest,
+  validateProductRuntimeProvenance,
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = 'be9e34881fcf3aca686481f231372f9377a02544';
+const productSha = '084ab218698b0411f9bdea7c7c32c45fce87fd18';
+const productTreeSha = '9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -54,7 +57,6 @@ function passingEvidence(environmentOverrides = {}) {
       environment: {
         HOME_RENDERED_PRODUCT_SHA: productSha,
         HOME_EVIDENCE_PRODUCER_SHA: producerSha,
-        HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
         ...environmentOverrides,
       },
     }));
@@ -64,6 +66,80 @@ function passingEvidence(environmentOverrides = {}) {
 }
 
 describe('independent ET13 audit contracts', () => {
+  it('catalogs 44px target coverage at every responsive boundary', () => {
+    const catalog = JSON.parse(readFileSync(
+      join(root, 'e2e/visual/case-catalog.v2.json'),
+      'utf8',
+    ));
+    expect(catalog.cases
+      .filter(({ id }) => id.startsWith('home-targets-44-'))
+      .map(({ id, viewport }) => [id, viewport.width])).toEqual([
+      ['home-targets-44-320', 320],
+      ['home-targets-44-600', 600],
+      ['home-targets-44-840', 840],
+      ['home-targets-44-1240', 1240],
+    ]);
+
+    const css = readFileSync(join(root, 'assets/styles.css'), 'utf8');
+    expect(css).toMatch(/\.site-nav a\s*\{[^}]*min-width:\s*44px/s);
+    expect(css).toMatch(/\.lf-consent label\s*\{[^}]*min-height:\s*44px/s);
+  });
+
+  it('catalogs complete compact-menu keyboard coverage', () => {
+    const catalog = JSON.parse(readFileSync(
+      join(root, 'e2e/visual/case-catalog.v2.json'),
+      'utf8',
+    ));
+    const compactKeyboard = catalog.cases.find(({ id }) => (
+      id === 'home-mobile-menu-keyboard'
+    ));
+    expect(compactKeyboard).toMatchObject({
+      kind: 'a11y',
+      viewport: { width: 320, height: 900 },
+    });
+    expect(compactKeyboard.checks).toEqual([
+      'open_menu_full_tab_order',
+      'open_menu_focus_visible',
+      'open_menu_focus_not_offscreen',
+      'open_menu_no_focus_trap',
+      'open_menu_keyboard_activation',
+      'open_menu_escape_return',
+    ]);
+  });
+
+  it('binds evidence to a verified committed product tree', () => {
+    const candidate = JSON.parse(readFileSync(
+      join(root, 'e2e/visual/candidate-spec.v2.json'),
+      'utf8',
+    ));
+    const evidenceSource = readFileSync(join(root, 'scripts/visual-evidence.mjs'), 'utf8');
+    const updaterSource = readFileSync(join(root, 'scripts/update-visual-baselines.mjs'), 'utf8');
+    expect(candidate.surface.rendered_product_tree_sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(evidenceSource).toContain('validateProductRuntimeProvenance');
+    expect(updaterSource).toContain('validateProductRuntimeProvenance');
+    expect(productRuntimeTreeSha256(productSha)).toBe(productTreeSha);
+    expect(validateProductRuntimeProvenance({
+      candidate,
+      evidenceProducerSha: productSha,
+      requireClean: false,
+    })).toMatchObject({
+      rendered_product_sha: productSha,
+      evidence_producer_sha: productSha,
+      rendered_product_tree_sha256: productTreeSha,
+    });
+
+    const staleProduct = structuredClone(candidate);
+    staleProduct.surface.rendered_product_sha = '1ee751bfe8e0e26ec1f57d02cef56975859360c7';
+    staleProduct.surface.rendered_product_tree_sha256 = productRuntimeTreeSha256(
+      staleProduct.surface.rendered_product_sha,
+    );
+    expect(() => validateProductRuntimeProvenance({
+      candidate: staleProduct,
+      evidenceProducerSha: productSha,
+      requireClean: false,
+    })).toThrow(/runtime drift|styles\.css/i);
+  });
+
   it('distinguishes rendered product source from the evidence producer', () => {
     const candidate = JSON.parse(readFileSync(
       join(root, 'e2e/visual/candidate-spec.v2.json'),
@@ -106,7 +182,6 @@ describe('independent ET13 audit contracts', () => {
       environment: {
         HOME_RENDERED_PRODUCT_SHA: productSha,
         HOME_EVIDENCE_PRODUCER_SHA: producerSha,
-        HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
       },
       enforceBindings: true,
     })).not.toThrow();
@@ -131,7 +206,6 @@ describe('independent ET13 audit contracts', () => {
       environment: {
         HOME_RENDERED_PRODUCT_SHA: productSha,
         HOME_EVIDENCE_PRODUCER_SHA: producerSha,
-        HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
       },
       enforceBindings: true,
     })).toThrow(/artifact|baseline|hash/i);

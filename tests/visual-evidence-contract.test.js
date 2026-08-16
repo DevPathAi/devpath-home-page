@@ -14,6 +14,7 @@ import {
   candidateSpecSha256,
   generateEvidenceManifests,
   loadCaseCatalog,
+  sha256Bytes,
   validateEvidenceManifest,
 } from '../scripts/visual-evidence.mjs';
 import { updateVisualBaselines } from '../scripts/update-visual-baselines.mjs';
@@ -37,7 +38,8 @@ describe('Home visual/a11y evidence v2 contract', () => {
       repository: 'DevPathAi/devpath-home-page',
       route: '/',
       build: 'production-dist',
-      rendered_product_sha: 'be9e34881fcf3aca686481f231372f9377a02544',
+      rendered_product_sha: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
+      rendered_product_tree_sha256: '9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25',
     });
     expect(candidate.runtime).toMatchObject({
       locale: 'ko-KR',
@@ -104,7 +106,11 @@ describe('Home visual/a11y evidence v2 contract', () => {
     const temporary = mkdtempSync(join(tmpdir(), 'home-visual-evidence-'));
     const records = join(temporary, 'records');
     const output = join(temporary, 'manifests');
+    const releaseCandidatePath = join(temporary, 'global-candidate.raw.json');
+    const releaseCandidateBytes = Buffer.from('{"document_type":"candidate-spec"}\n', 'utf8');
+    const releaseCandidateSha256 = sha256Bytes(releaseCandidateBytes);
     try {
+      writeFileSync(releaseCandidatePath, releaseCandidateBytes);
       for (const entry of loadCaseCatalog().cases) {
         const directory = join(records, entry.id);
         mkdirSync(directory, { recursive: true });
@@ -127,15 +133,17 @@ describe('Home visual/a11y evidence v2 contract', () => {
         recordsDirectory: records,
         outputDirectory: output,
         environment: {
-          HOME_RENDERED_PRODUCT_SHA: 'be9e34881fcf3aca686481f231372f9377a02544',
+          HOME_RENDERED_PRODUCT_SHA: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
           HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
-          HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
+          MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
+          MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
         },
       });
       expect(result.visual.binding).toMatchObject({
-        rendered_product_sha: 'be9e34881fcf3aca686481f231372f9377a02544',
+        rendered_product_sha: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
+        rendered_product_tree_sha256: '9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25',
         evidence_producer_sha: 'a'.repeat(40),
-        candidate_spec_sha256: 'b'.repeat(64),
+        candidate_spec_sha256: releaseCandidateSha256,
       });
       expect(result.visual.summary.failed).toBe(0);
       expect(result.a11y.summary.failed).toBe(0);
@@ -145,9 +153,10 @@ describe('Home visual/a11y evidence v2 contract', () => {
       });
       expect(JSON.stringify(result)).not.toMatch(/private learner|"screenshot_path"|"selector"/);
       const environment = {
-        HOME_RENDERED_PRODUCT_SHA: 'be9e34881fcf3aca686481f231372f9377a02544',
+        HOME_RENDERED_PRODUCT_SHA: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
         HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
-        HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
+        MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
+        MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
       };
       expect(() => validateEvidenceManifest(result.visual, {
         environment,

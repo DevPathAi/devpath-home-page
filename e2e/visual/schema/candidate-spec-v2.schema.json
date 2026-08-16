@@ -12,12 +12,13 @@
     "surface": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository", "route", "build", "rendered_product_sha"],
+      "required": ["repository", "route", "build", "rendered_product_sha", "rendered_product_tree_sha256"],
       "properties": {
         "repository": { "const": "DevPathAi/devpath-home-page" },
         "route": { "const": "/" },
         "build": { "const": "production-dist" },
-        "rendered_product_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+        "rendered_product_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "rendered_product_tree_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
       }
     },
     "runtime": {
