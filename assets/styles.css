@@ -123,6 +123,11 @@ textarea {
   top: var(--dp-space-sm);
   left: var(--dp-space-md);
   z-index: 300;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   padding: var(--dp-space-sm) var(--dp-space-lg);
   background: var(--dp-color-surface);
   border: 1px solid var(--dp-color-border);
@@ -200,7 +205,12 @@ textarea {
 }
 
 .wordmark {
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   color: var(--dp-color-text-primary);
   font: var(--dp-type-title-large);
   letter-spacing: -0.03em;
@@ -813,6 +823,12 @@ textarea {
 
 .final-cta__inner .eyebrow {
   color: var(--dp-color-rail-text);
+}
+
+.founder__more a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .lead {
