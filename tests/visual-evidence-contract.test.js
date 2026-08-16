@@ -191,6 +191,14 @@ describe('Home visual/a11y evidence v2 contract', () => {
     }
     expect(workflow).toContain('mcr.microsoft.com/playwright:v1.61.1-noble@sha256:');
     expect(workflow).toContain('actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683');
+    const visualJob = workflow.slice(workflow.indexOf('  visual-a11y:'));
+    expect(visualJob).toContain('test -n "${GITHUB_WORKSPACE}"');
+    expect(visualJob).toContain(
+      'git config --global --add safe.directory "${GITHUB_WORKSPACE}"',
+    );
+    expect(visualJob).toContain(
+      'test "$(git rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"',
+    );
     expect(workflow).not.toContain('--update-snapshots');
     expect(workflow).not.toMatch(/uses:\s+actions\/[a-z-]+@v\d/);
 

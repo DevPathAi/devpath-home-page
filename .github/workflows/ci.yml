@@ -66,6 +66,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Trust the checked-out workspace inside the pinned container
+        run: |
+          set -eu
+          test -n "${GITHUB_WORKSPACE}"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          test "$(git rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"
+
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
