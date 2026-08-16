@@ -8,7 +8,7 @@ import {
   writeFileSync,
   mkdirSync,
 } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -24,6 +24,7 @@ const SAFE_ID = /^[a-z0-9]+(?:[a-z0-9._-]*[a-z0-9])?$/;
 const CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PNG_SIGNATURE = '89504e470d0a1a0a';
 const EVIDENCE_ONLY_PATHS = Object.freeze([
+  { exact: '.github/workflows/ci.yml' },
   { exact: 'README.md' },
   { exact: 'docs/visual-a11y-evidence.md' },
   { prefix: 'e2e/visual/' },
@@ -36,21 +37,70 @@ const EVIDENCE_ONLY_PATHS = Object.freeze([
   { exact: 'tests/visual-evidence-release-binding.test.js' },
 ]);
 const EXPECTED_CASES = Object.freeze([
-  { id: 'home-light-compact-320', kind: 'visual', width: 320, height: 900, checkCount: 3 },
-  { id: 'home-light-medium-600', kind: 'visual', width: 600, height: 900, checkCount: 3 },
-  { id: 'home-light-expanded-840', kind: 'visual', width: 840, height: 900, checkCount: 3 },
-  { id: 'home-light-large-1240', kind: 'visual', width: 1240, height: 900, checkCount: 3 },
-  { id: 'home-axe-wcag-aa', kind: 'a11y', width: 1240, height: 900, checkCount: 12 },
-  { id: 'home-reflow-200-long-ko', kind: 'a11y', width: 320, height: 900, checkCount: 6 },
-  { id: 'home-keyboard-focus', kind: 'a11y', width: 1240, height: 900, checkCount: 7 },
-  { id: 'home-heading-primary', kind: 'a11y', width: 1240, height: 900, checkCount: 3 },
-  { id: 'home-targets-44-320', kind: 'a11y', width: 320, height: 900, checkCount: 4 },
-  { id: 'home-targets-44-600', kind: 'a11y', width: 600, height: 900, checkCount: 4 },
-  { id: 'home-targets-44-840', kind: 'a11y', width: 840, height: 900, checkCount: 4 },
-  { id: 'home-targets-44-1240', kind: 'a11y', width: 1240, height: 900, checkCount: 4 },
-  { id: 'home-reduced-motion', kind: 'a11y', width: 1240, height: 900, checkCount: 2 },
-  { id: 'home-mobile-menu-escape', kind: 'a11y', width: 320, height: 900, checkCount: 3 },
-  { id: 'home-mobile-menu-keyboard', kind: 'a11y', width: 320, height: 900, checkCount: 6 },
+  {
+    id: 'home-light-compact-320', kind: 'visual', width: 320, height: 900,
+    artifact: 'home-light-compact-320.png',
+    checks: ['full_page', 'no_horizontal_overflow', 'production_dist'],
+  },
+  {
+    id: 'home-light-medium-600', kind: 'visual', width: 600, height: 900,
+    artifact: 'home-light-medium-600.png',
+    checks: ['full_page', 'no_horizontal_overflow', 'production_dist'],
+  },
+  {
+    id: 'home-light-expanded-840', kind: 'visual', width: 840, height: 900,
+    artifact: 'home-light-expanded-840.png',
+    checks: ['full_page', 'no_horizontal_overflow', 'production_dist'],
+  },
+  {
+    id: 'home-light-large-1240', kind: 'visual', width: 1240, height: 900,
+    artifact: 'home-light-large-1240.png',
+    checks: ['full_page', 'no_horizontal_overflow', 'production_dist'],
+  },
+  {
+    id: 'home-axe-wcag-aa', kind: 'a11y', width: 1240, height: 900, artifact: null,
+    checks: ['axe_320_closed', 'axe_320_open', 'axe_600_closed', 'axe_840_closed', 'axe_1240_closed', 'axe_wcag2a', 'axe_wcag2aa', 'axe_wcag21a', 'axe_wcag21aa', 'axe_wcag22aa', 'local_fonts', 'local_network'],
+  },
+  {
+    id: 'home-reflow-200-long-ko', kind: 'a11y', width: 320, height: 900, artifact: null,
+    checks: ['text_resize_200', 'body_font_exact_2x', 'label_font_exact_2x', 'heading_font_exact_2x', 'long_korean_identifier', 'no_horizontal_overflow'],
+  },
+  {
+    id: 'home-keyboard-focus', kind: 'a11y', width: 1240, height: 900, artifact: null,
+    checks: ['full_focus_order', 'focus_visible', 'focus_not_offscreen', 'no_focus_trap', 'keyboard_activation', 'skip_link', 'form_controls'],
+  },
+  {
+    id: 'home-heading-primary', kind: 'a11y', width: 1240, height: 900, artifact: null,
+    checks: ['one_h1', 'heading_order', 'one_primary_per_section'],
+  },
+  {
+    id: 'home-targets-44-320', kind: 'a11y', width: 320, height: 900, artifact: null,
+    checks: ['all_independent_targets_enumerated', 'controls_44', 'inline_exceptions_explicit', 'exception_allowlist_exhausted'],
+  },
+  {
+    id: 'home-targets-44-600', kind: 'a11y', width: 600, height: 900, artifact: null,
+    checks: ['all_independent_targets_enumerated', 'controls_44', 'inline_exceptions_explicit', 'exception_allowlist_exhausted'],
+  },
+  {
+    id: 'home-targets-44-840', kind: 'a11y', width: 840, height: 900, artifact: null,
+    checks: ['all_independent_targets_enumerated', 'controls_44', 'inline_exceptions_explicit', 'exception_allowlist_exhausted'],
+  },
+  {
+    id: 'home-targets-44-1240', kind: 'a11y', width: 1240, height: 900, artifact: null,
+    checks: ['all_independent_targets_enumerated', 'controls_44', 'inline_exceptions_explicit', 'exception_allowlist_exhausted'],
+  },
+  {
+    id: 'home-reduced-motion', kind: 'a11y', width: 1240, height: 900, artifact: null,
+    checks: ['prefers_reduced_motion', 'animations_disabled'],
+  },
+  {
+    id: 'home-mobile-menu-escape', kind: 'a11y', width: 320, height: 900, artifact: null,
+    checks: ['menu_keyboard_open', 'menu_escape', 'focus_return'],
+  },
+  {
+    id: 'home-mobile-menu-keyboard', kind: 'a11y', width: 320, height: 900, artifact: null,
+    checks: ['open_menu_full_tab_order', 'open_menu_focus_visible', 'open_menu_focus_not_offscreen', 'open_menu_no_focus_trap', 'open_menu_keyboard_activation', 'open_menu_escape_return'],
+  },
 ]);
 const EXPECTED_FONT_FILES = Object.freeze([
   {
@@ -179,6 +229,9 @@ export function resolveEvidenceCandidateBinding(environment = process.env) {
   }
 
   exactString(configuredPath, 'MISSION_CANDIDATE_SPEC_PATH', undefined, 4096);
+  if (!isAbsolute(configuredPath)) {
+    throw new Error('MISSION_CANDIDATE_SPEC_PATH must be absolute');
+  }
   if (/[\0\r\n,]/.test(configuredPath)) {
     throw new Error('MISSION_CANDIDATE_SPEC_PATH is not safe for an exact read-only bind mount');
   }
@@ -443,10 +496,11 @@ export function validateCaseCatalog(value) {
     kind: entry.kind,
     width: entry.viewport.width,
     height: entry.viewport.height,
-    checkCount: entry.checks.length,
+    artifact: entry.kind === 'visual' ? entry.artifact : null,
+    checks: [...entry.checks],
   }));
   if (JSON.stringify(caseContract) !== JSON.stringify(EXPECTED_CASES)) {
-    throw new Error('case catalog ID/kind/viewport/check-count order drifted');
+    throw new Error('case catalog ID/kind/viewport/artifact/ordered-check contract drifted');
   }
   return value;
 }

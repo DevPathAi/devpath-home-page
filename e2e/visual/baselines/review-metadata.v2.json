@@ -7,8 +7,8 @@
   "reason": "Final-audit-responsive-and-product-tree-baseline-candidate-awaiting-external-review",
   "reviewed_at": null,
   "rendered_product_sha": "084ab218698b0411f9bdea7c7c32c45fce87fd18",
-  "rendered_product_tree_sha256": "9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25",
-  "candidate_spec_sha256": "6edee25e58b1c07d0f1a30863415306586426cd25d29c4847502de7432df20e5",
+  "rendered_product_tree_sha256": "64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368",
+  "candidate_spec_sha256": "90b988c879cb725ffe98a53acae1f1c9a0769ec0cf7014ec35ab736988da68fe",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {

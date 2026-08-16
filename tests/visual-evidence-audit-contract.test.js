@@ -5,6 +5,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -23,7 +24,7 @@ import {
 
 const root = join(import.meta.dirname, '..');
 const productSha = '084ab218698b0411f9bdea7c7c32c45fce87fd18';
-const productTreeSha = '9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25';
+const productTreeSha = '64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -85,6 +86,16 @@ describe('independent ET13 audit contracts', () => {
     expect(css).toMatch(/\.lf-consent label\s*\{[^}]*min-height:\s*44px/s);
   });
 
+  it('rejects same-count check-label and visual-artifact drift', () => {
+    const checkDrift = structuredClone(loadCaseCatalog());
+    checkDrift.cases[0].checks[0] = 'full_pages';
+    expect(() => validateCaseCatalog(checkDrift)).toThrow(/check|catalog|drift/i);
+
+    const artifactDrift = structuredClone(loadCaseCatalog());
+    artifactDrift.cases[0].artifact = 'home-light-compact-alternate.png';
+    expect(() => validateCaseCatalog(artifactDrift)).toThrow(/artifact|catalog|drift/i);
+  });
+
   it('catalogs complete compact-menu keyboard coverage', () => {
     const catalog = JSON.parse(readFileSync(
       join(root, 'e2e/visual/case-catalog.v2.json'),
@@ -138,6 +149,21 @@ describe('independent ET13 audit contracts', () => {
       evidenceProducerSha: productSha,
       requireClean: false,
     })).toThrow(/runtime drift|styles\.css/i);
+  });
+
+  it('allows the exact CI-only descendant while retaining runtime drift detection', () => {
+    const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: root,
+      encoding: 'utf8',
+    }).trim();
+    const changedPaths = execFileSync('git', ['diff', '--name-only', productSha, headSha], {
+      cwd: root,
+      encoding: 'utf8',
+    }).split(/\r?\n/).filter(Boolean);
+    expect(changedPaths).toContain('.github/workflows/ci.yml');
+    expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
+    expect(productRuntimeTreeSha256('1ee751bfe8e0e26ec1f57d02cef56975859360c7'))
+      .not.toBe(productRuntimeTreeSha256(productSha));
   });
 
   it('distinguishes rendered product source from the evidence producer', () => {

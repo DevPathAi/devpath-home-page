@@ -1,5 +1,6 @@
 import {
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -35,16 +36,22 @@ describe('Home release-candidate evidence binding', () => {
       MISSION_CANDIDATE_SPEC_PATH: 'candidate.raw',
     })).toThrow(/path.*sha|together|pair/i);
     expect(() => resolveEvidenceCandidateBinding({
-      MISSION_CANDIDATE_SPEC_PATH: 'candidate.raw',
+      MISSION_CANDIDATE_SPEC_PATH: resolve('candidate.raw'),
       MISSION_CANDIDATE_SPEC_SHA256: 'A'.repeat(64),
     })).toThrow(/lowercase|format/i);
     expect(() => resolveEvidenceCandidateBinding({
       HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'a'.repeat(64),
     })).toThrow(/external.*pair|path.*sha/i);
     expect(() => resolveEvidenceCandidateBinding({
-      MISSION_CANDIDATE_SPEC_PATH: 'candidate.raw,target=/work',
+      MISSION_CANDIDATE_SPEC_PATH: resolve('candidate.raw,target=/work'),
       MISSION_CANDIDATE_SPEC_SHA256: 'a'.repeat(64),
     })).toThrow(/bind mount|safe/i);
+
+    const relativePath = 'e2e/visual/case-catalog.v2.json';
+    expect(() => resolveEvidenceCandidateBinding({
+      MISSION_CANDIDATE_SPEC_PATH: relativePath,
+      MISSION_CANDIDATE_SPEC_SHA256: sha256Bytes(readFileSync(relativePath)),
+    })).toThrow(/absolute/i);
   });
 
   it('hashes the external raw bytes and mounts only that file read-only', () => {

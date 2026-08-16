@@ -39,7 +39,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
       route: '/',
       build: 'production-dist',
       rendered_product_sha: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
-      rendered_product_tree_sha256: '9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25',
+      rendered_product_tree_sha256: '64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368',
     });
     expect(candidate.runtime).toMatchObject({
       locale: 'ko-KR',
@@ -141,7 +141,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
       });
       expect(result.visual.binding).toMatchObject({
         rendered_product_sha: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
-        rendered_product_tree_sha256: '9f7f2c06c7caa9e77a155163654cc8107670fe8c9d9cc059d1f4a6ca427bcf25',
+        rendered_product_tree_sha256: '64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368',
         evidence_producer_sha: 'a'.repeat(40),
         candidate_spec_sha256: releaseCandidateSha256,
       });
@@ -180,6 +180,15 @@ describe('Home visual/a11y evidence v2 contract', () => {
 
   it('pins CI actions/container and never updates snapshots in CI', () => {
     const workflow = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8');
+    const checkoutSteps = [...workflow.matchAll(
+      /^\s*- uses: actions\/checkout@([0-9a-f]{40})[^\r\n]*\r?\n\s+with:\r?\n((?:\s{10,}[^\r\n]+\r?\n?)+)/gm,
+    )].map((match) => ({ sha: match[1], withBlock: match[2] }));
+    expect(checkoutSteps).toHaveLength(2);
+    for (const checkout of checkoutSteps) {
+      expect(checkout.sha).toBe('11bd71901bbe5b1630ceea73d27597364c9af683');
+      expect(checkout.withBlock).toMatch(/^\s+fetch-depth:\s*0\s*$/m);
+      expect(checkout.withBlock).toMatch(/^\s+persist-credentials:\s*false\s*$/m);
+    }
     expect(workflow).toContain('mcr.microsoft.com/playwright:v1.61.1-noble@sha256:');
     expect(workflow).toContain('actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683');
     expect(workflow).not.toContain('--update-snapshots');
