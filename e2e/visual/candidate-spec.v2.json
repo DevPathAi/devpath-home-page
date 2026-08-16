@@ -5,7 +5,8 @@
   "surface": {
     "repository": "DevPathAi/devpath-home-page",
     "route": "/",
-    "build": "production-dist"
+    "build": "production-dist",
+    "rendered_product_sha": "be9e34881fcf3aca686481f231372f9377a02544"
   },
   "runtime": {
     "browser": "chromium",

@@ -20,6 +20,10 @@ import { updateVisualBaselines } from '../scripts/update-visual-baselines.mjs';
 import { runEvidenceCase } from '../e2e/visual/support/evidence-recorder.js';
 
 const root = join(import.meta.dirname, '..');
+const baselineHashes = new Map(JSON.parse(readFileSync(
+  join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
+  'utf8',
+)).artifacts.map(({ case_id: caseId, sha256 }) => [caseId, sha256]));
 
 describe('Home visual/a11y evidence v2 contract', () => {
   it('pins a production-dist, deterministic light-theme candidate spec', () => {
@@ -33,6 +37,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
       repository: 'DevPathAi/devpath-home-page',
       route: '/',
       build: 'production-dist',
+      rendered_product_sha: 'be9e34881fcf3aca686481f231372f9377a02544',
     });
     expect(candidate.runtime).toMatchObject({
       locale: 'ko-KR',
@@ -111,7 +116,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
           status: 'passed',
           check_count: entry.checks.length,
           failed_check_count: 0,
-          artifact_sha256: entry.kind === 'visual' ? 'c'.repeat(64) : null,
+          artifact_sha256: entry.kind === 'visual' ? baselineHashes.get(entry.id) : null,
           violation_counts: entry.kind === 'a11y'
             ? { critical: 0, serious: 0, moderate: 0, minor: 0, total: 0 }
             : null,
@@ -122,12 +127,14 @@ describe('Home visual/a11y evidence v2 contract', () => {
         recordsDirectory: records,
         outputDirectory: output,
         environment: {
-          HOME_SOURCE_SHA: 'a'.repeat(40),
+          HOME_RENDERED_PRODUCT_SHA: 'be9e34881fcf3aca686481f231372f9377a02544',
+          HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
           HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
         },
       });
       expect(result.visual.binding).toMatchObject({
-        home_source_sha: 'a'.repeat(40),
+        rendered_product_sha: 'be9e34881fcf3aca686481f231372f9377a02544',
+        evidence_producer_sha: 'a'.repeat(40),
         candidate_spec_sha256: 'b'.repeat(64),
       });
       expect(result.visual.summary.failed).toBe(0);
@@ -138,7 +145,8 @@ describe('Home visual/a11y evidence v2 contract', () => {
       });
       expect(JSON.stringify(result)).not.toMatch(/private learner|"screenshot_path"|"selector"/);
       const environment = {
-        HOME_SOURCE_SHA: 'a'.repeat(40),
+        HOME_RENDERED_PRODUCT_SHA: 'be9e34881fcf3aca686481f231372f9377a02544',
+        HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
         HOME_VISUAL_CANDIDATE_SPEC_SHA256: 'b'.repeat(64),
       };
       expect(() => validateEvidenceManifest(result.visual, {

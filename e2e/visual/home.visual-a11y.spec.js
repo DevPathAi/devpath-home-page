@@ -20,6 +20,50 @@ import {
 
 const catalog = loadCaseCatalog();
 const baselineDirectory = join(VISUAL_ROOT, 'baselines');
+const TEXT_RESIZE_200_CSS = `
+  :root {
+    --dp-type-display-small: 400 72px/88px "Pretendard";
+    --dp-type-headline-small: 600 48px/64px "Pretendard";
+    --dp-type-title-large: 700 40px/56px "Pretendard";
+    --dp-type-title-medium: 600 32px/48px "Pretendard";
+    --dp-type-title-small: 600 28px/40px "Pretendard";
+    --dp-type-body-large: 400 32px/51.2px "Pretendard";
+    --dp-type-body-medium: 400 28px/44.8px "Pretendard";
+    --dp-type-body-small: 400 26px/40px "Pretendard";
+    --dp-type-label-large: 600 28px/40px "Pretendard";
+    --dp-type-label-medium: 600 24px/32px "Pretendard";
+    --dp-type-label-small: 500 22px/32px "Pretendard";
+    --dp-type-code: 400 28px/42px "D2Coding";
+  }
+  html { font-size: 200% !important; }
+`;
+const TARGET_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  'summary',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+const INLINE_TARGET_EXCEPTIONS = Object.freeze([
+  {
+    selector: '.traction__fallback a',
+    case: 'wcag-2.5.8-inline-text',
+    reason: 'The traction link is embedded in fallback prose.',
+  },
+  {
+    selector: '.faq__list dd a',
+    case: 'wcag-2.5.8-inline-text',
+    reason: 'FAQ links are embedded in answer sentences.',
+  },
+]);
+const REQUIRED_TARGET_SELECTORS = Object.freeze([
+  '.skip-link',
+  '.wordmark',
+  '.founder__more a',
+  '.traction__fallback a',
+]);
 
 function hashFile(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
@@ -34,6 +78,17 @@ async function assertNoHorizontalOverflow(page) {
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
+}
+
+async function fontSizes(page) {
+  return page.evaluate(() => Object.fromEntries([
+    ['body', '.hero__support'],
+    ['label', '.eyebrow'],
+    ['heading', '#outcome-preview-title'],
+  ].map(([name, selector]) => [
+    name,
+    Number.parseFloat(getComputedStyle(document.querySelector(selector)).fontSize),
+  ])));
 }
 
 test.describe('Home production-dist permanent visual evidence', () => {
@@ -69,16 +124,40 @@ test.describe('Home production-dist automated accessibility evidence', () => {
   test('home-axe-wcag-aa', async ({ page }, testInfo) => {
     const entry = catalogCase('home-axe-wcag-aa');
     await runEvidenceCase({ testInfo, catalogCase: entry }, async () => {
-      await page.setViewportSize(entry.viewport);
+      await page.setViewportSize({ width: 320, height: entry.viewport.height });
       const runtime = await prepareDeterministicPage(page);
-      const results = await new AxeBuilder({ page })
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-        .analyze();
-      const counts = violationCounts(results.violations);
+      const states = [];
+      for (const width of [320, 600, 840, 1240]) {
+        await page.setViewportSize({ width, height: entry.viewport.height });
+        if (width !== 320) {
+          await page.locator('details.mobile-nav').evaluate((details) => details.removeAttribute('open'));
+        }
+        states.push({ name: `${width}-closed`, width });
+        if (width === 320) {
+          await page.locator('.mobile-nav__toggle').click();
+          states.push({ name: '320-open', width });
+        }
+      }
+      const violations = [];
+      for (const state of states) {
+        await page.setViewportSize({ width: state.width, height: entry.viewport.height });
+        await page.locator('details.mobile-nav').evaluate((details, open) => {
+          details.toggleAttribute('open', open);
+        }, state.name.endsWith('-open'));
+        const results = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze();
+        violations.push(...results.violations.map((violation) => ({
+          ...violation,
+          state: state.name,
+        })));
+      }
+      const counts = violationCounts(violations);
       try {
-        expect(results.violations.map(({ id, impact, nodes }) => ({
+        expect(violations.map(({ id, impact, nodes, state }) => ({
           id,
           impact,
+          state,
           targets: nodes.map((node) => node.target),
         }))).toEqual([]);
       } catch (cause) {
@@ -89,7 +168,13 @@ test.describe('Home production-dist automated accessibility evidence', () => {
         }
         throw cause;
       }
-      expect(runtime.fontState).toEqual({ status: 'loaded', pretendard: true, d2coding: true });
+      expect(runtime.fontState.required).toEqual([
+        { family: 'Pretendard', weight: 400, loaded: true },
+        { family: 'Pretendard', weight: 500, loaded: true },
+        { family: 'Pretendard', weight: 600, loaded: true },
+        { family: 'Pretendard', weight: 700, loaded: true },
+        { family: 'D2Coding', weight: 400, loaded: true },
+      ]);
       // External font/ads requests are blocked before transmission; only the local dist,
       // pinned local fonts, and deterministic same-origin API fixtures may complete.
       expect(runtime.getExternalRequestCount()).toBeGreaterThanOrEqual(1);
@@ -102,7 +187,14 @@ test.describe('Home production-dist automated accessibility evidence', () => {
     await runEvidenceCase({ testInfo, catalogCase: entry }, async () => {
       await page.setViewportSize(entry.viewport);
       await prepareDeterministicPage(page);
-      await page.addStyleTag({ content: 'html { font-size: 200% !important; }' });
+      const before = await fontSizes(page);
+      await page.addStyleTag({ content: TEXT_RESIZE_200_CSS });
+      const after = await fontSizes(page);
+      expect(after).toEqual({
+        body: before.body * 2,
+        label: before.label * 2,
+        heading: before.heading * 2,
+      });
       await page.locator('.outcome-preview__context dd').first().evaluate((element) => {
         element.textContent = '학습경로식별자-가나다라마바사아자차카타파하-ABCDEF0123456789'.repeat(4);
       });
@@ -122,20 +214,97 @@ test.describe('Home production-dist automated accessibility evidence', () => {
     await runEvidenceCase({ testInfo, catalogCase: entry }, async () => {
       await page.setViewportSize(entry.viewport);
       await prepareDeterministicPage(page);
+      const expectedOrder = await page.evaluate((selector) => {
+        const controls = [...new Set(document.querySelectorAll(selector))]
+          .filter((element) => {
+            const style = getComputedStyle(element);
+            return element.tabIndex >= 0
+              && style.display !== 'none'
+              && style.visibility !== 'hidden'
+              && element.getClientRects().length > 0;
+          });
+        controls.forEach((element, index) => {
+          element.dataset.auditFocusId = `focus-${index}`;
+        });
+        document.activeElement?.blur();
+        return controls.map((element) => element.dataset.auditFocusId);
+      }, TARGET_SELECTOR);
+      expect(expectedOrder.length).toBeGreaterThan(20);
+
+      const visited = [];
+      for (const expectedId of expectedOrder) {
+        await page.keyboard.press('Tab');
+        const focus = await page.evaluate(() => {
+          const element = document.activeElement;
+          const style = getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return {
+            id: element.dataset.auditFocusId,
+            outlineWidth: Number.parseFloat(style.outlineWidth),
+            outlineStyle: style.outlineStyle,
+            outlineColor: style.outlineColor,
+            rect: { top: rect.top, right: rect.right, bottom: rect.bottom, left: rect.left },
+            viewport: { width: innerWidth, height: innerHeight },
+          };
+        });
+        expect(focus.id).toBe(expectedId);
+        expect(focus.outlineWidth).toBeGreaterThanOrEqual(2);
+        expect(focus.outlineStyle).not.toBe('none');
+        expect(focus.outlineColor).not.toBe('rgba(0, 0, 0, 0)');
+        expect(focus.rect.top).toBeGreaterThanOrEqual(-1);
+        expect(focus.rect.left).toBeGreaterThanOrEqual(-1);
+        expect(focus.rect.bottom).toBeLessThanOrEqual(focus.viewport.height + 1);
+        expect(focus.rect.right).toBeLessThanOrEqual(focus.viewport.width + 1);
+        visited.push(focus.id);
+      }
+      expect(visited).toEqual(expectedOrder);
+      expect(new Set(visited).size).toBe(expectedOrder.length);
       await page.keyboard.press('Tab');
+      if (await page.evaluate(() => document.activeElement === document.body)) {
+        await page.keyboard.press('Tab');
+      }
+      expect(await page.evaluate(() => document.activeElement.dataset.auditFocusId)).toBe(expectedOrder[0]);
+
       const skip = page.locator('.skip-link');
-      await expect(skip).toBeFocused();
-      await expect(skip).toBeVisible();
-      const focus = await skip.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return { width: style.outlineWidth, style: style.outlineStyle };
-      });
-      expect(Number.parseFloat(focus.width)).toBeGreaterThanOrEqual(2);
-      expect(focus.style).not.toBe('none');
+      await skip.focus();
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(/\/#main$/);
-      await page.keyboard.press('Tab');
-      expect(await page.evaluate(() => document.activeElement !== document.body)).toBe(true);
+      await page.evaluate(() => history.replaceState(null, '', `${location.pathname}${location.search}`));
+
+      for (const id of expectedOrder) {
+        const control = page.locator(`[data-audit-focus-id="${id}"]`);
+        const descriptor = await control.evaluate((element) => ({
+          tag: element.tagName.toLowerCase(),
+          type: element.getAttribute('type') || '',
+          selectedIndex: element instanceof HTMLSelectElement ? element.selectedIndex : null,
+        }));
+        await control.focus();
+        if (['a', 'button', 'summary'].includes(descriptor.tag)) {
+          await control.evaluate((element, activationId) => {
+            window.__auditActivation = null;
+            element.addEventListener('click', (event) => {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              window.__auditActivation = activationId;
+            }, { capture: true, once: true });
+          }, id);
+          await page.keyboard.press('Enter');
+          expect(await page.evaluate(() => window.__auditActivation)).toBe(id);
+        } else if (descriptor.type === 'checkbox') {
+          const before = await control.isChecked();
+          await page.keyboard.press('Space');
+          expect(await control.isChecked()).toBe(!before);
+          await control.setChecked(before);
+        } else if (descriptor.tag === 'select') {
+          await page.keyboard.press('ArrowDown');
+          expect(await control.evaluate((element) => element.selectedIndex)).not.toBe(descriptor.selectedIndex);
+          await control.evaluate((element, index) => { element.selectedIndex = index; }, descriptor.selectedIndex);
+        } else if (['input', 'textarea'].includes(descriptor.tag)) {
+          await page.keyboard.type('x');
+          expect(await control.inputValue()).toBe('x');
+          await control.fill('');
+        }
+      }
       return { checkCount: entry.checks.length, violationCounts: violationCounts() };
     });
   });
@@ -169,30 +338,74 @@ test.describe('Home production-dist automated accessibility evidence', () => {
     const entry = catalogCase('home-targets-44');
     await runEvidenceCase({ testInfo, catalogCase: entry }, async () => {
       await page.setViewportSize(entry.viewport);
-      await prepareDeterministicPage(page);
+      await prepareDeterministicPage(page, {
+        statsFixture: { ok: true, signups: 0, diagnoses_completed: 0, satisfaction: null },
+      });
       await page.locator('.mobile-nav__toggle').click();
-      const undersized = await page.locator([
-        '.btn',
-        '.mobile-nav__toggle',
-        '.mobile-nav__panel a',
-        '.outcome-preview__action a',
-        '.site-footer__links a',
-        '.lcs-tab',
-        '.lead-form input:not([type="checkbox"])',
-        '.lead-form select',
-        '.lead-form textarea',
-      ].join(',')).evaluateAll((elements) => elements.flatMap((element) => {
-        const box = element.getBoundingClientRect();
-        const visible = box.width > 0 && box.height > 0 && getComputedStyle(element).visibility !== 'hidden';
-        if (!visible || (box.width >= 44 && box.height >= 44)) return [];
-        return [{
-          tag: element.tagName.toLowerCase(),
-          class_name: [...element.classList].sort().join('.'),
-          width: Math.round(box.width),
-          height: Math.round(box.height),
-        }];
-      }));
-      expect(undersized).toEqual([]);
+      const audit = await page.evaluate(({ selector, exceptionRules, requiredSelectors }) => {
+        const elements = [...new Set(document.querySelectorAll(selector))]
+          .filter((element) => {
+            const style = getComputedStyle(element);
+            return style.display !== 'none'
+              && style.visibility !== 'hidden'
+              && element.getClientRects().length > 0;
+          });
+        const undersized = [];
+        const exceptions = [];
+        const invalidExceptions = [];
+        for (const [index, element] of elements.entries()) {
+          element.dataset.auditTargetId = `target-${index}`;
+          const rule = exceptionRules.find(({ selector: candidate }) => element.matches(candidate));
+          if (rule) {
+            const inline = getComputedStyle(element).display === 'inline';
+            const embeddedInProse = element.parentElement
+              && element.parentElement.textContent.trim() !== element.textContent.trim();
+            exceptions.push({ selector: rule.selector, case: rule.case, reason: rule.reason });
+            if (!inline || !embeddedInProse) {
+              invalidExceptions.push({ selector: rule.selector, inline, embeddedInProse });
+            }
+            continue;
+          }
+          element.focus({ preventScroll: true });
+          const hitTarget = element.matches('input[type="checkbox"]')
+            ? element.closest('label') || element
+            : element;
+          const box = hitTarget.getBoundingClientRect();
+          if (box.width < 44 || box.height < 44) {
+            undersized.push({
+              id: element.dataset.auditTargetId,
+              tag: element.tagName.toLowerCase(),
+              class_name: [...element.classList].sort().join('.'),
+              width: Math.round(box.width),
+              height: Math.round(box.height),
+            });
+          }
+        }
+        return {
+          enumerated: elements.length,
+          requiredTargets: Object.fromEntries(requiredSelectors.map((requiredSelector) => [
+            requiredSelector,
+            elements.filter((element) => element.matches(requiredSelector)).length,
+          ])),
+          undersized,
+          exceptions,
+          invalidExceptions,
+        };
+      }, {
+        selector: TARGET_SELECTOR,
+        exceptionRules: INLINE_TARGET_EXCEPTIONS,
+        requiredSelectors: REQUIRED_TARGET_SELECTORS,
+      });
+      expect(audit.enumerated).toBeGreaterThan(25);
+      expect(audit.requiredTargets).toEqual(Object.fromEntries(
+        REQUIRED_TARGET_SELECTORS.map((selector) => [selector, 1]),
+      ));
+      expect(audit.invalidExceptions).toEqual([]);
+      expect(new Set(audit.exceptions.map((exception) => exception.selector))).toEqual(
+        new Set(INLINE_TARGET_EXCEPTIONS.map((exception) => exception.selector)),
+      );
+      expect(audit.exceptions.every((exception) => exception.case && exception.reason)).toBe(true);
+      expect(audit.undersized).toEqual([]);
       return { checkCount: entry.checks.length, violationCounts: violationCounts() };
     });
   });

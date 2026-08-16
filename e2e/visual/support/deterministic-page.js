@@ -46,7 +46,10 @@ async function hydrateDeterministically(page) {
   await page.evaluate(() => window.scrollTo(0, 0));
 }
 
-export async function prepareDeterministicPage(page, { animationsOff = true } = {}) {
+export async function prepareDeterministicPage(
+  page,
+  { animationsOff = true, statsFixture = STATS_FIXTURE } = {},
+) {
   const candidate = readCandidate();
   const fonts = await loadVisualFontAssets();
   const fontByPath = new Map(fonts.map((font) => [`/__visual_fonts__/${font.file}`, font]));
@@ -91,7 +94,7 @@ export async function prepareDeterministicPage(page, { animationsOff = true } = 
       return;
     }
     if (url.pathname === '/api/stats') {
-      await route.fulfill({ status: 200, json: STATS_FIXTURE });
+      await route.fulfill({ status: 200, json: statsFixture });
       return;
     }
     if (url.pathname === '/api/lead') {
@@ -115,15 +118,33 @@ export async function prepareDeterministicPage(page, { animationsOff = true } = 
       }
     ` });
   }
-  await page.evaluate(async () => {
+  const requiredFontTuples = fonts.map(({ family, weight }) => ({ family, weight }));
+  await page.evaluate(async (required) => {
+    await Promise.all(required.map(({ family, weight }) => (
+      document.fonts.load(`${weight} 16px "${family}"`)
+    )));
     await document.fonts.ready;
-  });
-  const fontState = await page.evaluate(() => ({
-    status: document.fonts.status,
-    pretendard: document.fonts.check('16px Pretendard'),
-    d2coding: document.fonts.check('16px D2Coding'),
-  }));
-  expect(fontState).toEqual({ status: 'loaded', pretendard: true, d2coding: true });
+  }, requiredFontTuples);
+  const fontState = await page.evaluate((required) => {
+    const faces = [...document.fonts].map((face) => ({
+      family: face.family.replaceAll('"', ''),
+      weight: Number(face.weight),
+      status: face.status,
+    }));
+    return {
+      status: document.fonts.status,
+      required: required.map((tuple) => ({
+        ...tuple,
+        loaded: faces.some((face) => (
+          face.family === tuple.family
+          && face.weight === tuple.weight
+          && face.status === 'loaded'
+        )),
+      })),
+    };
+  }, requiredFontTuples);
+  expect(fontState.status).toBe('loaded');
+  expect(fontState.required).toEqual(requiredFontTuples.map((tuple) => ({ ...tuple, loaded: true })));
 
   await hydrateDeterministically(page);
   const stylesheets = await page.locator('link[rel="stylesheet"]').evaluateAll((links) => (

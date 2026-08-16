@@ -12,7 +12,8 @@
     "cache_directory": { "const": ".visual-cache/fonts" },
     "fonts": {
       "type": "array",
-      "minItems": 2,
+      "minItems": 5,
+      "maxItems": 5,
       "items": {
         "type": "object",
         "additionalProperties": false,

@@ -22,6 +22,57 @@ const SHA40 = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[a-z0-9]+(?:[a-z0-9._-]*[a-z0-9])?$/;
 const CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const PNG_SIGNATURE = '89504e470d0a1a0a';
+const EXPECTED_CASES = Object.freeze([
+  { id: 'home-light-compact-320', kind: 'visual', width: 320, height: 900, checkCount: 3 },
+  { id: 'home-light-medium-600', kind: 'visual', width: 600, height: 900, checkCount: 3 },
+  { id: 'home-light-expanded-840', kind: 'visual', width: 840, height: 900, checkCount: 3 },
+  { id: 'home-light-large-1240', kind: 'visual', width: 1240, height: 900, checkCount: 3 },
+  { id: 'home-axe-wcag-aa', kind: 'a11y', width: 1240, height: 900, checkCount: 12 },
+  { id: 'home-reflow-200-long-ko', kind: 'a11y', width: 320, height: 900, checkCount: 6 },
+  { id: 'home-keyboard-focus', kind: 'a11y', width: 1240, height: 900, checkCount: 7 },
+  { id: 'home-heading-primary', kind: 'a11y', width: 1240, height: 900, checkCount: 3 },
+  { id: 'home-targets-44', kind: 'a11y', width: 320, height: 900, checkCount: 4 },
+  { id: 'home-reduced-motion', kind: 'a11y', width: 1240, height: 900, checkCount: 2 },
+  { id: 'home-mobile-menu-escape', kind: 'a11y', width: 320, height: 900, checkCount: 3 },
+]);
+const EXPECTED_FONT_FILES = Object.freeze([
+  {
+    family: 'Pretendard',
+    weight: 400,
+    file: 'Pretendard-Regular.woff2',
+    url: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Regular.woff2',
+    sha256: 'fad853f7f47c6c8b103171e7193fa095708cdcd70850a71d93aa5379e8a61d63',
+  },
+  {
+    family: 'Pretendard',
+    weight: 500,
+    file: 'Pretendard-Medium.woff2',
+    url: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Medium.woff2',
+    sha256: 'd03481330eeba0659ab5b87f25ceb504a35de377dd90a0d0aba2982eb2d05e2c',
+  },
+  {
+    family: 'Pretendard',
+    weight: 600,
+    file: 'Pretendard-SemiBold.woff2',
+    url: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2',
+    sha256: 'c863f76a7de5c1ddc1ed8b2fa794964530774592c4f31407a84e2a2ae93f17f0',
+  },
+  {
+    family: 'Pretendard',
+    weight: 700,
+    file: 'Pretendard-Bold.woff2',
+    url: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Bold.woff2',
+    sha256: '4609c3356e536fafe38f4add0daeceb3d8595d3057bce13c428c33ddbd43d362',
+  },
+  {
+    family: 'D2Coding',
+    weight: 400,
+    file: 'D2Coding-Regular.woff2',
+    url: 'https://cdn.jsdelivr.net/npm/d2coding@1.3.2/fonts/d2coding-subset.woff2',
+    sha256: '5d54097ce55cf1893761203191fa6795d49cab22120675b966eae1082f6f9c3c',
+  },
+]);
 const FORBIDDEN_EVIDENCE_KEYS = new Set([
   'raw_content',
   'content',
@@ -98,7 +149,11 @@ export function validateCandidateSpec(value) {
     throw new Error('candidate-spec must be schema v2');
   }
   exactString(value.$schema, 'candidate-spec.$schema', /^\.\/schema\/candidate-spec-v2\.schema\.json$/);
-  exactKeys(value.surface, ['repository', 'route', 'build'], 'candidate-spec.surface');
+  exactKeys(
+    value.surface,
+    ['repository', 'route', 'build', 'rendered_product_sha'],
+    'candidate-spec.surface',
+  );
   if (
     value.surface.repository !== 'DevPathAi/devpath-home-page'
     || value.surface.route !== '/'
@@ -106,6 +161,12 @@ export function validateCandidateSpec(value) {
   ) {
     throw new Error('candidate-spec surface must be canonical production-dist Home');
   }
+  exactString(
+    value.surface.rendered_product_sha,
+    'candidate-spec.surface.rendered_product_sha',
+    SHA40,
+    40,
+  );
   exactKeys(value.runtime, [
     'browser',
     'playwright_version',
@@ -221,6 +282,16 @@ export function validateCaseCatalog(value) {
   if (JSON.stringify(widths) !== JSON.stringify([320, 600, 840, 1240])) {
     throw new Error('visual cases must cover exactly 320/600/840/1240 in order');
   }
+  const caseContract = value.cases.map((entry) => ({
+    id: entry.id,
+    kind: entry.kind,
+    width: entry.viewport.width,
+    height: entry.viewport.height,
+    checkCount: entry.checks.length,
+  }));
+  if (JSON.stringify(caseContract) !== JSON.stringify(EXPECTED_CASES)) {
+    throw new Error('case catalog ID/kind/viewport/check-count order drifted');
+  }
   return value;
 }
 
@@ -234,7 +305,9 @@ export function validateFontManifest(value) {
     throw new Error('font-manifest must be schema v2');
   }
   if (value.cache_directory !== '.visual-cache/fonts') throw new Error('font cache path drifted');
-  if (!Array.isArray(value.fonts) || value.fonts.length !== 4) throw new Error('four pinned font files are required');
+  if (!Array.isArray(value.fonts) || value.fonts.length !== EXPECTED_FONT_FILES.length) {
+    throw new Error('the complete pinned production font tuple set is required');
+  }
   const files = new Set();
   for (const [index, font] of value.fonts.entries()) {
     const path = `font-manifest.fonts[${index}]`;
@@ -247,6 +320,16 @@ export function validateFontManifest(value) {
     files.add(font.file);
     exactString(font.url, `${path}.url`, /^https:\/\/cdn\.jsdelivr\.net\//, 300);
     exactString(font.sha256, `${path}.sha256`, SHA256, 64);
+  }
+  const pinnedFiles = value.fonts.map(({ family, weight, file, url, sha256 }) => ({
+    family,
+    weight,
+    file,
+    url,
+    sha256,
+  }));
+  if (JSON.stringify(pinnedFiles) !== JSON.stringify(EXPECTED_FONT_FILES)) {
+    throw new Error('font family/weight tuple, URL, or SHA-256 drifted');
   }
   return value;
 }
@@ -287,18 +370,31 @@ function validateRuntime(value, path) {
   if (JSON.stringify(value) !== JSON.stringify(expected)) throw new Error(`${path} does not match candidate-spec`);
 }
 
-function validateEvidenceCase(entry, documentType, path) {
+function validateEvidenceCase(entry, expected, documentType, path) {
   const visual = documentType === 'home-visual-evidence';
   const required = visual
     ? ['case_id', 'status', 'theme', 'viewport', 'check_count', 'failed_check_count', 'artifact_sha256']
     : ['case_id', 'status', 'theme', 'viewport', 'check_count', 'failed_check_count', 'violation_counts'];
   exactKeys(entry, required, path);
   exactString(entry.case_id, `${path}.case_id`, CASE_ID, 80);
+  if (entry.case_id !== expected.id) throw new Error(`${path}.case_id drifted from catalog order`);
   if (!['passed', 'failed'].includes(entry.status)) throw new Error(`${path}.status is invalid`);
   if (entry.theme !== 'light') throw new Error(`${path}.theme must be light`);
   validateViewport(entry.viewport, `${path}.viewport`);
+  if (JSON.stringify(entry.viewport) !== JSON.stringify(expected.viewport)) {
+    throw new Error(`${path}.viewport drifted from catalog`);
+  }
   boundedInteger(entry.check_count, `${path}.check_count`, 1, 1000);
+  if (entry.check_count !== expected.checks.length) {
+    throw new Error(`${path}.check_count drifted from catalog`);
+  }
   boundedInteger(entry.failed_check_count, `${path}.failed_check_count`, 0, entry.check_count);
+  if (entry.status === 'passed' && entry.failed_check_count !== 0) {
+    throw new Error(`${path} passed but reports failed checks`);
+  }
+  if (entry.status === 'failed' && entry.failed_check_count < 1) {
+    throw new Error(`${path} failed without a failed check`);
+  }
   if (visual) {
     exactString(entry.artifact_sha256, `${path}.artifact_sha256`, SHA256, 64);
   } else {
@@ -311,18 +407,26 @@ function validateEvidenceCase(entry, documentType, path) {
       + entry.violation_counts.moderate
       + entry.violation_counts.minor;
     if (entry.violation_counts.total !== total) throw new Error(`${path}.violation_counts.total is inconsistent`);
+    if (entry.status === 'passed' && total !== 0) {
+      throw new Error(`${path} passed with accessibility violations`);
+    }
   }
 }
 
 export function validateEvidenceManifest(
   value,
-  { environment = process.env, enforceBindings = false } = {},
+  {
+    environment = process.env,
+    enforceBindings = false,
+    requirePassing = false,
+  } = {},
 ) {
   assertSanitized(value);
   exactKeys(value, [
     '$schema',
     'schema_version',
     'document_type',
+    'evidence_mode',
     'binding',
     'runtime',
     'theme_coverage',
@@ -334,15 +438,28 @@ export function validateEvidenceManifest(
   if (value.schema_version !== 2 || !['home-visual-evidence', 'home-a11y-evidence'].includes(value.document_type)) {
     throw new Error('evidence must be a visual/a11y schema v2 manifest');
   }
-  exactKeys(value.binding, ['repository', 'home_source_sha', 'candidate_spec_sha256', 'case_catalog_sha256', 'font_manifest_sha256'], 'evidence.binding');
+  if (!['release_ready', 'diagnostic_pending_review', 'diagnostic_failure'].includes(value.evidence_mode)) {
+    throw new Error('evidence mode is invalid');
+  }
+  exactKeys(value.binding, [
+    'repository',
+    'rendered_product_sha',
+    'evidence_producer_sha',
+    'candidate_spec_sha256',
+    'case_catalog_sha256',
+    'font_manifest_sha256',
+  ], 'evidence.binding');
   if (value.binding.repository !== 'DevPathAi/devpath-home-page') throw new Error('evidence repository is not canonical');
-  exactString(value.binding.home_source_sha, 'evidence.binding.home_source_sha', SHA40, 40);
+  exactString(value.binding.rendered_product_sha, 'evidence.binding.rendered_product_sha', SHA40, 40);
+  exactString(value.binding.evidence_producer_sha, 'evidence.binding.evidence_producer_sha', SHA40, 40);
   for (const field of ['candidate_spec_sha256', 'case_catalog_sha256', 'font_manifest_sha256']) {
     exactString(value.binding[field], `evidence.binding.${field}`, SHA256, 64);
   }
   if (enforceBindings) {
+    const candidate = validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
     const expectedBinding = {
-      home_source_sha: currentHomeSha(environment),
+      rendered_product_sha: renderedProductSha(candidate, environment),
+      evidence_producer_sha: currentEvidenceProducerSha(environment),
       candidate_spec_sha256: evidenceCandidateSha(environment),
       case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
       font_manifest_sha256: sha256File(FONT_MANIFEST_PATH),
@@ -383,13 +500,59 @@ export function validateEvidenceManifest(
   if (value.baseline_review.review_id !== null) {
     exactString(value.baseline_review.review_id, 'evidence.baseline_review.review_id', SAFE_ID, 80);
   }
+  if (enforceBindings) {
+    const expectedSummary = baselineReviewSummary(environment);
+    if (JSON.stringify(value.baseline_review) !== JSON.stringify(expectedSummary)) {
+      throw new Error('evidence baseline review summary does not match verified baseline metadata');
+    }
+  }
   exactKeys(value.summary, ['required', 'passed', 'failed'], 'evidence.summary');
   for (const [key, count] of Object.entries(value.summary)) boundedInteger(count, `evidence.summary.${key}`, 0, 1000);
   if (value.summary.required !== value.summary.passed + value.summary.failed) {
     throw new Error('evidence summary counts are inconsistent');
   }
   if (!Array.isArray(value.cases)) throw new Error('evidence.cases must be an array');
-  value.cases.forEach((entry, index) => validateEvidenceCase(entry, value.document_type, `evidence.cases[${index}]`));
+  const kind = value.document_type === 'home-visual-evidence' ? 'visual' : 'a11y';
+  const expectedCases = loadCaseCatalog().cases.filter((entry) => entry.kind === kind);
+  if (value.cases.length !== expectedCases.length || value.summary.required !== expectedCases.length) {
+    throw new Error('evidence required case count drifted from catalog');
+  }
+  value.cases.forEach((entry, index) => validateEvidenceCase(
+    entry,
+    expectedCases[index],
+    value.document_type,
+    `evidence.cases[${index}]`,
+  ));
+  if (enforceBindings && kind === 'visual') {
+    for (const [index, expected] of expectedCases.entries()) {
+      const artifactPath = join(VISUAL_ROOT, 'baselines', expected.artifact);
+      if (!existsSync(artifactPath)) {
+        throw new Error(`evidence baseline artifact is missing: ${expected.artifact}`);
+      }
+      if (
+        value.cases[index].status === 'passed'
+        && value.cases[index].artifact_sha256 !== sha256File(artifactPath)
+      ) {
+        throw new Error(`evidence artifact hash does not match baseline PNG: ${expected.id}`);
+      }
+    }
+  }
+  const actualPassed = value.cases.filter((entry) => entry.status === 'passed').length;
+  const actualFailed = value.cases.length - actualPassed;
+  if (value.summary.passed !== actualPassed || value.summary.failed !== actualFailed) {
+    throw new Error('evidence summary does not match ordered case results');
+  }
+  const expectedMode = actualFailed > 0
+    ? 'diagnostic_failure'
+    : kind === 'visual' && value.baseline_review.status !== 'approved'
+      ? 'diagnostic_pending_review'
+      : 'release_ready';
+  if (value.evidence_mode !== expectedMode) {
+    throw new Error(`evidence_mode must be ${expectedMode}`);
+  }
+  if (requirePassing && (actualFailed !== 0 || actualPassed !== expectedCases.length)) {
+    throw new Error('all required evidence cases must be passing with failed=0');
+  }
   exactKeys(value.privacy, ['classification', 'contains_raw_content'], 'evidence.privacy');
   if (value.privacy.classification !== 'sanitized-aggregate-only' || value.privacy.contains_raw_content !== false) {
     throw new Error('evidence privacy contract is invalid');
@@ -397,8 +560,8 @@ export function validateEvidenceManifest(
   return value;
 }
 
-export function validateBaselineReview(value) {
-  exactKeys(value, ['schema_version', 'document_type', 'status', 'review_id', 'reviewer', 'reason', 'reviewed_at', 'home_source_sha', 'candidate_spec_sha256', 'case_catalog_sha256', 'artifacts'], 'baseline-review');
+export function validateBaselineReview(value, { enforceBindings = false } = {}) {
+  exactKeys(value, ['schema_version', 'document_type', 'status', 'review_id', 'reviewer', 'reason', 'reviewed_at', 'rendered_product_sha', 'candidate_spec_sha256', 'case_catalog_sha256', 'artifacts'], 'baseline-review');
   if (value.schema_version !== 2 || value.document_type !== 'home-visual-baseline-review') {
     throw new Error('baseline review must be schema v2');
   }
@@ -411,7 +574,7 @@ export function validateBaselineReview(value) {
   } else if (value.reviewed_at !== null) {
     throw new Error('pending baseline review must not claim a review timestamp');
   }
-  exactString(value.home_source_sha, 'baseline-review.home_source_sha', SHA40, 40);
+  exactString(value.rendered_product_sha, 'baseline-review.rendered_product_sha', SHA40, 40);
   exactString(value.candidate_spec_sha256, 'baseline-review.candidate_spec_sha256', SHA256, 64);
   exactString(value.case_catalog_sha256, 'baseline-review.case_catalog_sha256', SHA256, 64);
   if (!Array.isArray(value.artifacts) || value.artifacts.length !== 4) throw new Error('baseline review requires four artifacts');
@@ -419,6 +582,38 @@ export function validateBaselineReview(value) {
     exactKeys(artifact, ['case_id', 'sha256'], `baseline-review.artifacts[${index}]`);
     exactString(artifact.case_id, `baseline-review.artifacts[${index}].case_id`, CASE_ID, 80);
     exactString(artifact.sha256, `baseline-review.artifacts[${index}].sha256`, SHA256, 64);
+  }
+  if (enforceBindings) {
+    const candidate = validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
+    const catalog = loadCaseCatalog();
+    if (value.rendered_product_sha !== candidate.surface.rendered_product_sha) {
+      throw new Error('baseline rendered product source does not match candidate-spec');
+    }
+    if (value.candidate_spec_sha256 !== candidateSpecSha256()) {
+      throw new Error('baseline candidate-spec hash does not match');
+    }
+    if (value.case_catalog_sha256 !== sha256File(CASE_CATALOG_PATH)) {
+      throw new Error('baseline case-catalog hash does not match');
+    }
+    const expectedArtifacts = catalog.cases.filter((entry) => entry.kind === 'visual');
+    for (const [index, expected] of expectedArtifacts.entries()) {
+      const artifact = value.artifacts[index];
+      if (artifact.case_id !== expected.id) {
+        throw new Error('baseline artifact order does not match case catalog');
+      }
+      const path = join(VISUAL_ROOT, 'baselines', expected.artifact);
+      if (!existsSync(path)) throw new Error(`baseline artifact is missing: ${expected.artifact}`);
+      const bytes = readFileSync(path);
+      if (bytes.length < 24 || bytes.subarray(0, 8).toString('hex') !== PNG_SIGNATURE) {
+        throw new Error(`baseline artifact is not a valid PNG: ${expected.artifact}`);
+      }
+      if (bytes.readUInt32BE(16) !== expected.viewport.width) {
+        throw new Error(`baseline PNG width drifted: ${expected.artifact}`);
+      }
+      if (artifact.sha256 !== sha256Bytes(bytes)) {
+        throw new Error(`baseline artifact hash mismatch: ${expected.artifact}`);
+      }
+    }
   }
   return value;
 }
@@ -461,13 +656,24 @@ function loadRecords(recordsDirectory) {
   return byId;
 }
 
-function currentHomeSha(environment = process.env) {
-  const configured = environment.HOME_SOURCE_SHA;
+function currentEvidenceProducerSha(environment = process.env) {
+  const configured = environment.HOME_EVIDENCE_PRODUCER_SHA;
   const sha = configured || execFileSync('git', ['rev-parse', 'HEAD'], {
     cwd: ROOT,
     encoding: 'utf8',
   }).trim().toLowerCase();
-  return exactString(sha, 'HOME_SOURCE_SHA', SHA40, 40);
+  return exactString(sha, 'HOME_EVIDENCE_PRODUCER_SHA', SHA40, 40);
+}
+
+function renderedProductSha(candidate, environment = process.env) {
+  const configured = environment.HOME_RENDERED_PRODUCT_SHA;
+  if (configured) {
+    exactString(configured, 'HOME_RENDERED_PRODUCT_SHA', SHA40, 40);
+    if (configured !== candidate.surface.rendered_product_sha) {
+      throw new Error('HOME_RENDERED_PRODUCT_SHA does not match candidate-spec');
+    }
+  }
+  return candidate.surface.rendered_product_sha;
 }
 
 function evidenceCandidateSha(environment = process.env) {
@@ -478,9 +684,18 @@ function evidenceCandidateSha(environment = process.env) {
     : candidateSpecSha256();
 }
 
-function baselineReviewSummary() {
+function baselineReviewSummary(environment = process.env) {
+  if (environment.HOME_VISUAL_BASELINE_UPDATE === '1') {
+    const status = environment.HOME_VISUAL_BASELINE_STATUS;
+    const reviewId = environment.HOME_VISUAL_BASELINE_REVIEW_ID;
+    if (!['pending_external_review', 'approved'].includes(status)) {
+      throw new Error('baseline update evidence requires an explicit review status');
+    }
+    exactString(reviewId, 'HOME_VISUAL_BASELINE_REVIEW_ID', SAFE_ID, 80);
+    return { status, review_id: reviewId };
+  }
   if (!existsSync(BASELINE_REVIEW_PATH)) return { status: 'missing', review_id: null };
-  const review = validateBaselineReview(readJson(BASELINE_REVIEW_PATH));
+  const review = validateBaselineReview(readJson(BASELINE_REVIEW_PATH), { enforceBindings: true });
   return { status: review.status, review_id: review.review_id };
 }
 
@@ -489,7 +704,7 @@ function emptyViolations() {
 }
 
 export function generateEvidenceManifests({ recordsDirectory, outputDirectory, environment = process.env }) {
-  validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
+  const candidate = validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
   const catalog = loadCaseCatalog();
   validateFontManifest(readJson(FONT_MANIFEST_PATH));
   const records = loadRecords(recordsDirectory);
@@ -501,7 +716,8 @@ export function generateEvidenceManifests({ recordsDirectory, outputDirectory, e
   }
   const binding = {
     repository: 'DevPathAi/devpath-home-page',
-    home_source_sha: currentHomeSha(environment),
+    rendered_product_sha: renderedProductSha(candidate, environment),
+    evidence_producer_sha: currentEvidenceProducerSha(environment),
     candidate_spec_sha256: evidenceCandidateSha(environment),
     case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
     font_manifest_sha256: sha256File(FONT_MANIFEST_PATH),
@@ -520,7 +736,7 @@ export function generateEvidenceManifests({ recordsDirectory, outputDirectory, e
         approval: { ...catalog.theme_coverage.dark.approval },
       },
     },
-    baseline_review: baselineReviewSummary(),
+    baseline_review: baselineReviewSummary(environment),
     privacy: { classification: 'sanitized-aggregate-only', contains_raw_content: false },
   };
 
@@ -545,9 +761,16 @@ export function generateEvidenceManifests({ recordsDirectory, outputDirectory, e
       passed: cases.filter((entry) => entry.status === 'passed').length,
       failed: cases.filter((entry) => entry.status === 'failed').length,
     };
+    const baseline = common.baseline_review;
+    const evidenceMode = summary.failed > 0
+      ? 'diagnostic_failure'
+      : kind === 'visual' && baseline.status !== 'approved'
+        ? 'diagnostic_pending_review'
+        : 'release_ready';
     return validateEvidenceManifest({
       ...common,
       document_type: kind === 'visual' ? 'home-visual-evidence' : 'home-a11y-evidence',
+      evidence_mode: evidenceMode,
       summary,
       cases,
     }, { environment, enforceBindings: true });
@@ -589,18 +812,19 @@ function cli() {
     process.stdout.write(`sanitized evidence written to ${outputDirectory}\n`);
     return;
   }
-  if (command === 'validate') {
+  if (command === 'validate' || command === 'validate-diagnostic') {
     const directory = resolve(argument('--dir') || join(ROOT, 'test-results', 'visual-a11y', 'manifests'));
     for (const name of ['visual-evidence.v2.json', 'a11y-evidence.v2.json']) {
       validateEvidenceManifest(readJson(join(directory, name)), {
         environment: process.env,
         enforceBindings: true,
+        requirePassing: command === 'validate',
       });
     }
     process.stdout.write('sanitized evidence manifests valid\n');
     return;
   }
-  throw new Error('usage: visual-evidence.mjs <candidate-sha|contracts|generate|validate>');
+  throw new Error('usage: visual-evidence.mjs <candidate-sha|contracts|generate|validate|validate-diagnostic>');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) cli();

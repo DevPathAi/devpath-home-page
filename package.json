@@ -20,6 +20,8 @@
     "visual:fonts": "node scripts/visual-fonts.mjs prepare",
     "visual:fonts:verify": "node scripts/visual-fonts.mjs verify",
     "visual:evidence:validate": "node scripts/visual-evidence.mjs validate",
+    "visual:evidence:validate:diagnostic": "node scripts/visual-evidence.mjs validate-diagnostic",
+    "visual:evidence:docker": "node scripts/run-visual-evidence-docker.mjs",
     "visual:baseline:update": "node scripts/update-visual-baselines.mjs",
     "test:all": "vitest run && playwright test"
   },

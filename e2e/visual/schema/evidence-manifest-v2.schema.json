@@ -4,18 +4,20 @@
   "title": "Sanitized Home visual/a11y evidence manifest v2",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "schema_version", "document_type", "binding", "runtime", "theme_coverage", "baseline_review", "summary", "cases", "privacy"],
+  "required": ["$schema", "schema_version", "document_type", "evidence_mode", "binding", "runtime", "theme_coverage", "baseline_review", "summary", "cases", "privacy"],
   "properties": {
     "$schema": { "type": "string" },
     "schema_version": { "const": 2 },
     "document_type": { "enum": ["home-visual-evidence", "home-a11y-evidence"] },
+    "evidence_mode": { "enum": ["release_ready", "diagnostic_pending_review", "diagnostic_failure"] },
     "binding": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository", "home_source_sha", "candidate_spec_sha256", "case_catalog_sha256", "font_manifest_sha256"],
+      "required": ["repository", "rendered_product_sha", "evidence_producer_sha", "candidate_spec_sha256", "case_catalog_sha256", "font_manifest_sha256"],
       "properties": {
         "repository": { "const": "DevPathAi/devpath-home-page" },
-        "home_source_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "rendered_product_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "evidence_producer_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
         "candidate_spec_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "case_catalog_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
         "font_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }

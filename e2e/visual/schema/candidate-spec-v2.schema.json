@@ -12,11 +12,12 @@
     "surface": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["repository", "route", "build"],
+      "required": ["repository", "route", "build", "rendered_product_sha"],
       "properties": {
         "repository": { "const": "DevPathAi/devpath-home-page" },
         "route": { "const": "/" },
-        "build": { "const": "production-dist" }
+        "build": { "const": "production-dist" },
+        "rendered_product_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
       }
     },
     "runtime": {
