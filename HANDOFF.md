@@ -1,6 +1,6 @@
 # DevPath AI 홈페이지 — 다음 세션 핸드오프
 
-> 갱신: 2026-07-14 · 상태: **T1~T18 구현 + 요금 4단계 + OG + CI + 라이브 디자인 리뷰 완료. `develop` 반영. 배포 미연결.**
+> 갱신: 2026-07-14 · 상태: **v0.2 `master` 릴리스 완료 (T1~T18 + 요금 4단계 + OG + CI + 디자인 리뷰 수정 + DESIGN.md). 남은 건 배포 연결(창업자 액션).**
 
 ## 지금까지 (요약)
 - **제품:** DevPath AI (AI 개발자 학습 플랫폼). 이 레포는 정식 마케팅 홈페이지.
@@ -8,12 +8,10 @@
 - **스택:** 바닐라 ES모듈 + Vitest + Playwright + CI(GitHub Actions). 배포 = Cloudflare Pages(미연결).
 - **검증:** 유닛 32 + E2E 6 통과. CI 녹색. 라이브 디자인 감사 Design A− / AI Slop A.
 
-## 브랜치 상태 (중요)
-- **`master`** = 릴리스 v0.1 (`81acfd9`) — T1~T18까지. **아래 6커밋이 아직 없음.**
-- **`develop`** = 최신. master보다 **6커밋 앞섬**:
-  - `.dev.vars.example` + gitignore (PR #5)
-  - 디자인 리뷰 수정 FINDING-001/002 + `DESIGN.md` (PR #6)
-- → **다음 세션 첫 작업: `develop` → `master` 릴리스 PR** (디자인 성능 수정을 master로).
+## 브랜치 상태
+- **`master`** = 릴리스 **v0.2** (`31cafc8`) — develop과 동기화 완료(격차 0). 디자인 성능 수정 포함.
+- **`develop`** = master와 동일. 다음 작업은 `develop`에서 분기.
+- → **다음 세션 첫 작업: 배포 연결** (아래 이관 항목 참조).
 
 ## 라이브 디자인 리뷰 결과 (2026-07-14, `/design-review`)
 - **FINDING-001 (성능):** CDN 폰트가 렌더블로킹(`media=all`) → **domReady 4224ms**. `media="print" onload` 논블로킹 + noscript 폴백으로 전환 → **domReady 19ms**. 커밋 `535a82f`.
@@ -31,17 +29,16 @@
 - CI `.github/workflows/ci.yml` (vitest + playwright + build)
 
 ## 다음 세션 이관 항목 (순서)
-1. **릴리스:** `develop` → `master` PR 머지 (디자인 수정·DESIGN.md·.dev.vars를 master로).
-2. **배포 연결 (창업자 값 필요):**
+1. **배포 연결 (창업자 값 필요 → 받으면 즉시 반영, `feat/*` 브랜치 → develop PR):**
    - `APPS_SCRIPT_URL` = 기존 devpath-landing-page Apps Script `/exec` URL → CF Pages 환경변수
    - 창업자 링크 StockPilot/LearnFlow 실제 URL (index.html 현재 `#`)
    - 도메인 `devpath.ai` 확정 (canonical/OG 절대경로 기준)
-3. **창업자 대시보드 작업:**
+2. **창업자 대시보드 작업 (제가 접근 불가):**
    - Cloudflare Pages 프로젝트 생성 → 레포 연결 (build `npm run build`, output `dist`, env `APPS_SCRIPT_URL`)
    - Apps Script `Code.gs` Web App 배포 (`SHEET_ID` Script Property)
    - 도메인 DNS + SSL
-4. **실배포 후:** `/design-review`로 라이브 도메인 재감사 + CORS 실검증(라이브 도메인에서 /api/* 호출).
-5. **보류:** T8 한/영 i18n 토글. 폰트 셀프호스팅은 불필요(논블로킹으로 해결됨).
+3. **실배포 후:** `/design-review`로 라이브 도메인 재감사 + CORS 실검증(라이브 도메인에서 /api/* 호출).
+4. **보류:** T8 한/영 i18n 토글. 폰트 셀프호스팅은 불필요(논블로킹으로 해결됨).
 
 ## 문서 위치
 - `DESIGN.md` — 확정 디자인 시스템 (신규)

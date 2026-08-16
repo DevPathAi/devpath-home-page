@@ -1,0 +1,31 @@
+{
+  "schema_version": 2,
+  "document_type": "home-visual-baseline-review",
+  "status": "pending_external_review",
+  "review_id": "et13-final-audit-refresh",
+  "reviewer": "codex-unapproved",
+  "reason": "Final-audit-responsive-and-product-tree-baseline-candidate-awaiting-external-review",
+  "reviewed_at": null,
+  "rendered_product_sha": "084ab218698b0411f9bdea7c7c32c45fce87fd18",
+  "rendered_product_tree_sha256": "64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368",
+  "candidate_spec_sha256": "90b988c879cb725ffe98a53acae1f1c9a0769ec0cf7014ec35ab736988da68fe",
+  "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
+  "artifacts": [
+    {
+      "case_id": "home-light-compact-320",
+      "sha256": "bb05be3bc974f301f35bd8135ca1d67f0c6d26357307c66f1e733a7ad8bd1ee2"
+    },
+    {
+      "case_id": "home-light-medium-600",
+      "sha256": "d9a440c006e442d883de76b6f2ce2a1d27af6eac3b0f7279985a8dead38efa98"
+    },
+    {
+      "case_id": "home-light-expanded-840",
+      "sha256": "6298f5a43dc094e435820124847513f5d7dc7560b9072ddac28bc9a46067e53b"
+    },
+    {
+      "case_id": "home-light-large-1240",
+      "sha256": "ecd571a2d26636faea786229a98aaf607eedda15fa4d086891df7893f24798aa"
+    }
+  ]
+}

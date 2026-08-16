@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "DevPath AI 정식 마케팅 홈페이지 (바닐라 ES모듈)",
+  "description": "Leva 정식 마케팅 홈페이지 (바닐라 ES모듈)",
   "scripts": {
     "dev": "node scripts/serve.mjs . 4321",
     "build": "node build.mjs",
@@ -12,11 +12,24 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:release": "playwright test --config=playwright.release.config.js",
+    "test:release:list": "playwright test --config=playwright.release.config.js --list",
+    "test:visual": "playwright test --config=playwright.visual.config.js",
+    "test:visual:list": "playwright test --config=playwright.visual.config.js --list",
+    "visual:contracts": "node scripts/visual-evidence.mjs contracts",
+    "visual:fonts": "node scripts/visual-fonts.mjs prepare",
+    "visual:fonts:verify": "node scripts/visual-fonts.mjs verify",
+    "visual:evidence:validate": "node scripts/visual-evidence.mjs validate",
+    "visual:evidence:validate:diagnostic": "node scripts/visual-evidence.mjs validate-diagnostic",
+    "visual:evidence:docker": "node scripts/run-visual-evidence-docker.mjs",
+    "visual:baseline:update": "node scripts/update-visual-baselines.mjs",
     "test:all": "vitest run && playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.49.0",
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.61.1",
     "jsdom": "^25.0.1",
+    "marked": "^18.0.9",
     "vitest": "^2.1.8"
   }
 }

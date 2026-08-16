@@ -12,7 +12,14 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.visual-cache/
 .env
 .env.local
 # Cloudflare Pages Functions 로컬 시크릿 (예시는 .dev.vars.example)
 .dev.vars
+
+# gstack 도구 산출물
+.gstack/
+
+# superpowers SDD 작업 산출물(레저·브리프·리뷰 패키지)
+.superpowers/

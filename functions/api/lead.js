@@ -28,11 +28,17 @@ export async function onRequestPost({ request, env }) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body,
     });
+    // Apps Script는 실패도 HTTP 200 + HTML 오류 페이지로 돌려준다. 상태코드만
+    // 믿고 본문을 그대로 넘기면 HTML에 application/json 라벨이 붙고, 빈 본문은
+    // 성공으로 날조돼 기록되지 않은 리드가 접수된 것처럼 보인다.
     const text = await res.text();
-    return new Response(text || '{"ok":true}', {
-      status: res.ok ? 200 : 502,
-      headers: { 'Content-Type': 'application/json; charset=utf-8' },
-    });
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      return json({ ok: false, error: 'upstream_invalid' }, 502);
+    }
+    return json(parsed, res.ok ? 200 : 502);
   } catch {
     return json({ ok: false, error: 'upstream_unreachable' }, 502);
   }

@@ -1,26 +1,49 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// E2E 1: 홈 로드 → 주 CTA → 리드폼(Apps Script 모킹) 스모크.
-// 정적 dev 서버를 띄워 소스 루트를 서빙한다(절대경로 /src /assets 해석).
-const PORT = 4321;
+// 같은 스펙을 production dist와 빠른 source root 양쪽에서 실행한다.
+// release smoke는 반드시 해시 자산이 적용된 dist를 통과해야 한다.
+const DIST_PORT = 4321;
+const SOURCE_PORT = 4322;
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/release/**',
+  testMatch: /^(?!.*[\\/]visual[\\/]).*\.spec\.js$/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
-    baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'on-first-retry',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'production-dist',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://127.0.0.1:${DIST_PORT}`,
+      },
+    },
+    {
+      name: 'source-root',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: `http://127.0.0.1:${SOURCE_PORT}`,
+      },
+    },
   ],
-  webServer: {
-    command: `node scripts/serve.mjs . ${PORT}`,
-    url: `http://127.0.0.1:${PORT}`,
-    reuseExistingServer: !process.env.CI,
-    timeout: 30_000,
-  },
+  webServer: [
+    {
+      command: `npm run build && node scripts/serve.mjs dist ${DIST_PORT}`,
+      url: `http://127.0.0.1:${DIST_PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
+      command: `node scripts/serve.mjs . ${SOURCE_PORT}`,
+      url: `http://127.0.0.1:${SOURCE_PORT}`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+  ],
 });

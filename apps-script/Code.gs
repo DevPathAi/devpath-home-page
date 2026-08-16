@@ -53,7 +53,26 @@ function doPost(e) {
     } else {
       sheet.appendRow(objectToRow_(merged, headers));
     }
-    return json_({ ok: true, lead_id: merged.lead_id, updated: Boolean(rowNumber) });
+
+    // 확인 메일은 신규 접수에만 보낸다(재신청마다 다시 보내면 스팸이 된다).
+    // 발송 실패가 접수 자체를 실패로 만들면 안 되므로 삼키되, 무엇이 실제로
+    // 일어났는지는 mail_sent로 정직하게 돌려준다 — 화면 문구가 이 값에 종속된다.
+    let mailSent = false;
+    let mailError = '';
+    if (!rowNumber && payload.action === 'lead') {
+      try {
+        sendLeadEmails_(merged);
+        mailSent = true;
+      } catch (error) {
+        // 사유를 감추면 밖에서는 "안 왔다"는 사실만 남고 원인을 알 수 없다.
+        // 실행 기록과 응답 양쪽에 남긴다.
+        mailError = String((error && error.message) || error).slice(0, 160);
+        Logger.log('lead mail failed: ' + mailError);
+      }
+    }
+    const result = { ok: true, lead_id: merged.lead_id, updated: Boolean(rowNumber), mail_sent: mailSent };
+    if (mailError) result.mail_error = mailError;
+    return json_(result);
   } catch (error) {
     return json_({ ok: false, error: error.message });
   }
@@ -101,6 +120,82 @@ function computeStats_() {
 
   const satisfaction = ratingCount > 0 ? Math.round((ratingSum / ratingCount) * 10) / 10 : null;
   return { ok: true, signups, diagnoses_completed: completed, satisfaction, updated_at: nowIso_() };
+}
+
+// ── 메일 발송 ─────────────────────────────────────────────────────────────
+const ADMIN_EMAIL_FALLBACK = 'info@leva.ai.kr';
+
+// 편집기에서 이 함수를 한 번 실행해 메일 권한(script.send_mail)을 승인한다.
+// Apps Script는 "실행한 코드가 실제로 요구하는" 권한만 동의를 묻는다. 그래서
+// MailApp을 건드리지 않는 함수를 실행하면 팝업이 뜨지 않고, 승인 없는 웹앱은
+// 런타임에 거부당한다(실측: "You do not have permission to call MailApp...").
+// 승인 후에는 새 버전으로 배포해야 웹앱에 반영된다.
+function authorizeMailScope() {
+  const remaining = MailApp.getRemainingDailyQuota();
+  Logger.log('mail scope authorized. remaining daily quota: ' + remaining);
+  return remaining;
+}
+
+function adminEmail_() {
+  return PropertiesService.getScriptProperties().getProperty('ADMIN_EMAIL') || ADMIN_EMAIL_FALLBACK;
+}
+
+// 보내지 못하는 모든 경우를 사유와 함께 던진다. 호출자가 잡아 기록하고,
+// 접수 자체는 실패시키지 않는다.
+function sendLeadEmails_(lead) {
+  const applicant = String(lead.email_normalized || '').trim();
+  if (!applicant) throw new Error('no applicant address');
+  // 일일 쿼터를 넘기면 sendEmail이 던진다. 미리 보고 사유를 분명히 한다.
+  if (MailApp.getRemainingDailyQuota() < 2) throw new Error('daily mail quota exhausted');
+
+  const admin = adminEmail_();
+  MailApp.sendEmail({
+    to: applicant,
+    subject: 'Leva 진단 초대 신청이 접수됐습니다',
+    body: applicantMailBody_(lead, admin),
+    name: 'Leva',
+    replyTo: admin,
+  });
+  MailApp.sendEmail({
+    to: admin,
+    subject: '[Leva] 새 진단 신청 — ' + applicant,
+    body: adminMailBody_(lead),
+    name: 'Leva 리드 알림',
+    replyTo: applicant,
+  });
+}
+
+function applicantMailBody_(lead, admin) {
+  return [
+    '진단 초대 신청이 접수됐습니다.',
+    '',
+    '남겨주신 내용을 확인한 뒤, 진단 초대와 학습 로드맵 안내를 이메일로 보내드립니다.',
+    '베타 기간에는 순차적으로 초대를 보내고 있어 며칠 걸릴 수 있습니다.',
+    '',
+    '접수 내용',
+    '- 이메일: ' + lead.email_normalized,
+    '- 현재 단계: ' + (lead.current_stage || '-'),
+    '- 스택: ' + (lead.stack || '-'),
+    '',
+    '이 신청을 한 적이 없다면 이 메일을 무시하셔도 됩니다.',
+    '문의: ' + admin,
+    '',
+    'Leva · https://leva.ai.kr',
+  ].join('\n');
+}
+
+function adminMailBody_(lead) {
+  return [
+    '새 진단 신청이 접수됐습니다.',
+    '',
+    '- 이메일: ' + lead.email_normalized,
+    '- 현재 단계: ' + (lead.current_stage || '-'),
+    '- 스택: ' + (lead.stack || '-'),
+    '- 막히는 지점: ' + (lead.recent_stuck_moment || '-'),
+    '- 유입: ' + (lead.utm_source || '-') + ' / ' + (lead.referrer || '-'),
+    '- lead_score: ' + (lead.lead_score || 0),
+    '- lead_id: ' + lead.lead_id,
+  ].join('\n');
 }
 
 // ── 검증 ──────────────────────────────────────────────────────────────────

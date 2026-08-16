@@ -1,0 +1,29 @@
+{
+  "$schema": "./schema/candidate-spec-v2.schema.json",
+  "schema_version": 2,
+  "document_type": "home-visual-a11y-candidate-spec",
+  "surface": {
+    "repository": "DevPathAi/devpath-home-page",
+    "route": "/",
+    "build": "production-dist",
+    "rendered_product_sha": "084ab218698b0411f9bdea7c7c32c45fce87fd18",
+    "rendered_product_tree_sha256": "64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368"
+  },
+  "runtime": {
+    "browser": "chromium",
+    "playwright_version": "1.61.1",
+    "locale": "ko-KR",
+    "timezone_id": "UTC",
+    "device_scale_factor": 1,
+    "color_scheme": "light",
+    "reduced_motion": "reduce",
+    "animations": "disabled",
+    "clock": "2026-08-16T00:00:00.000Z",
+    "network_policy": "loopback-only",
+    "workers": 1
+  },
+  "inputs": {
+    "case_catalog": "e2e/visual/case-catalog.v2.json",
+    "font_manifest": "e2e/visual/fonts/manifest.v2.json"
+  }
+}

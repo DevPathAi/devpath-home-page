@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leva.ai.kr/schemas/home-visual-baseline-review-v2.json",
+  "title": "Home visual baseline review metadata v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "document_type", "status", "review_id", "reviewer", "reason", "reviewed_at", "rendered_product_sha", "rendered_product_tree_sha256", "candidate_spec_sha256", "case_catalog_sha256", "artifacts"],
+  "properties": {
+    "schema_version": { "const": 2 },
+    "document_type": { "const": "home-visual-baseline-review" },
+    "status": { "enum": ["pending_external_review", "approved"] },
+    "review_id": { "type": "string" },
+    "reviewer": { "type": "string" },
+    "reason": { "type": "string" },
+    "reviewed_at": { "type": ["string", "null"] },
+    "rendered_product_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "rendered_product_tree_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "candidate_spec_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "case_catalog_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["case_id", "sha256"],
+        "properties": {
+          "case_id": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

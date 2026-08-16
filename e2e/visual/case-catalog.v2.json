@@ -1,0 +1,171 @@
+{
+  "$schema": "./schema/case-catalog-v2.schema.json",
+  "schema_version": 2,
+  "document_type": "home-visual-a11y-case-catalog",
+  "surface": {
+    "repository": "DevPathAi/devpath-home-page",
+    "route": "/",
+    "build": "production-dist"
+  },
+  "theme_coverage": {
+    "light": {
+      "status": "required"
+    },
+    "dark": {
+      "status": "not_applicable",
+      "reason": "The Home production UI has no approved dark-theme activation policy; dormant tokens are not a user-visible theme.",
+      "approval": {
+        "required": true,
+        "status": "pending",
+        "owner": "product-design",
+        "artifact": null
+      }
+    }
+  },
+  "baseline_policy": {
+    "platform": "mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48",
+    "update_in_ci": false,
+    "review_metadata_required": true
+  },
+  "cases": [
+    {
+      "id": "home-light-compact-320",
+      "kind": "visual",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 320, "height": 900 },
+      "artifact": "home-light-compact-320.png",
+      "checks": ["full_page", "no_horizontal_overflow", "production_dist"]
+    },
+    {
+      "id": "home-light-medium-600",
+      "kind": "visual",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 600, "height": 900 },
+      "artifact": "home-light-medium-600.png",
+      "checks": ["full_page", "no_horizontal_overflow", "production_dist"]
+    },
+    {
+      "id": "home-light-expanded-840",
+      "kind": "visual",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 840, "height": 900 },
+      "artifact": "home-light-expanded-840.png",
+      "checks": ["full_page", "no_horizontal_overflow", "production_dist"]
+    },
+    {
+      "id": "home-light-large-1240",
+      "kind": "visual",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 1240, "height": 900 },
+      "artifact": "home-light-large-1240.png",
+      "checks": ["full_page", "no_horizontal_overflow", "production_dist"]
+    },
+    {
+      "id": "home-axe-wcag-aa",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 1240, "height": 900 },
+      "checks": ["axe_320_closed", "axe_320_open", "axe_600_closed", "axe_840_closed", "axe_1240_closed", "axe_wcag2a", "axe_wcag2aa", "axe_wcag21a", "axe_wcag21aa", "axe_wcag22aa", "local_fonts", "local_network"]
+    },
+    {
+      "id": "home-reflow-200-long-ko",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 320, "height": 900 },
+      "checks": ["text_resize_200", "body_font_exact_2x", "label_font_exact_2x", "heading_font_exact_2x", "long_korean_identifier", "no_horizontal_overflow"]
+    },
+    {
+      "id": "home-keyboard-focus",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 1240, "height": 900 },
+      "checks": ["full_focus_order", "focus_visible", "focus_not_offscreen", "no_focus_trap", "keyboard_activation", "skip_link", "form_controls"]
+    },
+    {
+      "id": "home-heading-primary",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 1240, "height": 900 },
+      "checks": ["one_h1", "heading_order", "one_primary_per_section"]
+    },
+    {
+      "id": "home-targets-44-320",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 320, "height": 900 },
+      "checks": ["all_independent_targets_enumerated", "controls_44", "inline_exceptions_explicit", "exception_allowlist_exhausted"]
+    },
+    {
+      "id": "home-targets-44-600",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 600, "height": 900 },
+      "checks": ["all_independent_targets_enumerated", "controls_44", "inline_exceptions_explicit", "exception_allowlist_exhausted"]
+    },
+    {
+      "id": "home-targets-44-840",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 840, "height": 900 },
+      "checks": ["all_independent_targets_enumerated", "controls_44", "inline_exceptions_explicit", "exception_allowlist_exhausted"]
+    },
+    {
+      "id": "home-targets-44-1240",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 1240, "height": 900 },
+      "checks": ["all_independent_targets_enumerated", "controls_44", "inline_exceptions_explicit", "exception_allowlist_exhausted"]
+    },
+    {
+      "id": "home-reduced-motion",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 1240, "height": 900 },
+      "checks": ["prefers_reduced_motion", "animations_disabled"]
+    },
+    {
+      "id": "home-mobile-menu-escape",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 320, "height": 900 },
+      "checks": ["menu_keyboard_open", "menu_escape", "focus_return"]
+    },
+    {
+      "id": "home-mobile-menu-keyboard",
+      "kind": "a11y",
+      "status": "required",
+      "theme": "light",
+      "route": "/",
+      "viewport": { "width": 320, "height": 900 },
+      "checks": ["open_menu_full_tab_order", "open_menu_focus_visible", "open_menu_focus_not_offscreen", "open_menu_no_focus_trap", "open_menu_keyboard_activation", "open_menu_escape_return"]
+    }
+  ]
+}

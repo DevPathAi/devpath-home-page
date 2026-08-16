@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leva.ai.kr/schemas/home-visual-font-manifest-v2.json",
+  "title": "Home visual font manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "document_type", "cache_directory", "fonts"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 2 },
+    "document_type": { "const": "home-visual-font-manifest" },
+    "cache_directory": { "const": ".visual-cache/fonts" },
+    "fonts": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["family", "weight", "style", "file", "url", "sha256"],
+        "properties": {
+          "family": { "enum": ["Pretendard", "D2Coding"] },
+          "weight": { "type": "integer" },
+          "style": { "const": "normal" },
+          "file": { "type": "string", "pattern": "^[A-Za-z0-9-]+\\.woff2$" },
+          "url": { "type": "string", "pattern": "^https://cdn\\.jsdelivr\\.net/" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    }
+  }
+}

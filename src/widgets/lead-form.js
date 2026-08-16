@@ -16,6 +16,15 @@ const STAGES = [
   { value: 'working', label: '현업 개발자' },
 ];
 
+// 성공 문구는 서버가 실제로 메일을 보냈다고 알려줄 때만 발송을 언급한다.
+// 발송 여부를 모르는 응답(구 배포 등)은 보내지 않은 것으로 취급한다 —
+// 하지 않은 일을 했다고 말하는 쪽이 반대보다 훨씬 나쁘다.
+export function successMessage(mailSent) {
+  return mailSent === true
+    ? '진단 초대와 로드맵 안내를 이메일로 보내드릴게요. 확인 메일을 발송했으니 스팸함도 한 번 확인해 주세요.'
+    : '담당자가 확인 후 이메일로 진단 초대와 로드맵 안내를 드릴게요.';
+}
+
 function field(labelHtml, controlHtml, errorId, hintHtml = '') {
   return `<div class="lf-field">${labelHtml}${controlHtml}${hintHtml}<p class="lf-field-error" id="${errorId}" role="alert"></p></div>`;
 }
@@ -53,11 +62,11 @@ function formMarkup() {
         <p class="lf-field-error" id="lf-consent-err" role="alert"></p>
       </div>
       <p class="lf-error" id="lf-error" role="alert" hidden></p>
-      <button class="btn btn-primary lf-submit" type="submit">진단 초대받기</button>
+      <button class="btn btn-secondary lf-submit" type="submit">진단 초대받기</button>
     </form>
     <div class="lead-form__success surface" id="lf-success" tabindex="-1" hidden>
       <h3>신청이 접수됐어요 ✓</h3>
-      <p>진단 초대와 로드맵 안내를 이메일로 보내드릴게요. 확인 메일을 발송했으니 스팸함도 한 번 확인해 주세요.</p>
+      <p id="lf-success-msg">${successMessage(false)}</p>
     </div>
   `;
 }
@@ -152,6 +161,9 @@ export function mount(root) {
     try {
       const res = await postJson(config.formEndpoint, payload, { timeoutMs: 12000, retries: 1 });
       if (res && res.ok === false) throw new ApiError(res.error || '제출 실패', { kind: 'http', status: 400 });
+      // 서버가 보냈다고 확인해 준 경우에만 발송을 언급한다.
+      const msgEl = successBox.querySelector('#lf-success-msg');
+      if (msgEl) msgEl.textContent = successMessage(res && res.mail_sent);
       form.hidden = true;
       successBox.hidden = false;
       successBox.focus();
