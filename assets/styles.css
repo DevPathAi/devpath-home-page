@@ -812,7 +812,7 @@ textarea {
 }
 
 .final-cta__inner .eyebrow {
-  color: var(--dp-color-primary);
+  color: var(--dp-color-rail-text);
 }
 
 .lead {
@@ -1106,7 +1106,10 @@ textarea {
 .site-footer__links a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 44px;
   min-height: 44px;
+  padding-inline: var(--dp-space-xs);
   color: var(--dp-color-text-secondary);
   font: var(--dp-type-body-medium);
 }
