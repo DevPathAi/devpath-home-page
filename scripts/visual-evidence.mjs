@@ -25,13 +25,16 @@ const CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PNG_SIGNATURE = '89504e470d0a1a0a';
 const EVIDENCE_ONLY_PATHS = Object.freeze([
   { exact: '.github/workflows/ci.yml' },
+  { exact: '.github/workflows/mission-spine-home-dist.yml' },
   { exact: 'README.md' },
   { exact: 'docs/visual-a11y-evidence.md' },
   { prefix: 'e2e/visual/' },
   { exact: 'playwright.visual.config.js' },
+  { exact: 'scripts/mission-spine-home-dist.mjs' },
   { exact: 'scripts/run-visual-evidence-docker.mjs' },
   { exact: 'scripts/update-visual-baselines.mjs' },
   { exact: 'scripts/visual-evidence.mjs' },
+  { exact: 'tests/mission-spine-home-dist.test.js' },
   { exact: 'tests/visual-evidence-audit-contract.test.js' },
   { exact: 'tests/visual-evidence-contract.test.js' },
   { exact: 'tests/visual-evidence-release-binding.test.js' },
