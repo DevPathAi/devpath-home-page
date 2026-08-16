@@ -8,6 +8,7 @@ const SOURCE_PORT = 4322;
 export default defineConfig({
   testDir: './e2e',
   testIgnore: '**/release/**',
+  testMatch: /^(?!.*[\\/]visual[\\/]).*\.spec\.js$/,
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

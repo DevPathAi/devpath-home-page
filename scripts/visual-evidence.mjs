@@ -1,0 +1,606 @@
+import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  statSync,
+  writeFileSync,
+  mkdirSync,
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+export const VISUAL_ROOT = join(ROOT, 'e2e', 'visual');
+export const CANDIDATE_SPEC_PATH = join(VISUAL_ROOT, 'candidate-spec.v2.json');
+export const CASE_CATALOG_PATH = join(VISUAL_ROOT, 'case-catalog.v2.json');
+export const FONT_MANIFEST_PATH = join(VISUAL_ROOT, 'fonts', 'manifest.v2.json');
+export const BASELINE_REVIEW_PATH = join(VISUAL_ROOT, 'baselines', 'review-metadata.v2.json');
+
+const SHA40 = /^[0-9a-f]{40}$/;
+const SHA256 = /^[0-9a-f]{64}$/;
+const SAFE_ID = /^[a-z0-9]+(?:[a-z0-9._-]*[a-z0-9])?$/;
+const CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const FORBIDDEN_EVIDENCE_KEYS = new Set([
+  'raw_content',
+  'content',
+  'html',
+  'text',
+  'code',
+  'prompt',
+  'error',
+  'output',
+  'url',
+  'selector',
+  'target',
+  'nodes',
+  'request',
+  'response',
+  'screenshot_path',
+  'trace',
+]);
+
+function object(value, path) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`${path} must be an object`);
+  }
+  return value;
+}
+
+function exactKeys(value, expected, path) {
+  object(value, path);
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  if (JSON.stringify(actual) !== JSON.stringify(wanted)) {
+    throw new Error(`${path} must use exact keys: ${wanted.join(', ')}`);
+  }
+}
+
+function exactString(value, path, pattern, max = 256) {
+  if (typeof value !== 'string' || value.length === 0 || value.length > max) {
+    throw new Error(`${path} must be a bounded string`);
+  }
+  if (pattern && !pattern.test(value)) throw new Error(`${path} has an invalid format`);
+  return value;
+}
+
+function boundedInteger(value, path, minimum, maximum) {
+  if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+    throw new Error(`${path} must be an integer from ${minimum} through ${maximum}`);
+  }
+  return value;
+}
+
+function readJson(path) {
+  const bytes = readFileSync(path);
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    throw new Error(`${path} must be BOM-free UTF-8 JSON`);
+  }
+  return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+}
+
+export function sha256Bytes(bytes) {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+export function sha256File(path) {
+  return sha256Bytes(readFileSync(path));
+}
+
+export function candidateSpecSha256() {
+  return sha256File(CANDIDATE_SPEC_PATH);
+}
+
+export function validateCandidateSpec(value) {
+  exactKeys(value, ['$schema', 'schema_version', 'document_type', 'surface', 'runtime', 'inputs'], 'candidate-spec');
+  if (value.schema_version !== 2 || value.document_type !== 'home-visual-a11y-candidate-spec') {
+    throw new Error('candidate-spec must be schema v2');
+  }
+  exactString(value.$schema, 'candidate-spec.$schema', /^\.\/schema\/candidate-spec-v2\.schema\.json$/);
+  exactKeys(value.surface, ['repository', 'route', 'build'], 'candidate-spec.surface');
+  if (
+    value.surface.repository !== 'DevPathAi/devpath-home-page'
+    || value.surface.route !== '/'
+    || value.surface.build !== 'production-dist'
+  ) {
+    throw new Error('candidate-spec surface must be canonical production-dist Home');
+  }
+  exactKeys(value.runtime, [
+    'browser',
+    'playwright_version',
+    'locale',
+    'timezone_id',
+    'device_scale_factor',
+    'color_scheme',
+    'reduced_motion',
+    'animations',
+    'clock',
+    'network_policy',
+    'workers',
+  ], 'candidate-spec.runtime');
+  const expectedRuntime = {
+    browser: 'chromium',
+    playwright_version: '1.61.1',
+    locale: 'ko-KR',
+    timezone_id: 'UTC',
+    device_scale_factor: 1,
+    color_scheme: 'light',
+    reduced_motion: 'reduce',
+    animations: 'disabled',
+    network_policy: 'loopback-only',
+    workers: 1,
+  };
+  for (const [key, expected] of Object.entries(expectedRuntime)) {
+    if (value.runtime[key] !== expected) throw new Error(`candidate-spec.runtime.${key} drifted`);
+  }
+  if (value.runtime.clock !== '2026-08-16T00:00:00.000Z') {
+    throw new Error('candidate-spec runtime clock must be pinned');
+  }
+  exactKeys(value.inputs, ['case_catalog', 'font_manifest'], 'candidate-spec.inputs');
+  if (
+    value.inputs.case_catalog !== 'e2e/visual/case-catalog.v2.json'
+    || value.inputs.font_manifest !== 'e2e/visual/fonts/manifest.v2.json'
+  ) {
+    throw new Error('candidate-spec inputs must be canonical');
+  }
+  return value;
+}
+
+function validateViewport(value, path) {
+  exactKeys(value, ['width', 'height'], path);
+  if (![320, 600, 840, 1240].includes(value.width)) {
+    throw new Error(`${path}.width is not an approved boundary`);
+  }
+  boundedInteger(value.height, `${path}.height`, 720, 1200);
+}
+
+export function validateCaseCatalog(value) {
+  exactKeys(value, ['$schema', 'schema_version', 'document_type', 'surface', 'theme_coverage', 'baseline_policy', 'cases'], 'case-catalog');
+  if (value.schema_version !== 2 || value.document_type !== 'home-visual-a11y-case-catalog') {
+    throw new Error('case-catalog must be schema v2');
+  }
+  exactKeys(value.surface, ['repository', 'route', 'build'], 'case-catalog.surface');
+  if (
+    value.surface.repository !== 'DevPathAi/devpath-home-page'
+    || value.surface.route !== '/'
+    || value.surface.build !== 'production-dist'
+  ) {
+    throw new Error('case-catalog surface must be canonical production-dist Home');
+  }
+  exactKeys(value.theme_coverage, ['light', 'dark'], 'case-catalog.theme_coverage');
+  exactKeys(value.theme_coverage.light, ['status'], 'case-catalog.theme_coverage.light');
+  if (value.theme_coverage.light.status !== 'required') throw new Error('light theme is required');
+  exactKeys(value.theme_coverage.dark, ['status', 'reason', 'approval'], 'case-catalog.theme_coverage.dark');
+  if (value.theme_coverage.dark.status !== 'not_applicable') {
+    throw new Error('dark must remain explicitly not_applicable until production activation is approved');
+  }
+  exactString(value.theme_coverage.dark.reason, 'case-catalog.theme_coverage.dark.reason', undefined, 240);
+  exactKeys(value.theme_coverage.dark.approval, ['required', 'status', 'owner', 'artifact'], 'case-catalog.theme_coverage.dark.approval');
+  if (
+    value.theme_coverage.dark.approval.required !== true
+    || value.theme_coverage.dark.approval.status !== 'pending'
+    || value.theme_coverage.dark.approval.owner !== 'product-design'
+    || value.theme_coverage.dark.approval.artifact !== null
+  ) {
+    throw new Error('dark approval must remain pending and explicit');
+  }
+  exactKeys(value.baseline_policy, ['platform', 'update_in_ci', 'review_metadata_required'], 'case-catalog.baseline_policy');
+  if (
+    value.baseline_policy.platform !== 'mcr.microsoft.com/playwright:v1.61.1-noble@sha256:5b8f294aff9041b7191c34a4bab3ac270157a28774d4b0660e9743297b697e48'
+    || value.baseline_policy.update_in_ci !== false
+    || value.baseline_policy.review_metadata_required !== true
+  ) {
+    throw new Error('baseline policy drifted');
+  }
+  if (!Array.isArray(value.cases) || value.cases.length === 0) throw new Error('case-catalog.cases is required');
+  const ids = new Set();
+  for (const [index, entry] of value.cases.entries()) {
+    const path = `case-catalog.cases[${index}]`;
+    const expected = entry.kind === 'visual'
+      ? ['id', 'kind', 'status', 'theme', 'route', 'viewport', 'artifact', 'checks']
+      : ['id', 'kind', 'status', 'theme', 'route', 'viewport', 'checks'];
+    exactKeys(entry, expected, path);
+    exactString(entry.id, `${path}.id`, CASE_ID, 80);
+    if (ids.has(entry.id)) throw new Error(`duplicate case id: ${entry.id}`);
+    ids.add(entry.id);
+    if (!['visual', 'a11y'].includes(entry.kind)) throw new Error(`${path}.kind is invalid`);
+    if (entry.status !== 'required' || entry.theme !== 'light' || entry.route !== '/') {
+      throw new Error(`${path} must be a required light Home case`);
+    }
+    validateViewport(entry.viewport, `${path}.viewport`);
+    if (entry.kind === 'visual') exactString(entry.artifact, `${path}.artifact`, /^[a-z0-9-]+\.png$/, 100);
+    if (!Array.isArray(entry.checks) || entry.checks.length === 0) throw new Error(`${path}.checks is required`);
+    for (const [checkIndex, check] of entry.checks.entries()) {
+      exactString(check, `${path}.checks[${checkIndex}]`, /^[a-z0-9_]+$/, 64);
+    }
+  }
+  const widths = value.cases
+    .filter((entry) => entry.kind === 'visual')
+    .map((entry) => entry.viewport.width);
+  if (JSON.stringify(widths) !== JSON.stringify([320, 600, 840, 1240])) {
+    throw new Error('visual cases must cover exactly 320/600/840/1240 in order');
+  }
+  return value;
+}
+
+export function loadCaseCatalog() {
+  return validateCaseCatalog(readJson(CASE_CATALOG_PATH));
+}
+
+export function validateFontManifest(value) {
+  exactKeys(value, ['$schema', 'schema_version', 'document_type', 'cache_directory', 'fonts'], 'font-manifest');
+  if (value.schema_version !== 2 || value.document_type !== 'home-visual-font-manifest') {
+    throw new Error('font-manifest must be schema v2');
+  }
+  if (value.cache_directory !== '.visual-cache/fonts') throw new Error('font cache path drifted');
+  if (!Array.isArray(value.fonts) || value.fonts.length !== 4) throw new Error('four pinned font files are required');
+  const files = new Set();
+  for (const [index, font] of value.fonts.entries()) {
+    const path = `font-manifest.fonts[${index}]`;
+    exactKeys(font, ['family', 'weight', 'style', 'file', 'url', 'sha256'], path);
+    if (!['Pretendard', 'D2Coding'].includes(font.family)) throw new Error(`${path}.family is invalid`);
+    boundedInteger(font.weight, `${path}.weight`, 100, 900);
+    if (font.style !== 'normal') throw new Error(`${path}.style must be normal`);
+    exactString(font.file, `${path}.file`, /^[A-Za-z0-9-]+\.woff2$/, 100);
+    if (files.has(font.file)) throw new Error(`duplicate font file: ${font.file}`);
+    files.add(font.file);
+    exactString(font.url, `${path}.url`, /^https:\/\/cdn\.jsdelivr\.net\//, 300);
+    exactString(font.sha256, `${path}.sha256`, SHA256, 64);
+  }
+  return value;
+}
+
+export function loadFontManifest() {
+  return validateFontManifest(readJson(FONT_MANIFEST_PATH));
+}
+
+function assertSanitized(value, path = 'evidence') {
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => assertSanitized(entry, `${path}[${index}]`));
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  for (const [key, nested] of Object.entries(value)) {
+    if (FORBIDDEN_EVIDENCE_KEYS.has(key)) {
+      throw new Error(`${path}.${key} is forbidden raw content in sanitized evidence`);
+    }
+    assertSanitized(nested, `${path}.${key}`);
+  }
+}
+
+function validateRuntime(value, path) {
+  exactKeys(value, [
+    'browser',
+    'playwright_version',
+    'locale',
+    'timezone_id',
+    'device_scale_factor',
+    'color_scheme',
+    'reduced_motion',
+    'animations',
+    'clock',
+    'network_policy',
+    'workers',
+  ], path);
+  const expected = validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH)).runtime;
+  if (JSON.stringify(value) !== JSON.stringify(expected)) throw new Error(`${path} does not match candidate-spec`);
+}
+
+function validateEvidenceCase(entry, documentType, path) {
+  const visual = documentType === 'home-visual-evidence';
+  const required = visual
+    ? ['case_id', 'status', 'theme', 'viewport', 'check_count', 'failed_check_count', 'artifact_sha256']
+    : ['case_id', 'status', 'theme', 'viewport', 'check_count', 'failed_check_count', 'violation_counts'];
+  exactKeys(entry, required, path);
+  exactString(entry.case_id, `${path}.case_id`, CASE_ID, 80);
+  if (!['passed', 'failed'].includes(entry.status)) throw new Error(`${path}.status is invalid`);
+  if (entry.theme !== 'light') throw new Error(`${path}.theme must be light`);
+  validateViewport(entry.viewport, `${path}.viewport`);
+  boundedInteger(entry.check_count, `${path}.check_count`, 1, 1000);
+  boundedInteger(entry.failed_check_count, `${path}.failed_check_count`, 0, entry.check_count);
+  if (visual) {
+    exactString(entry.artifact_sha256, `${path}.artifact_sha256`, SHA256, 64);
+  } else {
+    exactKeys(entry.violation_counts, ['critical', 'serious', 'moderate', 'minor', 'total'], `${path}.violation_counts`);
+    for (const [key, count] of Object.entries(entry.violation_counts)) {
+      boundedInteger(count, `${path}.violation_counts.${key}`, 0, 10000);
+    }
+    const total = entry.violation_counts.critical
+      + entry.violation_counts.serious
+      + entry.violation_counts.moderate
+      + entry.violation_counts.minor;
+    if (entry.violation_counts.total !== total) throw new Error(`${path}.violation_counts.total is inconsistent`);
+  }
+}
+
+export function validateEvidenceManifest(
+  value,
+  { environment = process.env, enforceBindings = false } = {},
+) {
+  assertSanitized(value);
+  exactKeys(value, [
+    '$schema',
+    'schema_version',
+    'document_type',
+    'binding',
+    'runtime',
+    'theme_coverage',
+    'baseline_review',
+    'summary',
+    'cases',
+    'privacy',
+  ], 'evidence');
+  if (value.schema_version !== 2 || !['home-visual-evidence', 'home-a11y-evidence'].includes(value.document_type)) {
+    throw new Error('evidence must be a visual/a11y schema v2 manifest');
+  }
+  exactKeys(value.binding, ['repository', 'home_source_sha', 'candidate_spec_sha256', 'case_catalog_sha256', 'font_manifest_sha256'], 'evidence.binding');
+  if (value.binding.repository !== 'DevPathAi/devpath-home-page') throw new Error('evidence repository is not canonical');
+  exactString(value.binding.home_source_sha, 'evidence.binding.home_source_sha', SHA40, 40);
+  for (const field of ['candidate_spec_sha256', 'case_catalog_sha256', 'font_manifest_sha256']) {
+    exactString(value.binding[field], `evidence.binding.${field}`, SHA256, 64);
+  }
+  if (enforceBindings) {
+    const expectedBinding = {
+      home_source_sha: currentHomeSha(environment),
+      candidate_spec_sha256: evidenceCandidateSha(environment),
+      case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
+      font_manifest_sha256: sha256File(FONT_MANIFEST_PATH),
+    };
+    for (const [field, expected] of Object.entries(expectedBinding)) {
+      if (value.binding[field] !== expected) {
+        throw new Error(`evidence.binding.${field} does not match the current candidate`);
+      }
+    }
+  }
+  validateRuntime(value.runtime, 'evidence.runtime');
+  exactKeys(value.theme_coverage, ['light', 'dark'], 'evidence.theme_coverage');
+  if (value.theme_coverage.light !== 'covered') {
+    throw new Error('evidence light theme must be covered');
+  }
+  exactKeys(value.theme_coverage.dark, ['status', 'reason', 'approval'], 'evidence.theme_coverage.dark');
+  if (value.theme_coverage.dark.status !== 'not_applicable') {
+    throw new Error('evidence dark theme must be explicitly not_applicable');
+  }
+  exactString(value.theme_coverage.dark.reason, 'evidence.theme_coverage.dark.reason', undefined, 240);
+  exactKeys(
+    value.theme_coverage.dark.approval,
+    ['required', 'status', 'owner', 'artifact'],
+    'evidence.theme_coverage.dark.approval',
+  );
+  if (
+    value.theme_coverage.dark.approval.required !== true
+    || value.theme_coverage.dark.approval.status !== 'pending'
+    || value.theme_coverage.dark.approval.owner !== 'product-design'
+    || value.theme_coverage.dark.approval.artifact !== null
+  ) {
+    throw new Error('evidence dark-theme approval must remain explicit and pending');
+  }
+  exactKeys(value.baseline_review, ['status', 'review_id'], 'evidence.baseline_review');
+  if (!['missing', 'pending_external_review', 'approved'].includes(value.baseline_review.status)) {
+    throw new Error('evidence baseline review status is invalid');
+  }
+  if (value.baseline_review.review_id !== null) {
+    exactString(value.baseline_review.review_id, 'evidence.baseline_review.review_id', SAFE_ID, 80);
+  }
+  exactKeys(value.summary, ['required', 'passed', 'failed'], 'evidence.summary');
+  for (const [key, count] of Object.entries(value.summary)) boundedInteger(count, `evidence.summary.${key}`, 0, 1000);
+  if (value.summary.required !== value.summary.passed + value.summary.failed) {
+    throw new Error('evidence summary counts are inconsistent');
+  }
+  if (!Array.isArray(value.cases)) throw new Error('evidence.cases must be an array');
+  value.cases.forEach((entry, index) => validateEvidenceCase(entry, value.document_type, `evidence.cases[${index}]`));
+  exactKeys(value.privacy, ['classification', 'contains_raw_content'], 'evidence.privacy');
+  if (value.privacy.classification !== 'sanitized-aggregate-only' || value.privacy.contains_raw_content !== false) {
+    throw new Error('evidence privacy contract is invalid');
+  }
+  return value;
+}
+
+export function validateBaselineReview(value) {
+  exactKeys(value, ['schema_version', 'document_type', 'status', 'review_id', 'reviewer', 'reason', 'reviewed_at', 'home_source_sha', 'candidate_spec_sha256', 'case_catalog_sha256', 'artifacts'], 'baseline-review');
+  if (value.schema_version !== 2 || value.document_type !== 'home-visual-baseline-review') {
+    throw new Error('baseline review must be schema v2');
+  }
+  if (!['pending_external_review', 'approved'].includes(value.status)) throw new Error('baseline review status is invalid');
+  exactString(value.review_id, 'baseline-review.review_id', SAFE_ID, 80);
+  exactString(value.reviewer, 'baseline-review.reviewer', SAFE_ID, 80);
+  exactString(value.reason, 'baseline-review.reason', undefined, 240);
+  if (value.status === 'approved') {
+    exactString(value.reviewed_at, 'baseline-review.reviewed_at', /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/, 24);
+  } else if (value.reviewed_at !== null) {
+    throw new Error('pending baseline review must not claim a review timestamp');
+  }
+  exactString(value.home_source_sha, 'baseline-review.home_source_sha', SHA40, 40);
+  exactString(value.candidate_spec_sha256, 'baseline-review.candidate_spec_sha256', SHA256, 64);
+  exactString(value.case_catalog_sha256, 'baseline-review.case_catalog_sha256', SHA256, 64);
+  if (!Array.isArray(value.artifacts) || value.artifacts.length !== 4) throw new Error('baseline review requires four artifacts');
+  for (const [index, artifact] of value.artifacts.entries()) {
+    exactKeys(artifact, ['case_id', 'sha256'], `baseline-review.artifacts[${index}]`);
+    exactString(artifact.case_id, `baseline-review.artifacts[${index}].case_id`, CASE_ID, 80);
+    exactString(artifact.sha256, `baseline-review.artifacts[${index}].sha256`, SHA256, 64);
+  }
+  return value;
+}
+
+function findFiles(directory, basename) {
+  if (!existsSync(directory)) return [];
+  const found = [];
+  for (const entry of readdirSync(directory)) {
+    const path = join(directory, entry);
+    if (statSync(path).isDirectory()) found.push(...findFiles(path, basename));
+    else if (entry === basename) found.push(path);
+  }
+  return found.sort();
+}
+
+function loadRecords(recordsDirectory) {
+  const records = findFiles(recordsDirectory, 'sanitized-evidence.json').map(readJson);
+  const byId = new Map();
+  for (const record of records) {
+    exactKeys(record, ['schema_version', 'document_type', 'case_id', 'kind', 'status', 'check_count', 'failed_check_count', 'artifact_sha256', 'violation_counts'], 'case-record');
+    if (record.schema_version !== 2 || record.document_type !== 'home-visual-a11y-case-record') {
+      throw new Error('case record must be schema v2');
+    }
+    exactString(record.case_id, 'case-record.case_id', CASE_ID, 80);
+    if (byId.has(record.case_id)) throw new Error(`duplicate evidence record: ${record.case_id}`);
+    if (!['visual', 'a11y'].includes(record.kind) || !['passed', 'failed'].includes(record.status)) {
+      throw new Error(`case record ${record.case_id} has an invalid kind/status`);
+    }
+    boundedInteger(record.check_count, 'case-record.check_count', 1, 1000);
+    boundedInteger(record.failed_check_count, 'case-record.failed_check_count', 0, record.check_count);
+    if (record.kind === 'visual') {
+      exactString(record.artifact_sha256, 'case-record.artifact_sha256', SHA256, 64);
+      if (record.violation_counts !== null) throw new Error('visual record cannot carry violation counts');
+    } else {
+      if (record.artifact_sha256 !== null) throw new Error('a11y record cannot carry an artifact hash');
+      exactKeys(record.violation_counts, ['critical', 'serious', 'moderate', 'minor', 'total'], 'case-record.violation_counts');
+    }
+    byId.set(record.case_id, record);
+  }
+  return byId;
+}
+
+function currentHomeSha(environment = process.env) {
+  const configured = environment.HOME_SOURCE_SHA;
+  const sha = configured || execFileSync('git', ['rev-parse', 'HEAD'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  }).trim().toLowerCase();
+  return exactString(sha, 'HOME_SOURCE_SHA', SHA40, 40);
+}
+
+function evidenceCandidateSha(environment = process.env) {
+  const configured = environment.MISSION_CANDIDATE_SPEC_SHA256
+    || environment.HOME_VISUAL_CANDIDATE_SPEC_SHA256;
+  return configured
+    ? exactString(configured.toLowerCase(), 'candidate-spec SHA256', SHA256, 64)
+    : candidateSpecSha256();
+}
+
+function baselineReviewSummary() {
+  if (!existsSync(BASELINE_REVIEW_PATH)) return { status: 'missing', review_id: null };
+  const review = validateBaselineReview(readJson(BASELINE_REVIEW_PATH));
+  return { status: review.status, review_id: review.review_id };
+}
+
+function emptyViolations() {
+  return { critical: 0, serious: 0, moderate: 0, minor: 0, total: 0 };
+}
+
+export function generateEvidenceManifests({ recordsDirectory, outputDirectory, environment = process.env }) {
+  validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
+  const catalog = loadCaseCatalog();
+  validateFontManifest(readJson(FONT_MANIFEST_PATH));
+  const records = loadRecords(recordsDirectory);
+  const catalogById = new Map(catalog.cases.map((entry) => [entry.id, entry]));
+  for (const [caseId, record] of records.entries()) {
+    const expected = catalogById.get(caseId);
+    if (!expected) throw new Error(`evidence record is not in the case catalog: ${caseId}`);
+    if (record.kind !== expected.kind) throw new Error(`evidence record kind drifted: ${caseId}`);
+  }
+  const binding = {
+    repository: 'DevPathAi/devpath-home-page',
+    home_source_sha: currentHomeSha(environment),
+    candidate_spec_sha256: evidenceCandidateSha(environment),
+    case_catalog_sha256: sha256File(CASE_CATALOG_PATH),
+    font_manifest_sha256: sha256File(FONT_MANIFEST_PATH),
+  };
+  const runtime = readJson(CANDIDATE_SPEC_PATH).runtime;
+  const common = {
+    $schema: 'https://leva.ai.kr/schemas/home-visual-a11y-evidence-v2.json',
+    schema_version: 2,
+    binding,
+    runtime,
+    theme_coverage: {
+      light: 'covered',
+      dark: {
+        status: catalog.theme_coverage.dark.status,
+        reason: catalog.theme_coverage.dark.reason,
+        approval: { ...catalog.theme_coverage.dark.approval },
+      },
+    },
+    baseline_review: baselineReviewSummary(),
+    privacy: { classification: 'sanitized-aggregate-only', contains_raw_content: false },
+  };
+
+  const build = (kind) => {
+    const cases = catalog.cases.filter((entry) => entry.kind === kind).map((entry) => {
+      const record = records.get(entry.id);
+      const base = {
+        case_id: entry.id,
+        status: record?.status ?? 'failed',
+        theme: 'light',
+        viewport: entry.viewport,
+        check_count: record?.check_count ?? entry.checks.length,
+        failed_check_count: record?.failed_check_count ?? entry.checks.length,
+      };
+      if (kind === 'visual') {
+        return { ...base, artifact_sha256: record?.artifact_sha256 ?? '0'.repeat(64) };
+      }
+      return { ...base, violation_counts: record?.violation_counts ?? emptyViolations() };
+    });
+    const summary = {
+      required: cases.length,
+      passed: cases.filter((entry) => entry.status === 'passed').length,
+      failed: cases.filter((entry) => entry.status === 'failed').length,
+    };
+    return validateEvidenceManifest({
+      ...common,
+      document_type: kind === 'visual' ? 'home-visual-evidence' : 'home-a11y-evidence',
+      summary,
+      cases,
+    }, { environment, enforceBindings: true });
+  };
+
+  const visual = build('visual');
+  const a11y = build('a11y');
+  mkdirSync(outputDirectory, { recursive: true });
+  writeFileSync(join(outputDirectory, 'visual-evidence.v2.json'), `${JSON.stringify(visual, null, 2)}\n`, 'utf8');
+  writeFileSync(join(outputDirectory, 'a11y-evidence.v2.json'), `${JSON.stringify(a11y, null, 2)}\n`, 'utf8');
+  return { visual, a11y };
+}
+
+function argument(name) {
+  const index = process.argv.indexOf(name);
+  return index === -1 ? null : process.argv[index + 1];
+}
+
+function cli() {
+  const command = process.argv[2];
+  if (command === 'candidate-sha') {
+    process.stdout.write(`${candidateSpecSha256()}\n`);
+    return;
+  }
+  if (command === 'contracts') {
+    validateCandidateSpec(readJson(CANDIDATE_SPEC_PATH));
+    loadCaseCatalog();
+    loadFontManifest();
+    process.stdout.write('visual/a11y contracts valid\n');
+    return;
+  }
+  if (command === 'generate') {
+    const recordsDirectory = resolve(argument('--records') || join(ROOT, 'test-results', 'visual-a11y'));
+    const outputDirectory = resolve(argument('--out') || join(recordsDirectory, 'manifests'));
+    const result = generateEvidenceManifests({ recordsDirectory, outputDirectory });
+    if (result.visual.summary.failed || result.a11y.summary.failed) {
+      throw new Error('required visual/a11y evidence is incomplete or failed');
+    }
+    process.stdout.write(`sanitized evidence written to ${outputDirectory}\n`);
+    return;
+  }
+  if (command === 'validate') {
+    const directory = resolve(argument('--dir') || join(ROOT, 'test-results', 'visual-a11y', 'manifests'));
+    for (const name of ['visual-evidence.v2.json', 'a11y-evidence.v2.json']) {
+      validateEvidenceManifest(readJson(join(directory, name)), {
+        environment: process.env,
+        enforceBindings: true,
+      });
+    }
+    process.stdout.write('sanitized evidence manifests valid\n');
+    return;
+  }
+  throw new Error('usage: visual-evidence.mjs <candidate-sha|contracts|generate|validate>');
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) cli();

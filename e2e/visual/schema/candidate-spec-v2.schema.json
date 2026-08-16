@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leva.ai.kr/schemas/home-visual-a11y-candidate-spec-v2.json",
+  "title": "Home visual/a11y candidate spec v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "document_type", "surface", "runtime", "inputs"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": 2 },
+    "document_type": { "const": "home-visual-a11y-candidate-spec" },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "route", "build"],
+      "properties": {
+        "repository": { "const": "DevPathAi/devpath-home-page" },
+        "route": { "const": "/" },
+        "build": { "const": "production-dist" }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["browser", "playwright_version", "locale", "timezone_id", "device_scale_factor", "color_scheme", "reduced_motion", "animations", "clock", "network_policy", "workers"],
+      "properties": {
+        "browser": { "const": "chromium" },
+        "playwright_version": { "const": "1.61.1" },
+        "locale": { "const": "ko-KR" },
+        "timezone_id": { "const": "UTC" },
+        "device_scale_factor": { "const": 1 },
+        "color_scheme": { "const": "light" },
+        "reduced_motion": { "const": "reduce" },
+        "animations": { "const": "disabled" },
+        "clock": { "type": "string", "format": "date-time" },
+        "network_policy": { "const": "loopback-only" },
+        "workers": { "const": 1 }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_catalog", "font_manifest"],
+      "properties": {
+        "case_catalog": { "const": "e2e/visual/case-catalog.v2.json" },
+        "font_manifest": { "const": "e2e/visual/fonts/manifest.v2.json" }
+      }
+    }
+  }
+}

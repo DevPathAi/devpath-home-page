@@ -47,6 +47,7 @@ npm run gen:og     # assets/og-image.png 재생성 (템플릿/카피 변경 시)
 - [`docs/plan/plan-master.md`](./docs/plan/plan-master.md) — 마스터 플랜
 - [`docs/plan/design-doc.md`](./docs/plan/design-doc.md) — 설계 문서
 - [`docs/plan/test-plan.md`](./docs/plan/test-plan.md) — 테스트 플랜
+- [`docs/visual-a11y-evidence.md`](./docs/visual-a11y-evidence.md) — production-dist 시각/접근성 증거 v2와 baseline 승인 절차
 
 ## 브랜치 전략
 `master` 보호(릴리스). `develop` 통합 브랜치. 작업은 `feat/*`·`fix/*` → `develop` PR, 릴리스 시 `develop` → `master` PR.
