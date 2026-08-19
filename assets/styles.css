@@ -1091,6 +1091,20 @@ textarea {
   margin: var(--dp-space-xs) 0 0;
 }
 
+/* 글을 다 읽은 자리가 전환 의도가 가장 높다. 목록 링크보다 앞에 둔다. */
+.note__cta {
+  margin-top: var(--dp-space-xxxl);
+  padding: var(--dp-space-lg);
+  background: var(--dp-color-accent-soft);
+  border: 1px solid var(--dp-color-accent-line);
+  border-radius: var(--dp-radius-input);
+}
+
+.note__cta p {
+  margin-bottom: var(--dp-space-md);
+  font: var(--dp-type-body-medium);
+}
+
 .note__back {
   margin-top: var(--dp-space-xxxl);
 }
