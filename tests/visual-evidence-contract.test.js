@@ -133,15 +133,15 @@ describe('Home visual/a11y evidence v2 contract', () => {
         recordsDirectory: records,
         outputDirectory: output,
         environment: {
-          HOME_RENDERED_PRODUCT_SHA: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
+          HOME_RENDERED_PRODUCT_SHA: '8a02ea072831d471ca829aa4f7eb0354ea92daee',
           HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
           MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
           MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
         },
       });
       expect(result.visual.binding).toMatchObject({
-        rendered_product_sha: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
-        rendered_product_tree_sha256: '64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368',
+        rendered_product_sha: '8a02ea072831d471ca829aa4f7eb0354ea92daee',
+        rendered_product_tree_sha256: 'adc7603015e79ea5b2d6997a6637e59affc0f3c9832315971e3649c37e406d85',
         evidence_producer_sha: 'a'.repeat(40),
         candidate_spec_sha256: releaseCandidateSha256,
       });
@@ -153,7 +153,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
       });
       expect(JSON.stringify(result)).not.toMatch(/private learner|"screenshot_path"|"selector"/);
       const environment = {
-        HOME_RENDERED_PRODUCT_SHA: '084ab218698b0411f9bdea7c7c32c45fce87fd18',
+        HOME_RENDERED_PRODUCT_SHA: '8a02ea072831d471ca829aa4f7eb0354ea92daee',
         HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
         MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
         MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
