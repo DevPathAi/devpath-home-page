@@ -23,8 +23,8 @@ import {
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = '084ab218698b0411f9bdea7c7c32c45fce87fd18';
-const productTreeSha = '64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368';
+const productSha = '8a02ea072831d471ca829aa4f7eb0354ea92daee';
+const productTreeSha = 'adc7603015e79ea5b2d6997a6637e59affc0f3c9832315971e3649c37e406d85';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -160,7 +160,9 @@ describe('independent ET13 audit contracts', () => {
       cwd: root,
       encoding: 'utf8',
     }).split(/\r?\n/).filter(Boolean);
-    expect(changedPaths).toContain('.github/workflows/ci.yml');
+    // 렌더 기준 커밋과 HEAD 의 차이는 증거 허용목록 안에서만 일어나야 한다.
+    // 대표값으로 이번 재바인딩의 산출물을 지목한다(직전에는 ci.yml 이 그 자리였다).
+    expect(changedPaths).toContain('e2e/visual/baselines/review-metadata.v2.json');
     expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
     expect(productRuntimeTreeSha256('1ee751bfe8e0e26ec1f57d02cef56975859360c7'))
       .not.toBe(productRuntimeTreeSha256(productSha));
