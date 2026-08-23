@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   generateEvidenceManifests,
+  isCommitAncestorByObjectGraph,
   loadCaseCatalog,
   productRuntimeTreeSha256,
   validateBaselineReview,
@@ -163,6 +164,8 @@ describe('independent ET13 audit contracts', () => {
     // 렌더 기준 커밋과 HEAD 의 차이는 증거 허용목록 안에서만 일어나야 한다.
     // 대표값으로 이번 재바인딩의 산출물을 지목한다(직전에는 ci.yml 이 그 자리였다).
     expect(changedPaths).toContain('e2e/visual/baselines/review-metadata.v2.json');
+    expect(isCommitAncestorByObjectGraph(productSha, headSha)).toBe(true);
+    expect(isCommitAncestorByObjectGraph(headSha, productSha)).toBe(false);
     expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
     expect(productRuntimeTreeSha256('1ee751bfe8e0e26ec1f57d02cef56975859360c7'))
       .not.toBe(productRuntimeTreeSha256(productSha));
@@ -180,7 +183,7 @@ describe('independent ET13 audit contracts', () => {
       rendered_product_sha: productSha,
       evidence_producer_sha: producerSha,
     });
-    expect(visual.evidence_mode).toBe('diagnostic_pending_review');
+    expect(visual.evidence_mode).toBe('release_ready');
     expect(a11y.evidence_mode).toBe('release_ready');
   });
 

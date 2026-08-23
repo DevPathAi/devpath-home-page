@@ -23,6 +23,7 @@ const SHA256 = /^[0-9a-f]{64}$/;
 const SAFE_ID = /^[a-z0-9]+(?:[a-z0-9._-]*[a-z0-9])?$/;
 const CASE_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const PNG_SIGNATURE = '89504e470d0a1a0a';
+const MAX_ANCESTRY_COMMITS = 4096;
 const EVIDENCE_ONLY_PATHS = Object.freeze([
   { exact: '.github/workflows/ci.yml' },
   { exact: '.github/workflows/mission-spine-home-dist.yml' },
@@ -278,6 +279,34 @@ function ensureCommit(sha, path) {
   if (result.status !== 0) throw new Error(`${path} does not name a committed Git tree`);
 }
 
+export function isCommitAncestorByObjectGraph(ancestorSha, descendantSha) {
+  const pending = [descendantSha];
+  const seen = new Set();
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (current === ancestorSha) return true;
+    if (seen.has(current)) continue;
+    seen.add(current);
+    if (seen.size > MAX_ANCESTRY_COMMITS) {
+      throw new Error('commit ancestry traversal exceeded its safety limit');
+    }
+    const commit = spawnSync('git', ['cat-file', '-p', current], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    });
+    if (commit.error) throw commit.error;
+    if (commit.status !== 0) {
+      throw new Error('commit ancestry graph is incomplete');
+    }
+    const headers = String(commit.stdout || '').split(/\r?\n\r?\n/, 1)[0];
+    for (const line of headers.split(/\r?\n/)) {
+      const match = /^parent ([0-9a-f]{40})$/.exec(line);
+      if (match) pending.push(match[1]);
+    }
+  }
+  return false;
+}
+
 export function productRuntimeTreeSha256(commitSha) {
   ensureCommit(commitSha, 'rendered product SHA');
   const raw = execFileSync('git', ['ls-tree', '-r', '-z', '--full-tree', commitSha], {
@@ -310,7 +339,27 @@ export function validateProductRuntimeProvenance({
   );
   if (ancestor.error) throw ancestor.error;
   if (ancestor.status !== 0) {
-    throw new Error('rendered product commit must be an ancestor of the evidence producer');
+    const shallow = spawnSync(
+      'git',
+      ['rev-parse', '--is-shallow-repository'],
+      { cwd: ROOT, encoding: 'utf8' },
+    );
+    const detail = String(ancestor.stderr || '').trim().replace(/\s+/g, ' ') || 'none';
+    const shallowState = String(shallow.stdout || '').trim() || 'unknown';
+    if (
+      ancestor.status === 1
+      && shallowState === 'true'
+      && isCommitAncestorByObjectGraph(renderedProductSha, evidenceProducerSha)
+    ) {
+      // Exact-SHA GitHub checkouts can retain a shallow marker after fetching
+      // every object. Direct commit-object traversal preserves fail-closed
+      // ancestry validation without trusting the shallow revision boundary.
+    } else {
+      throw new Error(
+        `rendered product commit must be an ancestor of the evidence producer `
+        + `(status=${ancestor.status}, shallow=${shallowState}, stderr=${detail})`,
+      );
+    }
   }
 
   if (requireClean) {
