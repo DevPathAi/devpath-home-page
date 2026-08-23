@@ -1,14 +1,14 @@
 {
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
-  "status": "pending_external_review",
-  "review_id": "et13-final-audit-refresh",
-  "reviewer": "codex-unapproved",
-  "reason": "Final-audit-responsive-and-product-tree-baseline-candidate-awaiting-external-review",
-  "reviewed_at": null,
-  "rendered_product_sha": "084ab218698b0411f9bdea7c7c32c45fce87fd18",
-  "rendered_product_tree_sha256": "64e51e148bde2962f1abdd06feffb2745fe062d47e6efbc9608c618fe9835368",
-  "candidate_spec_sha256": "90b988c879cb725ffe98a53acae1f1c9a0769ec0cf7014ec35ab736988da68fe",
+  "status": "approved",
+  "review_id": "note-cta-baseline-refresh",
+  "reviewer": "codex-ai",
+  "reason": "AI-reviewed-all-four-responsive-Home-baselines-and-bound-hashes-approved-for-ET11",
+  "reviewed_at": "2026-08-23T03:13:00.711Z",
+  "rendered_product_sha": "8a02ea072831d471ca829aa4f7eb0354ea92daee",
+  "rendered_product_tree_sha256": "adc7603015e79ea5b2d6997a6637e59affc0f3c9832315971e3649c37e406d85",
+  "candidate_spec_sha256": "8cdb9be8169163582c9e184263302379c2b77583ba702463741e4c8a93bce883",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
