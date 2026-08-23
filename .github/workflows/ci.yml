@@ -100,7 +100,13 @@ jobs:
         run: npm run visual:fonts:verify
 
       - name: Production-dist visual and accessibility evidence
-        run: npm run test:visual
+        run: |
+          set -eu
+          if test "$(git rev-parse --is-shallow-repository)" = true; then
+            git fetch --no-tags --unshallow origin
+          fi
+          test "$(git rev-parse --is-shallow-repository)" = false
+          npm run test:visual
 
       - name: Validate sanitized schema-v2 evidence
         run: npm run visual:evidence:validate
