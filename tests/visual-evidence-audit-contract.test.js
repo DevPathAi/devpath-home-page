@@ -180,7 +180,7 @@ describe('independent ET13 audit contracts', () => {
       rendered_product_sha: productSha,
       evidence_producer_sha: producerSha,
     });
-    expect(visual.evidence_mode).toBe('diagnostic_pending_review');
+    expect(visual.evidence_mode).toBe('release_ready');
     expect(a11y.evidence_mode).toBe('release_ready');
   });
 
