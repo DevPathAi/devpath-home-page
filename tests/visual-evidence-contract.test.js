@@ -199,6 +199,10 @@ describe('Home visual/a11y evidence v2 contract', () => {
     expect(visualJob).toContain(
       'git config --global --add safe.directory "${GITHUB_WORKSPACE}"',
     );
+    expect(visualJob).toContain('git fetch --no-tags --unshallow origin');
+    expect(visualJob).toContain(
+      'test "$(git rev-parse --is-shallow-repository)" = false',
+    );
     expect(visualJob).toContain(
       'test "$(git rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"',
     );

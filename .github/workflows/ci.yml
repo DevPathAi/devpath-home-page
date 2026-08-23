@@ -74,6 +74,14 @@ jobs:
           git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           test "$(git rev-parse --show-toplevel)" = "${GITHUB_WORKSPACE}"
 
+      - name: Restore complete provenance history for exact PR heads
+        run: |
+          set -eu
+          if test "$(git rev-parse --is-shallow-repository)" = true; then
+            git fetch --no-tags --unshallow origin
+          fi
+          test "$(git rev-parse --is-shallow-repository)" = false
+
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '24'
