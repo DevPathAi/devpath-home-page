@@ -310,7 +310,17 @@ export function validateProductRuntimeProvenance({
   );
   if (ancestor.error) throw ancestor.error;
   if (ancestor.status !== 0) {
-    throw new Error('rendered product commit must be an ancestor of the evidence producer');
+    const shallow = spawnSync(
+      'git',
+      ['rev-parse', '--is-shallow-repository'],
+      { cwd: ROOT, encoding: 'utf8' },
+    );
+    const detail = String(ancestor.stderr || '').trim().replace(/\s+/g, ' ') || 'none';
+    const shallowState = String(shallow.stdout || '').trim() || 'unknown';
+    throw new Error(
+      `rendered product commit must be an ancestor of the evidence producer `
+      + `(status=${ancestor.status}, shallow=${shallowState}, stderr=${detail})`,
+    );
   }
 
   if (requireClean) {
