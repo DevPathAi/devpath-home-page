@@ -476,6 +476,17 @@ export class StagingControl {
   async bindBrowserRun(page, runKey, origins) {
     requireRunKey(runKey);
     const allowedOrigins = browserRunOrigins(origins);
+    await page.addInitScript(({ productOrigins, marker }) => {
+      if (!productOrigins.includes(window.location.origin)) return;
+      window.localStorage.setItem('leva.release.analytics.v1', JSON.stringify(marker));
+    }, {
+      productOrigins: [origins.landingOrigin, origins.appOrigin],
+      marker: {
+        schema_version: 'mission-spine.release-analytics.v1',
+        permission_url: `${origins.apiOrigin}/v1/release/browser/analytics-permission`,
+        capture_url: `${origins.analyticsSpyOrigin}/v1/release/browser/analytics-events`,
+      },
+    });
     await installHostBoundRunHeaders(page, {
       allowedOrigins,
       candidateSpecSha256: this.#candidateSpecSha256,

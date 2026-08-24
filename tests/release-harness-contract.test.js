@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   assertLiveReleaseContext,
@@ -470,6 +470,7 @@ describe('staging control contract', () => {
     };
     const page = {
       context: () => browserContext,
+      addInitScript: vi.fn(async () => {}),
       async close(options) {
         expect(options).toEqual({ runBeforeUnload: false });
         closed = true;
@@ -487,6 +488,17 @@ describe('staging control contract', () => {
       method: 'Fetch.enable',
       parameters: { patterns: [{ urlPattern: '*', requestStage: 'Request' }] },
     }]);
+    expect(page.addInitScript).toHaveBeenCalledOnce();
+    const [initScript, initConfig] = page.addInitScript.mock.calls[0];
+    expect(typeof initScript).toBe('function');
+    expect(initConfig).toEqual({
+      productOrigins: ['https://leva.ai.kr', 'https://app.leva.ai.kr'],
+      marker: {
+        schema_version: 'mission-spine.release-analytics.v1',
+        permission_url: 'https://api.leva.ai.kr/v1/release/browser/analytics-permission',
+        capture_url: 'https://analytics-spy.staging.leva.ai.kr/v1/release/browser/analytics-events',
+      },
+    });
     const pausedRequest = (requestId, url, redirectedRequestId) => ({
       requestId,
       request: { url, headers: { accept: 'text/html' } },
