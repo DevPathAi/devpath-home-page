@@ -475,6 +475,7 @@ function validateJourneyHarness(value, environments) {
   exactKeys(value, [
     'landing_origin',
     'app_origin',
+    'api_origin',
     'control_origin',
     'oauth_origin',
     'analytics_spy_origin',
@@ -483,6 +484,7 @@ function validateJourneyHarness(value, environments) {
   const origins = {
     landingOrigin: tlsOrigin(value.landing_origin, 'journey_harness.landing_origin'),
     appOrigin: tlsOrigin(value.app_origin, 'journey_harness.app_origin'),
+    apiOrigin: tlsOrigin(value.api_origin, 'journey_harness.api_origin'),
     controlOrigin: tlsOrigin(value.control_origin, 'journey_harness.control_origin'),
     oauthOrigin: tlsOrigin(value.oauth_origin, 'journey_harness.oauth_origin'),
     analyticsSpyOrigin: tlsOrigin(
@@ -495,6 +497,14 @@ function validateJourneyHarness(value, environments) {
     || origins.appOrigin !== environments.production.web_origin
   ) {
     throw new Error('journey harness must use the canonical production origins');
+  }
+  const appHostname = new URL(origins.appOrigin).hostname;
+  if (!appHostname.startsWith('app.')) {
+    throw new Error('canonical production app hostname must start with app.');
+  }
+  const expectedApiOrigin = `https://api.${appHostname.slice('app.'.length)}`;
+  if (origins.apiOrigin !== expectedApiOrigin) {
+    throw new Error(`journey harness must use canonical API origin ${expectedApiOrigin}`);
   }
   if (new Set(Object.values(origins)).size !== Object.keys(origins).length) {
     throw new Error('journey harness origins must be distinct');

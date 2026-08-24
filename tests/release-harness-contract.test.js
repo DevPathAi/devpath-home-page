@@ -144,6 +144,7 @@ function validCandidateSpec(overrides = {}) {
     journey_harness: {
       landing_origin: 'https://leva.ai.kr',
       app_origin: 'https://app.leva.ai.kr',
+      api_origin: 'https://api.leva.ai.kr',
       control_origin: 'https://release-control.staging.leva.ai.kr',
       oauth_origin: 'https://oauth.staging.leva.ai.kr',
       analytics_spy_origin: 'https://analytics-spy.staging.leva.ai.kr',
@@ -212,6 +213,7 @@ describe('release context fail-closed contract', () => {
     expect(context.releaseId).toBe('ms-20990101-contract-fixture');
     expect(context.landingOrigin).toBe('https://leva.ai.kr');
     expect(context.appOrigin).toBe('https://app.leva.ai.kr');
+    expect(context.apiOrigin).toBe('https://api.leva.ai.kr');
     expect(context.chromiumHostResolverRules).toBe(
       'MAP app.leva.ai.kr 10.24.0.11,MAP leva.ai.kr 10.24.0.10',
     );
@@ -254,6 +256,14 @@ describe('release context fail-closed contract', () => {
         const candidate = validCandidateSpec();
         candidate.journey_harness.app_origin = 'https://app.staging.leva.ai.kr';
         candidate.journey_harness.dns_overrides[1].hostname = 'app.staging.leva.ai.kr';
+        return candidate;
+      },
+    ],
+    [
+      'non-canonical API origin',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.journey_harness.api_origin = 'https://api.attacker.test:8443';
         return candidate;
       },
     ],
@@ -468,6 +478,7 @@ describe('staging control contract', () => {
     await control.bindBrowserRun(page, 'A'.repeat(22), {
       landingOrigin: 'https://leva.ai.kr',
       appOrigin: 'https://app.leva.ai.kr',
+      apiOrigin: 'https://api.leva.ai.kr',
       oauthOrigin: 'https://oauth.staging.leva.ai.kr',
       analyticsSpyOrigin: 'https://analytics-spy.staging.leva.ai.kr',
     });
@@ -481,19 +492,21 @@ describe('staging control contract', () => {
       request: { url, headers: { accept: 'text/html' } },
       ...(redirectedRequestId ? { redirectedRequestId } : {}),
     });
-    await pausedHandler(pausedRequest('allowed', 'https://app.leva.ai.kr/dashboard'));
+    await pausedHandler(pausedRequest('allowed-app', 'https://app.leva.ai.kr/dashboard'));
+    await pausedHandler(pausedRequest('allowed-api', 'https://api.leva.ai.kr/auth/refresh'));
     await pausedHandler(pausedRequest('external', 'https://fonts.example.net/font.woff2'));
 
-    const allowedContinue = sent[1];
-    expect(allowedContinue.method).toBe('Fetch.continueRequest');
-    expect(Object.fromEntries(allowedContinue.parameters.headers.map(({ name, value }) => [
-      name.toLowerCase(), value,
-    ]))).toMatchObject({
-      accept: 'text/html',
-      'x-candidate-spec-sha256': candidateSpecSha256,
-      'x-release-run-key': 'A'.repeat(22),
-    });
-    expect(sent[2]).toEqual({
+    for (const allowedContinue of sent.slice(1, 3)) {
+      expect(allowedContinue.method).toBe('Fetch.continueRequest');
+      expect(Object.fromEntries(allowedContinue.parameters.headers.map(({ name, value }) => [
+        name.toLowerCase(), value,
+      ]))).toMatchObject({
+        accept: 'text/html',
+        'x-candidate-spec-sha256': candidateSpecSha256,
+        'x-release-run-key': 'A'.repeat(22),
+      });
+    }
+    expect(sent[3]).toEqual({
       method: 'Fetch.continueRequest',
       parameters: { requestId: 'external' },
     });
@@ -501,9 +514,9 @@ describe('staging control contract', () => {
     await pausedHandler(pausedRequest(
       'redirect-target',
       'https://fonts.example.net/redirected.woff2',
-      'allowed',
+      'allowed-app',
     ));
-    expect(sent[3]).toEqual({
+    expect(sent[4]).toEqual({
       method: 'Fetch.failRequest',
       parameters: { requestId: 'redirect-target', errorReason: 'BlockedByClient' },
     });

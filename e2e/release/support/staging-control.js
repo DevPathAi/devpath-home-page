@@ -106,6 +106,7 @@ function browserRunOrigins(value) {
   const fields = [
     'landingOrigin',
     'appOrigin',
+    'apiOrigin',
     'oauthOrigin',
     'analyticsSpyOrigin',
   ];

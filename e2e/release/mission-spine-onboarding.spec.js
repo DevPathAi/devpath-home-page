@@ -82,6 +82,7 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     await control.bindBrowserRun(page, prepared.runKey, {
       landingOrigin: context.landingOrigin,
       appOrigin: context.appOrigin,
+      apiOrigin: context.apiOrigin,
       oauthOrigin: context.oauthOrigin,
       analyticsSpyOrigin: context.analyticsSpyOrigin,
     });
