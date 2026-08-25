@@ -40,6 +40,10 @@ const EVIDENCE_ONLY_PATHS = Object.freeze([
   { exact: 'tests/visual-evidence-contract.test.js' },
   { exact: 'tests/visual-evidence-release-binding.test.js' },
 ]);
+const NON_RENDERING_RELEASE_PATHS = Object.freeze([
+  { prefix: 'e2e/release/' },
+  { exact: 'tests/release-harness-contract.test.js' },
+]);
 const EXPECTED_CASES = Object.freeze([
   {
     id: 'home-light-compact-320', kind: 'visual', width: 320, height: 900,
@@ -269,6 +273,12 @@ function isEvidenceOnlyPath(path) {
   ));
 }
 
+function isNonRenderingReleasePath(path) {
+  return NON_RENDERING_RELEASE_PATHS.some((rule) => (
+    rule.exact === path || (rule.prefix && path.startsWith(rule.prefix))
+  ));
+}
+
 function ensureCommit(sha, path) {
   exactString(sha, path, SHA40, 40);
   const result = spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], {
@@ -389,7 +399,10 @@ export function validateProductRuntimeProvenance({
       ['diff', '--name-only', renderedProductSha, evidenceProducerSha],
       { cwd: ROOT, encoding: 'utf8' },
     ).split(/\r?\n/).filter(Boolean).filter((path) => !isEvidenceOnlyPath(path));
-    throw new Error(`product runtime drifted from rendered commit: ${driftedPaths.join(', ')}`);
+    const productDriftedPaths = driftedPaths.filter((path) => !isNonRenderingReleasePath(path));
+    if (productDriftedPaths.length > 0) {
+      throw new Error(`product runtime drifted from rendered commit: ${productDriftedPaths.join(', ')}`);
+    }
   }
   return {
     rendered_product_sha: renderedProductSha,
