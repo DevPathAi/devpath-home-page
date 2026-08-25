@@ -38,6 +38,20 @@ function temporaryDirectory() {
 
 function validCandidateSpec(overrides = {}) {
   const digest = (character) => `sha256:${character.repeat(64)}`;
+  const fixtureIds = [
+    'web-today-available',
+    'web-path-current-week',
+    'web-content-reading',
+    'web-workspace-idle',
+    'web-review-loaded',
+    'web-mentor-context-preview',
+    'admin-kpi-dashboard',
+    'admin-support-long-wire',
+    'mobile-today-available',
+    'mobile-content-reading',
+    'dp-design-mission-ledger',
+    'dp-design-context-payload-preview',
+  ];
   const component = (repository, name, sourceCharacter, digestCharacter) => ({
     repository,
     source_sha: sourceCharacter.repeat(40),
@@ -45,7 +59,7 @@ function validCandidateSpec(overrides = {}) {
     image_digest: digest(digestCharacter),
   });
   return {
-    $schema: '../../../../release-manifests/schema-v1.json',
+    $schema: '../schema-v1.json',
     schema_version: 1,
     document_type: 'candidate-spec',
     release_id: 'ms-20990101-contract-fixture',
@@ -53,6 +67,7 @@ function validCandidateSpec(overrides = {}) {
     gitops: {
       repository: 'DevPathAi/devpath-gitops',
       base_sha: '1'.repeat(40),
+      base_web_tag: `${'1'.repeat(40)}-mission-on`,
       base_web_digest: digest('c'),
       web_kustomization: 'apps/devpath-web/base/kustomization.yaml',
     },
@@ -70,10 +85,12 @@ function validCandidateSpec(overrides = {}) {
     shared_migration: {
       repository: 'DevPathAi/devpath-shared',
       source_sha: 'b'.repeat(40),
+      shared_version: '0.0.1-et11.20260822',
+      shared_jar_sha256: 'f'.repeat(64),
       image_repository: 'ghcr.io/devpathai/devpath-migration',
       image_digest: digest('d'),
-      flyway_target: '202608161011',
-      required_migration: 'V202608161011__validate_lcs_mentor_snapshot_contract.sql',
+      flyway_target: '202608221001',
+      required_migration: 'V202608221001__correct_question_bank_accuracy.sql',
       rollback_policy: 'additive-retained',
     },
     frontend: {
@@ -94,6 +111,12 @@ function validCandidateSpec(overrides = {}) {
       rollback: {
         mission_off_digest: digest('a'),
         prior_digest: digest('c'),
+        prior_identity: {
+          ready: false,
+          release_id: 'unreleased',
+          candidate_spec_sha256: '0'.repeat(64),
+          image_digest: digest('0'),
+        },
         final_target: 'prior',
       },
     },
@@ -108,6 +131,7 @@ function validCandidateSpec(overrides = {}) {
     },
     analytics_privacy: {
       collection_mode: 'explicit-consent',
+      approval_source_sha: 'e'.repeat(40),
       region: 'EU',
       project_identity: 'posthog-eu-mission-spine',
       retention_days: 90,
@@ -120,6 +144,8 @@ function validCandidateSpec(overrides = {}) {
       prompt_sha256: '3'.repeat(64),
       fixture_revision: 'mentor-eval.v1',
       fixture_sha256: '4'.repeat(64),
+      rendered_config_sha256: '5'.repeat(64),
+      ollama_endpoint_sha256: '6'.repeat(64),
     },
     environments: {
       staging: {
@@ -144,6 +170,7 @@ function validCandidateSpec(overrides = {}) {
     journey_harness: {
       landing_origin: 'https://leva.ai.kr',
       app_origin: 'https://app.leva.ai.kr',
+      api_origin: 'https://api.leva.ai.kr',
       control_origin: 'https://release-control.staging.leva.ai.kr',
       oauth_origin: 'https://oauth.staging.leva.ai.kr',
       analytics_spy_origin: 'https://analytics-spy.staging.leva.ai.kr',
@@ -152,10 +179,117 @@ function validCandidateSpec(overrides = {}) {
         { hostname: 'app.leva.ai.kr', address: '10.24.0.11' },
       ],
     },
+    quality_evidence_inputs: {
+      catalogs: {
+        'frontend-visual': {
+          repository: 'DevPathAi/devpath-frontend',
+          source_sha: '2'.repeat(40),
+          path: 'evidence/et13/generated/visual-cases.v1.json',
+          sha256: '7'.repeat(64),
+          case_catalog_version: 'leva.et13.catalog.v1',
+          case_catalog_schema_version: 'leva.et13.visual-cases.v1',
+          projection_contract_sha256: '8'.repeat(64),
+          fixture_ids: fixtureIds,
+          case_count: 96,
+          surface_case_counts: { web: 48, admin: 16, mobile: 16, dp_design: 16 },
+          capture_surface: 'flutter_web_release_projection',
+          device_evidence: false,
+          evidence_mode: 'release_ready',
+          input_provenance_sha256: '9'.repeat(64),
+          input_provenance_file_sha256: 'a'.repeat(64),
+          baseline_status: 'approved',
+          baseline_set_sha256: 'b'.repeat(64),
+          baseline_approval_sha256: 'c'.repeat(64),
+        },
+        'home-visual': {
+          repository: 'DevPathAi/devpath-home-page',
+          source_sha: '21caf102d947c77e38164bf2f7deac9f6f36ef01',
+          rendered_product_sha: 'd'.repeat(40),
+          rendered_product_tree_sha256: 'd'.repeat(64),
+          path: 'e2e/visual/case-catalog.v2.json',
+          sha256: 'e'.repeat(64),
+          case_count: 4,
+          provenance_sha256: 'f'.repeat(64),
+          font_manifest_sha256: '1'.repeat(64),
+        },
+        'frontend-automated-a11y': {
+          repository: 'DevPathAi/devpath-frontend',
+          source_sha: '2'.repeat(40),
+          path: 'evidence/et13/generated/a11y-cases.v1.json',
+          sha256: '2'.repeat(64),
+          case_catalog_version: 'leva.et13.catalog.v1',
+          case_catalog_schema_version: 'leva.et13.a11y-cases.v1',
+          projection_contract_sha256: '8'.repeat(64),
+          fixture_ids: fixtureIds,
+          case_count: 24,
+          surface_case_counts: { web: 12, admin: 4, mobile: 4, dp_design: 4 },
+          capture_surface: 'flutter_web_release_projection',
+          device_evidence: false,
+          evidence_mode: 'release_ready',
+          input_provenance_sha256: '3'.repeat(64),
+          input_provenance_file_sha256: '4'.repeat(64),
+        },
+        'home-axe-browser-a11y': {
+          repository: 'DevPathAi/devpath-home-page',
+          source_sha: '21caf102d947c77e38164bf2f7deac9f6f36ef01',
+          rendered_product_sha: 'd'.repeat(40),
+          rendered_product_tree_sha256: 'd'.repeat(64),
+          path: 'e2e/visual/case-catalog.v2.json',
+          sha256: 'e'.repeat(64),
+          case_count: 11,
+          provenance_sha256: 'f'.repeat(64),
+          font_manifest_sha256: '1'.repeat(64),
+        },
+        'manual-nvda': {
+          repository: 'DevPathAi/devpath-frontend',
+          source_sha: '2'.repeat(40),
+          path: 'tool/release-evidence/catalogs/manual-nvda.v1.json',
+          sha256: '5'.repeat(64),
+          case_count: 2,
+          provenance_sha256: '6'.repeat(64),
+        },
+        'manual-talkback': {
+          repository: 'DevPathAi/devpath-frontend',
+          source_sha: '2'.repeat(40),
+          path: 'tool/release-evidence/catalogs/manual-talkback.v1.json',
+          sha256: '7'.repeat(64),
+          case_count: 4,
+          provenance_sha256: '8'.repeat(64),
+        },
+      },
+      frontend_projection_contract: {
+        schema_version: 'leva.et13.projection-contract.v1',
+        projection_contract_sha256: '8'.repeat(64),
+        projection_matrix: fixtureIds.map((fixtureId) => ({
+          fixture_id: fixtureId,
+          capture_scope: 'body_projection',
+          source_widget: 'FixtureProjection',
+          substitutions: ['approved deterministic fixture'],
+        })),
+      },
+      mobile_test_artifacts: {
+        schema_version: 'leva.mission-spine.signed-android-build-binding.v2',
+        repository: 'DevPathAi/devpath-frontend',
+        source_sha: '2'.repeat(40),
+        event: 'workflow_dispatch',
+        workflow_path: '.github/workflows/mission-spine-signed-mobile-build.yml',
+        workflow_sha256: '9'.repeat(64),
+        workflow_run_id: 123456,
+        run_attempt: 1,
+        artifact_id: 654321,
+        artifact_name: 'ms-20990101-contract-fixture-signed-android-build',
+        artifact_archive_sha256: 'a'.repeat(64),
+        build_provenance_file: 'build-provenance.v2.json',
+        build_provenance_sha256: 'b'.repeat(64),
+        signed_apk_file: 'mobile/android/leva-release.apk',
+        signed_apk_sha256: 'c'.repeat(64),
+      },
+    },
     rollout: {
       sync_timeout_seconds: 300,
       canary_seconds: 900,
       rollback_budget_seconds: 600,
+      synthetic_probe_path: '/internal/release/ready',
       production_order: [
         'shared-migration',
         'additive-services',
@@ -212,6 +346,7 @@ describe('release context fail-closed contract', () => {
     expect(context.releaseId).toBe('ms-20990101-contract-fixture');
     expect(context.landingOrigin).toBe('https://leva.ai.kr');
     expect(context.appOrigin).toBe('https://app.leva.ai.kr');
+    expect(context.apiOrigin).toBe('https://api.leva.ai.kr');
     expect(context.chromiumHostResolverRules).toBe(
       'MAP app.leva.ai.kr 10.24.0.11,MAP leva.ai.kr 10.24.0.10',
     );
@@ -287,6 +422,30 @@ describe('release context fail-closed contract', () => {
       () => {
         const candidate = validCandidateSpec();
         candidate.frontend.selected_on_digest = `sha256:${'e'.repeat(64)}`;
+        return candidate;
+      },
+    ],
+    [
+      'quality catalog bound to another frontend source',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.quality_evidence_inputs.catalogs['frontend-visual'].source_sha = 'f'.repeat(40);
+        return candidate;
+      },
+    ],
+    [
+      'unknown post-run field nested in quality inputs',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.quality_evidence_inputs.mobile_test_artifacts.result = 'passed';
+        return candidate;
+      },
+    ],
+    [
+      'noncanonical synthetic probe path',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.rollout.synthetic_probe_path = '/health';
         return candidate;
       },
     ],
