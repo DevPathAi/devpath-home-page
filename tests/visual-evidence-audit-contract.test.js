@@ -161,12 +161,24 @@ describe('independent ET13 audit contracts', () => {
       cwd: root,
       encoding: 'utf8',
     }).split(/\r?\n/).filter(Boolean);
-    // 렌더 기준 커밋과 HEAD 의 차이는 증거 허용목록 안에서만 일어나야 한다.
-    // 대표값으로 이번 재바인딩의 산출물을 지목한다(직전에는 ci.yml 이 그 자리였다).
+    // 렌더 기준 커밋과 HEAD 의 제품 차이는 없어야 하며, 배포 하네스와 증거 파일만 달라질 수 있다.
     expect(changedPaths).toContain('e2e/visual/baselines/review-metadata.v2.json');
+    expect(changedPaths).toContain('e2e/release/support/release-context.js');
     expect(isCommitAncestorByObjectGraph(productSha, headSha)).toBe(true);
     expect(isCommitAncestorByObjectGraph(headSha, productSha)).toBe(false);
-    expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
+    expect(productRuntimeTreeSha256(headSha)).not.toBe(productRuntimeTreeSha256(productSha));
+    expect(validateProductRuntimeProvenance({
+      candidate: JSON.parse(readFileSync(
+        join(root, 'e2e/visual/candidate-spec.v2.json'),
+        'utf8',
+      )),
+      evidenceProducerSha: headSha,
+      requireClean: false,
+    })).toMatchObject({
+      rendered_product_sha: productSha,
+      evidence_producer_sha: headSha,
+      rendered_product_tree_sha256: productTreeSha,
+    });
     expect(productRuntimeTreeSha256('1ee751bfe8e0e26ec1f57d02cef56975859360c7'))
       .not.toBe(productRuntimeTreeSha256(productSha));
   });
