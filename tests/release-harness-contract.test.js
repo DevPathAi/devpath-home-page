@@ -20,6 +20,7 @@ import {
 import {
   REQUIRED_CAPABILITIES,
   StagingControl,
+  activateFlutterSemantics,
   assertAnalyticsSequence,
 } from '../e2e/release/support/staging-control.js';
 import {
@@ -470,6 +471,52 @@ describe('release context fail-closed contract', () => {
 });
 
 describe('staging control contract', () => {
+  it('waits for Flutter accessibility controls before activating semantics', async () => {
+    const calls = [];
+    let semanticsAttached = false;
+    const locator = (selector) => ({
+      first() {
+        return this;
+      },
+      async count() {
+        calls.push(`count:${selector}`);
+        return selector === 'flt-semantics' && semanticsAttached ? 1 : 0;
+      },
+      async isVisible() {
+        calls.push(`visible:${selector}`);
+        return false;
+      },
+      async waitFor() {
+        calls.push(`wait:${selector}`);
+        if (selector === 'flt-semantics' && !semanticsAttached) {
+          throw new Error('semantics did not attach');
+        }
+      },
+      async focus() {
+        calls.push(`focus:${selector}`);
+      },
+    });
+    const page = {
+      locator,
+      keyboard: {
+        async press(key) {
+          calls.push(`press:${key}`);
+          if (key === 'Enter') semanticsAttached = true;
+        },
+      },
+    };
+
+    await expect(activateFlutterSemantics(page)).resolves.toBeUndefined();
+    expect(calls).toEqual([
+      'count:flt-semantics',
+      'wait:flt-semantics, flt-semantics-placeholder',
+      'count:flt-semantics',
+      'focus:flt-semantics-placeholder',
+      'press:Enter',
+      'wait:flt-semantics',
+    ]);
+  });
+
   it('requires OAuth, analytics spy, durable service and fault controls', async () => {
     const candidateSpecSha256 = 'e'.repeat(64);
     const responseBody = {

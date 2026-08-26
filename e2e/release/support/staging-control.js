@@ -321,15 +321,22 @@ export function assertAnalyticsSequence(events, expectedEvents) {
 }
 
 export async function activateFlutterSemantics(page) {
+  const semantics = page.locator('flt-semantics').first();
+  if (await semantics.count() > 0) return;
+
   const placeholder = page.locator('flt-semantics-placeholder');
-  if (await placeholder.count() > 0 && await placeholder.first().isVisible()) {
-    await placeholder.first().click();
-  } else {
-    // Flutter can activate semantics after the first keyboard traversal before
-    // Playwright observes the placeholder. This remains an explicit activation.
-    await page.keyboard.press('Tab');
-  }
-  await page.locator('flt-semantics').first().waitFor({
+  await page.locator('flt-semantics, flt-semantics-placeholder').first().waitFor({
+    state: 'attached',
+    timeout: 15_000,
+  });
+  if (await semantics.count() > 0) return;
+
+  // Flutter places the accessibility activator just outside the viewport, so
+  // Playwright's pointer click is not actionable. Keyboard activation matches
+  // the control's role while remaining deterministic in headless Chromium.
+  await placeholder.first().focus();
+  await page.keyboard.press('Enter');
+  await semantics.waitFor({
     state: 'attached',
     timeout: 15_000,
   });
