@@ -29,6 +29,9 @@ async function reachAuthenticatedToday(page, appOrigin) {
     new URL(appOrigin).hostname,
   );
   await activateFlutterSemantics(page);
+  await page.waitForURL((url) => (
+    url.pathname === '/login' || /^\/path\/\d+\/today$/.test(url.pathname)
+  ));
   if (new URL(page.url()).pathname === '/login') {
     await page.getByRole('button', { name: 'GitHub로 계속하기', exact: true }).click();
   }
@@ -95,15 +98,16 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
 
     await evidence.step({ page, step: 'authenticated-authoritative-today' }, async () => {
       await reachAuthenticatedToday(page, context.appOrigin);
-      await expect(page.getByRole('button', { name: '미션 열기', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^미션 열기/ })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'authoritative-workspace-task');
       await control.checkpoint(JOURNEY, prepared.runKey, 'web-production-artifact');
     });
 
     await evidence.step({ page, step: 'canonical-content-to-sandbox' }, async () => {
-      await page.getByRole('button', { name: '미션 열기', exact: true }).click();
+      await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
+      await page.keyboard.press('End');
       await page.getByRole('button', { name: '실습 시작', exact: true }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/sandbox$/.test(url.pathname));
       await activateFlutterSemantics(page);
