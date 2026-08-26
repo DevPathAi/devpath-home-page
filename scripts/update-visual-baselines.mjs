@@ -55,8 +55,12 @@ function existingReviewStatus() {
   return validateBaselineReview(value).status;
 }
 
-function ensureAuthorizedMode(hasExistingBaselines) {
+function ensureNotCi() {
   if (process.env.CI) throw new Error('visual baselines cannot be updated in CI');
+}
+
+function ensureAuthorizedMode(hasExistingBaselines) {
+  ensureNotCi();
   if (process.platform !== 'linux' || process.env.HOME_VISUAL_BASELINE_PLATFORM !== PLATFORM) {
     throw new Error(`baseline updates must run in the pinned ${PLATFORM} environment`);
   }
@@ -98,6 +102,7 @@ function rollbackGuard(paths) {
 }
 
 export function updateVisualBaselines() {
+  ensureNotCi();
   const candidate = validateCandidateSpec(JSON.parse(readFileSync(CANDIDATE_SPEC_PATH, 'utf8')));
   const provenance = validateProductRuntimeProvenance({ candidate });
   const files = baselineFiles();

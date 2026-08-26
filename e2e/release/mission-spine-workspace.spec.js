@@ -87,6 +87,7 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     await control.bindBrowserRun(page, prepared.runKey, {
       landingOrigin: context.landingOrigin,
       appOrigin: context.appOrigin,
+      apiOrigin: context.apiOrigin,
       oauthOrigin: context.oauthOrigin,
       analyticsSpyOrigin: context.analyticsSpyOrigin,
     });
