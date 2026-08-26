@@ -30,7 +30,7 @@ async function refreshFlutter(page, pathname) {
 
 async function chooseBackendTrack(page) {
   await page.getByRole('button', { name: /진단할 트랙/ }).click();
-  await page.getByRole('button', { name: /백엔드.*Spring/i }).click();
+  await page.getByRole('menuitem', { name: /백엔드.*Spring/i }).click();
 }
 
 async function completeFifteenQuestions(page) {
@@ -109,7 +109,7 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     });
 
     await control.command(JOURNEY, prepared.runKey, 'grant-analytics-permission');
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
 
     await evidence.step({ page, step: 'opaque-journey-handoff' }, async () => {
       await page.locator('.hero [data-diagnostic-cta="primary"]').click();
@@ -176,16 +176,16 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.waitForURL((url) => url.pathname === '/path');
       await activateFlutterSemantics(page);
       await openToday(page);
-      await expect(page.getByRole('button', { name: '미션 열기', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^미션 열기/ })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'authoritative-first-task');
     });
 
     await evidence.step({ page, step: 'content-linked-completion-replay' }, async () => {
-      await page.getByRole('button', { name: '미션 열기', exact: true }).click();
+      await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-below-threshold');
-      await page.mouse.wheel(0, 100_000);
+      await page.keyboard.press('End');
       await page.waitForTimeout(1_500);
       await openToday(page);
       await control.command(JOURNEY, prepared.runKey, 'replay-content-linked-completion');
