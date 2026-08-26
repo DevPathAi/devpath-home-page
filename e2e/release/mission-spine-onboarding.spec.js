@@ -82,6 +82,7 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     await control.bindBrowserRun(page, prepared.runKey, {
       landingOrigin: context.landingOrigin,
       appOrigin: context.appOrigin,
+      apiOrigin: context.apiOrigin,
       oauthOrigin: context.oauthOrigin,
       analyticsSpyOrigin: context.analyticsSpyOrigin,
     });
@@ -108,7 +109,7 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     });
 
     await control.command(JOURNEY, prepared.runKey, 'grant-analytics-permission');
-    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'networkidle' });
 
     await evidence.step({ page, step: 'opaque-journey-handoff' }, async () => {
       await page.locator('.hero [data-diagnostic-cta="primary"]').click();

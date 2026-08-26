@@ -13,6 +13,7 @@ import {
   getOrCreateOpaqueId,
 } from './analytics/journey-id.js';
 import { instrumentLandingJourney } from './analytics/landing.js';
+import { resolveReleaseAnalytics } from './analytics/release-spy.js';
 import { mountMobileNavigation } from './mobile-navigation.js';
 
 const WIDGET_LOADERS = {
@@ -60,7 +61,7 @@ function initLazyWidgets() {
   mounts.forEach((el) => observer.observe(el));
 }
 
-function initLandingAnalytics() {
+async function initLandingAnalytics() {
   // main.js is shared with /beta. Only the funnel Landing owns these events.
   if (window.location.pathname !== '/') return;
   try {
@@ -70,7 +71,12 @@ function initLandingAnalytics() {
       storage,
       key: ANALYTICS_SESSION_STORAGE_KEY,
     });
+    const release = await resolveReleaseAnalytics({
+      storage: window.localStorage,
+      fetch: window.fetch.bind(window),
+    });
     const analytics = new JourneyAnalyticsAdapter({
+      ...(release ? { sdk: release.sdk } : {}),
       context: {
         environment: config.analyticsEnvironment,
         appVersion: config.appVersion,
@@ -78,9 +84,9 @@ function initLandingAnalytics() {
         journeyId,
         now: () => new Date(),
       },
-      // Privacy mode has not been approved yet. No SDK is initialized or called.
-      optedOut: true,
-      excluded: shouldExcludeAnalyticsTraffic({
+      // The browser-bound staging spy is enabled only after server-side permission.
+      optedOut: !release,
+      excluded: !release?.bypassAutomationExclusion && shouldExcludeAnalyticsTraffic({
         environment: config.analyticsEnvironment,
         appVersion: config.appVersion,
         userAgent: window.navigator.userAgent,
@@ -98,12 +104,12 @@ function initLandingAnalytics() {
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    initLandingAnalytics();
+    void initLandingAnalytics();
     mountMobileNavigation(document);
     initLazyWidgets();
   }, { once: true });
 } else {
-  initLandingAnalytics();
+  void initLandingAnalytics();
   mountMobileNavigation(document);
   initLazyWidgets();
 }
