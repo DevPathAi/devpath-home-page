@@ -78,8 +78,8 @@ async function initLandingAnalytics() {
     const analytics = new JourneyAnalyticsAdapter({
       ...(release ? { sdk: release.sdk } : {}),
       context: {
-        environment: config.analyticsEnvironment,
-        appVersion: config.appVersion,
+        environment: release ? 'production' : config.analyticsEnvironment,
+        appVersion: release?.candidateSpecSha256 ?? config.appVersion,
         sessionId,
         journeyId,
         now: () => new Date(),
