@@ -72,6 +72,7 @@ export async function resolveReleaseAnalytics({
     return Object.freeze({
       sdk: new ReleaseAnalyticsSpySdk({ captureUrl: marker.capture_url, fetch }),
       bypassAutomationExclusion: true,
+      candidateSpecSha256: body.candidate_spec_sha256,
     });
   } catch (_) {
     return null;

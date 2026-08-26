@@ -68,6 +68,7 @@ describe('release analytics spy transport', () => {
     const release = await resolveReleaseAnalytics({ storage: storage(), fetch });
     expect(release?.sdk).toBeInstanceOf(ReleaseAnalyticsSpySdk);
     expect(release?.bypassAutomationExclusion).toBe(true);
+    expect(release?.candidateSpecSha256).toBe('a'.repeat(64));
     await release.sdk.capture('landing_viewed', { page_view_id: 'P123' });
 
     expect(fetch).toHaveBeenNthCalledWith(2,
