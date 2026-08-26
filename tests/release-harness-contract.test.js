@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   assertLiveReleaseContext,
@@ -471,7 +471,7 @@ describe('release context fail-closed contract', () => {
 });
 
 describe('staging control contract', () => {
-  it('waits for Flutter accessibility controls before activating semantics', async () => {
+  it('DOM-activates the offscreen Flutter accessibility placeholder', async () => {
     const calls = [];
     let semanticsAttached = false;
     const locator = (selector) => ({
@@ -495,16 +495,16 @@ describe('staging control contract', () => {
       async focus() {
         calls.push(`focus:${selector}`);
       },
-    });
-    const page = {
-      locator,
-      keyboard: {
-        async press(key) {
-          calls.push(`press:${key}`);
-          if (key === 'Enter') semanticsAttached = true;
-        },
+      async evaluate(callback) {
+        calls.push(`evaluate:${selector}`);
+        callback({
+          click() {
+            semanticsAttached = true;
+          },
+        });
       },
-    };
+    });
+    const page = { locator };
 
     await expect(activateFlutterSemantics(page)).resolves.toBeUndefined();
     expect(calls).toEqual([
@@ -512,7 +512,7 @@ describe('staging control contract', () => {
       'wait:flt-semantics, flt-semantics-placeholder',
       'count:flt-semantics',
       'focus:flt-semantics-placeholder',
-      'press:Enter',
+      'evaluate:flt-semantics-placeholder',
       'wait:flt-semantics',
     ]);
   });
@@ -666,6 +666,7 @@ describe('staging control contract', () => {
     };
     const page = {
       context: () => browserContext,
+      addInitScript: vi.fn(async () => {}),
       async close(options) {
         expect(options).toEqual({ runBeforeUnload: false });
         closed = true;
@@ -674,6 +675,7 @@ describe('staging control contract', () => {
     await control.bindBrowserRun(page, 'A'.repeat(22), {
       landingOrigin: 'https://leva.ai.kr',
       appOrigin: 'https://app.leva.ai.kr',
+      apiOrigin: 'https://api.leva.ai.kr',
       oauthOrigin: 'https://oauth.staging.leva.ai.kr',
       analyticsSpyOrigin: 'https://analytics-spy.staging.leva.ai.kr',
     });
@@ -682,24 +684,37 @@ describe('staging control contract', () => {
       method: 'Fetch.enable',
       parameters: { patterns: [{ urlPattern: '*', requestStage: 'Request' }] },
     }]);
+    expect(page.addInitScript).toHaveBeenCalledOnce();
+    const [initScript, initConfig] = page.addInitScript.mock.calls[0];
+    expect(typeof initScript).toBe('function');
+    expect(initConfig).toEqual({
+      productOrigins: ['https://leva.ai.kr', 'https://app.leva.ai.kr'],
+      marker: {
+        schema_version: 'mission-spine.release-analytics.v1',
+        permission_url: 'https://api.leva.ai.kr/v1/release/browser/analytics-permission',
+        capture_url: 'https://analytics-spy.staging.leva.ai.kr/v1/release/browser/analytics-events',
+      },
+    });
     const pausedRequest = (requestId, url, redirectedRequestId) => ({
       requestId,
       request: { url, headers: { accept: 'text/html' } },
       ...(redirectedRequestId ? { redirectedRequestId } : {}),
     });
-    await pausedHandler(pausedRequest('allowed', 'https://app.leva.ai.kr/dashboard'));
+    await pausedHandler(pausedRequest('allowed-app', 'https://app.leva.ai.kr/dashboard'));
+    await pausedHandler(pausedRequest('allowed-api', 'https://api.leva.ai.kr/auth/refresh'));
     await pausedHandler(pausedRequest('external', 'https://fonts.example.net/font.woff2'));
 
-    const allowedContinue = sent[1];
-    expect(allowedContinue.method).toBe('Fetch.continueRequest');
-    expect(Object.fromEntries(allowedContinue.parameters.headers.map(({ name, value }) => [
-      name.toLowerCase(), value,
-    ]))).toMatchObject({
-      accept: 'text/html',
-      'x-candidate-spec-sha256': candidateSpecSha256,
-      'x-release-run-key': 'A'.repeat(22),
-    });
-    expect(sent[2]).toEqual({
+    for (const allowedContinue of sent.slice(1, 3)) {
+      expect(allowedContinue.method).toBe('Fetch.continueRequest');
+      expect(Object.fromEntries(allowedContinue.parameters.headers.map(({ name, value }) => [
+        name.toLowerCase(), value,
+      ]))).toMatchObject({
+        accept: 'text/html',
+        'x-candidate-spec-sha256': candidateSpecSha256,
+        'x-release-run-key': 'A'.repeat(22),
+      });
+    }
+    expect(sent[3]).toEqual({
       method: 'Fetch.continueRequest',
       parameters: { requestId: 'external' },
     });
@@ -707,9 +722,9 @@ describe('staging control contract', () => {
     await pausedHandler(pausedRequest(
       'redirect-target',
       'https://fonts.example.net/redirected.woff2',
-      'allowed',
+      'allowed-app',
     ));
-    expect(sent[3]).toEqual({
+    expect(sent[4]).toEqual({
       method: 'Fetch.failRequest',
       parameters: { requestId: 'redirect-target', errorReason: 'BlockedByClient' },
     });

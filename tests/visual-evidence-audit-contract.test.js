@@ -24,8 +24,8 @@ import {
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = '8a02ea072831d471ca829aa4f7eb0354ea92daee';
-const productTreeSha = 'adc7603015e79ea5b2d6997a6637e59affc0f3c9832315971e3649c37e406d85';
+const productSha = 'a45bc44b0d22c0ec5e30e46d4b49455a9ef8f57a';
+const productTreeSha = 'dbbd72fd209874dbab1d8c883fd64a46fdbbb95939e14e927bbcfa4012b72a0c';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -163,10 +163,10 @@ describe('independent ET13 audit contracts', () => {
     }).split(/\r?\n/).filter(Boolean);
     // 렌더 기준 커밋과 HEAD 의 제품 차이는 없어야 하며, 배포 하네스와 증거 파일만 달라질 수 있다.
     expect(changedPaths).toContain('e2e/visual/baselines/review-metadata.v2.json');
-    expect(changedPaths).toContain('e2e/release/support/release-context.js');
+    expect(changedPaths).toContain('e2e/visual/candidate-spec.v2.json');
     expect(isCommitAncestorByObjectGraph(productSha, headSha)).toBe(true);
     expect(isCommitAncestorByObjectGraph(headSha, productSha)).toBe(false);
-    expect(productRuntimeTreeSha256(headSha)).not.toBe(productRuntimeTreeSha256(productSha));
+    expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
     expect(validateProductRuntimeProvenance({
       candidate: JSON.parse(readFileSync(
         join(root, 'e2e/visual/candidate-spec.v2.json'),

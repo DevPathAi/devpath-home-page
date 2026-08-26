@@ -106,6 +106,7 @@ function browserRunOrigins(value) {
   const fields = [
     'landingOrigin',
     'appOrigin',
+    'apiOrigin',
     'oauthOrigin',
     'analyticsSpyOrigin',
   ];
@@ -332,10 +333,10 @@ export async function activateFlutterSemantics(page) {
   if (await semantics.count() > 0) return;
 
   // Flutter places the accessibility activator just outside the viewport, so
-  // Playwright's pointer click is not actionable. Keyboard activation matches
-  // the control's role while remaining deterministic in headless Chromium.
+  // Playwright's pointer click is not actionable. Dispatch its native DOM click
+  // directly so Linux and Windows headless Chromium activate it identically.
   await placeholder.first().focus();
-  await page.keyboard.press('Enter');
+  await placeholder.first().evaluate((element) => element.click());
   await semantics.waitFor({
     state: 'attached',
     timeout: 15_000,
@@ -482,6 +483,17 @@ export class StagingControl {
   async bindBrowserRun(page, runKey, origins) {
     requireRunKey(runKey);
     const allowedOrigins = browserRunOrigins(origins);
+    await page.addInitScript(({ productOrigins, marker }) => {
+      if (!productOrigins.includes(window.location.origin)) return;
+      window.localStorage.setItem('leva.release.analytics.v1', JSON.stringify(marker));
+    }, {
+      productOrigins: [origins.landingOrigin, origins.appOrigin],
+      marker: {
+        schema_version: 'mission-spine.release-analytics.v1',
+        permission_url: `${origins.apiOrigin}/v1/release/browser/analytics-permission`,
+        capture_url: `${origins.analyticsSpyOrigin}/v1/release/browser/analytics-events`,
+      },
+    });
     await installHostBoundRunHeaders(page, {
       allowedOrigins,
       candidateSpecSha256: this.#candidateSpecSha256,
