@@ -982,6 +982,43 @@ describe('staging control contract', () => {
     expect(source).not.toContain("name: '미션 완료', exact: true");
   });
 
+  it('waits for committed onboarding analytics and contentless completion before replay', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /const ONBOARDING_EVENTS[\s\S]*'result_claimed'[\s\S]*'existing_path_continued'[\s\S]*'path_first_viewed'/,
+    );
+    expect(source).toMatch(
+      /step: 'guest-diagnostic-fifteen'[\s\S]*waitForAnalyticsSequence\([\s\S]*ONBOARDING_EVENTS\.slice\(0, 4\)[\s\S]*step: 'guest-preview-refresh'/,
+    );
+    expect(source).toMatch(
+      /step: 'required-consent-claim-replay'[\s\S]*waitForAnalyticsSequence\([\s\S]*ONBOARDING_EVENTS\.slice\(0, 7\)[\s\S]*openToday\(page\)/,
+    );
+
+    const start = source.indexOf("step: 'contentless-completion-replay'");
+    const end = source.indexOf("step: 'onboarding-analytics-ordered'", start);
+    const replayStep = source.slice(start, end);
+    const committed = replayStep.indexOf('expect(completionResponse.ok()).toBe(true)');
+    const replay = replayStep.indexOf("'replay-contentless-completion'", committed);
+
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    expect(replayStep).toMatch(/waitForResponse\([\s\S]*learning-paths[\s\S]*tasks[\s\S]*complete/);
+    expect(replayStep).toContain("request().method() === 'POST'");
+    expect(replayStep).toContain('&& response.ok()');
+    expect(committed).toBeGreaterThanOrEqual(0);
+    expect(replay).toBeGreaterThan(committed);
+  });
+
+  it('flushes workspace analytics before navigating across event boundaries', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /step: 'authenticated-authoritative-today'[\s\S]*waitForAnalyticsSequence\([\s\S]*WORKSPACE_EVENTS\.slice\(0, 1\)[\s\S]*step: 'immediate-disconnect-timeout-recovery'/,
+    );
+    expect(source).toMatch(
+      /step: 'outbox-review-durable'[\s\S]*waitForAnalyticsSequence\(control, prepared\.runKey, WORKSPACE_EVENTS\)[\s\S]*step: 'private-context-preview-commit'/,
+    );
+  });
+
   it('drives the Flutter mentor field through accessibility and waits for retry completion', () => {
     const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
     expect(source).toMatch(
