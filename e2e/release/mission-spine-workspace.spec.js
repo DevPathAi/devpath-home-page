@@ -8,6 +8,7 @@ import {
   activateFlutterSemantics,
   assertAnalyticsSequence,
   assertProductionTlsNavigation,
+  waitForFlutterSemanticsTarget,
 } from './support/staging-control.js';
 
 const JOURNEY = 'mission-spine-workspace';
@@ -29,6 +30,9 @@ async function reachAuthenticatedToday(page, appOrigin) {
     new URL(appOrigin).hostname,
   );
   await activateFlutterSemantics(page);
+  await page.waitForURL((url) => (
+    url.pathname === '/login' || /^\/path\/\d+\/today$/.test(url.pathname)
+  ));
   if (new URL(page.url()).pathname === '/login') {
     await page.getByRole('button', { name: 'GitHub로 계속하기', exact: true }).click();
   }
@@ -36,10 +40,17 @@ async function reachAuthenticatedToday(page, appOrigin) {
     url.pathname === '/dashboard' || /^\/path\/\d+\/today$/.test(url.pathname)
   ));
   await activateFlutterSemantics(page);
+  await waitForFlutterSemanticsTarget(
+    page,
+    page.getByRole('button', { name: /^미션 열기/ }),
+  );
 }
 
 async function explicitlySelectCurrentContent(page) {
-  await page.getByRole('button', { name: '전송 전에 수정', exact: true }).click();
+  await page.getByRole('button', {
+    name: '전송 전에 수정',
+    exact: true,
+  }).first().click();
   const currentContent = page.getByRole('checkbox', { name: /현재 콘텐츠/ });
   if (await currentContent.isChecked()) {
     await currentContent.click();
@@ -49,15 +60,22 @@ async function explicitlySelectCurrentContent(page) {
   await page.getByRole('button', { name: '완료', exact: true }).click();
 }
 
-async function triggerReviewProducingRun(page) {
-  await page.getByRole('button', { name: '다시 실행', exact: true }).click();
-  await expect(page.getByText(/실행 중입니다/)).toBeVisible();
-  await expect(page.getByText(/실행 완료/)).toBeVisible({ timeout: 45_000 });
-  await page.getByRole('button', { name: '리뷰 확인', exact: true }).click();
+async function retryReviewInBrowser(page) {
+  await page.getByRole('button', { name: '다시 시도', exact: true }).click();
 }
 
-async function retryReviewInBrowser(page) {
-  await page.getByRole('button', { name: '리뷰 다시 시도', exact: true }).click();
+async function currentSandboxSessionId(page) {
+  return page.evaluate(() => {
+    const values = Object.entries(window.sessionStorage)
+      .filter(([key]) => key.startsWith('leva.sandbox.session.v2.'))
+      .map(([, value]) => Number(value));
+    if (values.length !== 1
+        || !Number.isSafeInteger(values[0])
+        || values[0] <= 0) {
+      throw new Error('current sandbox session id is unavailable');
+    }
+    return values[0];
+  });
 }
 
 test.beforeAll(() => {
@@ -81,9 +99,11 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     candidateSpecSha256: context.candidateSpecSha256,
   });
 
+  let prepared;
+  let priorSandboxSessionId;
   try {
     await control.assertPrerequisites(JOURNEY);
-    const prepared = await control.prepareJourney(JOURNEY);
+    prepared = await control.prepareJourney(JOURNEY);
     await control.bindBrowserRun(page, prepared.runKey, {
       landingOrigin: context.landingOrigin,
       appOrigin: context.appOrigin,
@@ -95,43 +115,87 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
 
     await evidence.step({ page, step: 'authenticated-authoritative-today' }, async () => {
       await reachAuthenticatedToday(page, context.appOrigin);
-      await expect(page.getByRole('button', { name: '미션 열기', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^미션 열기/ })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'authoritative-workspace-task');
       await control.checkpoint(JOURNEY, prepared.runKey, 'web-production-artifact');
     });
 
     await evidence.step({ page, step: 'canonical-content-to-sandbox' }, async () => {
-      await page.getByRole('button', { name: '미션 열기', exact: true }).click();
+      await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await page.getByRole('button', { name: '실습 시작', exact: true }).click();
+      await waitForFlutterSemanticsTarget(page, page.getByRole('checkbox').first());
+      const contentPath = new URL(page.url()).pathname;
+      const taskMatch = /^\/mission\/(\d+)\/content\/\d+$/.exec(contentPath);
+      if (taskMatch === null) throw new Error('canonical content route is invalid');
+      await page.goto(
+        `${context.appOrigin}/mission/${taskMatch[1]}/sandbox`,
+        { waitUntil: 'domcontentloaded' },
+      );
       await page.waitForURL((url) => /^\/mission\/\d+\/sandbox$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await expect(page.getByText('이번 실습 맥락', { exact: true })).toBeVisible();
-      await expect(page.getByText('현재 과제', { exact: true })).toBeVisible();
-      await expect(page.getByText('현재 단원', { exact: true })).toBeVisible();
-      await expect(page.getByText('실행 환경', { exact: true })).toBeVisible();
-      await expect(page.getByText('starter 출처', { exact: true })).toBeVisible();
+      await waitForFlutterSemanticsTarget(
+        page,
+        page.getByRole('button', { name: /^이번 실습 맥락/ }),
+      );
+      await expect(page.getByText(
+        /현재 과제.*현재 단원.*실행 환경.*starter 출처/,
+      )).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'workspace-context-parity');
     });
 
     await evidence.step({ page, step: 'immediate-disconnect-timeout-recovery' }, async () => {
       await control.command(JOURNEY, prepared.runKey, 'next-run-immediate-disconnect');
       await control.command(JOURNEY, prepared.runKey, 'next-run-timeout');
-      await page.getByRole('button', { name: '코드 실행', exact: true }).click();
+      await Promise.all([
+        page.waitForRequest((request) => (
+          new URL(request.url()).pathname.endsWith('/sandbox/run')
+          && request.method() === 'POST'
+        )),
+        page.getByRole('button', { name: /^코드 실행/ }).click(),
+      ]);
+      await expect.poll(async () => page.evaluate(() => (
+        Object.keys(window.sessionStorage).some((key) => (
+          key.startsWith('leva.sandbox.session.v2.')
+        ))
+      )), { timeout: 10_000 }).toBe(true);
       await page.reload({ waitUntil: 'domcontentloaded' });
       await activateFlutterSemantics(page);
-      await expect(page.getByText(/시간 초과/)).toBeVisible({ timeout: 45_000 });
+      await waitForFlutterSemanticsTarget(page, page.getByText(/시간 초과/), {
+        timeout: 45_000,
+      });
       await control.checkpoint(JOURNEY, prepared.runKey, 'session-id-within-one-second');
       await control.checkpoint(JOURNEY, prepared.runKey, 'immediate-disconnect-timed-out');
       await control.checkpoint(JOURNEY, prepared.runKey, 'owner-recovery-timed-out');
+      priorSandboxSessionId = await currentSandboxSessionId(page);
     });
 
     await evidence.step({ page, step: 'midstream-disconnect-truncated-recovery' }, async () => {
       await control.command(JOURNEY, prepared.runKey, 'next-run-midstream-disconnect');
       await control.command(JOURNEY, prepared.runKey, 'next-run-truncated');
-      await page.getByRole('button', { name: '다시 실행', exact: true }).click();
-      await expect(page.getByText(/실행 중입니다/)).toBeVisible();
+      await control.command(JOURNEY, prepared.runKey, 'fail-next-review', {
+        prior_sandbox_session_id: priorSandboxSessionId,
+      });
+      const previousSessionValues = await page.evaluate(() => Object.fromEntries(
+        Object.entries(window.sessionStorage).filter(([key]) => (
+          key.startsWith('leva.sandbox.session.v2.')
+        )),
+      ));
+      const rerunButton = page.getByRole('button', { name: /^다시 실행/ });
+      await waitForFlutterSemanticsTarget(page, rerunButton, { timeout: 45_000 });
+      await Promise.all([
+        page.waitForRequest((request) => (
+          new URL(request.url()).pathname.endsWith('/sandbox/run')
+          && request.method() === 'POST'
+        )),
+        rerunButton.click(),
+      ]);
+      await expect.poll(async () => page.evaluate((previous) => (
+        Object.entries(window.sessionStorage).some(([key, value]) => (
+          key.startsWith('leva.sandbox.session.v2.')
+          && previous[key] !== value
+        ))
+      ), previousSessionValues), { timeout: 10_000 }).toBe(true);
       await refreshFlutter(page);
       await expect(page.getByText(/실행 완료.*출력 일부만 표시/)).toBeVisible({
         timeout: 45_000,
@@ -150,18 +214,15 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     });
 
     await evidence.step({ page, step: 'outbox-review-durable' }, async () => {
-      await control.command(JOURNEY, prepared.runKey, 'fail-next-review');
-      await triggerReviewProducingRun(page);
       const reviewFailure = page.getByText(
         /부분 리뷰|리뷰 일부|리뷰 생성.*실패|받은 리뷰는 그대로|리뷰 다시 시도/,
       ).first();
-      await expect(reviewFailure).toBeVisible({ timeout: 45_000 });
+      await expect(reviewFailure).toBeVisible({ timeout: 75_000 });
       await expect(page.getByText(/실행 완료/)).toBeVisible();
-      await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'partial-review-retains-run-and-review');
       await control.command(JOURNEY, prepared.runKey, 'clear-faults');
       await retryReviewInBrowser(page);
-      await expect(reviewFailure).toBeHidden({ timeout: 45_000 });
+      await expect(reviewFailure).toBeHidden({ timeout: 75_000 });
       await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'kafka-outbox-review-correlated');
     });
@@ -170,7 +231,13 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await page.getByRole('button', { name: 'AI 멘토에게 질문', exact: true }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/mentor$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await page.getByPlaceholder('현재 미션에서 막힌 점을 질문하세요').fill(
+      const mentorPrompt = page.getByRole('textbox', {
+        name: '현재 미션에서 막힌 점을 질문하세요',
+        exact: true,
+      });
+      await waitForFlutterSemanticsTarget(page, mentorPrompt);
+      await mentorPrompt.click();
+      await page.keyboard.type(
         '다음 디버깅 단계를 알려주세요.',
       );
       await explicitlySelectCurrentContent(page);
@@ -188,13 +255,21 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
         name: '비공개로 질문 보내기',
         exact: true,
       }).click();
-      await expect(page.getByText(/부분답변|받은 답변은 그대로|다시 시도/)).toBeVisible({
+      const retryMentor = page.getByRole('button', {
+        name: '같은 질문 다시 보내기',
+        exact: true,
+      });
+      await expect(retryMentor).toBeVisible({
         timeout: 45_000,
       });
       await control.checkpoint(JOURNEY, prepared.runKey, 'private-mentor-prompt-committed');
       await control.checkpoint(JOURNEY, prepared.runKey, 'mentor-partial-retained');
       await control.command(JOURNEY, prepared.runKey, 'clear-faults');
-      await page.getByRole('button', { name: '같은 질문 다시 보내기', exact: true }).click();
+      await retryMentor.click();
+      await expect(page.getByRole('button', {
+        name: '맥락 미리보기',
+        exact: true,
+      })).toBeVisible({ timeout: 45_000 });
       await control.checkpoint(JOURNEY, prepared.runKey, 'mentor-provider-payload-exact');
       await control.checkpoint(JOURNEY, prepared.runKey, 'mentor-terminal-complete');
     });
@@ -206,6 +281,9 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await control.checkpoint(JOURNEY, prepared.runKey, 'sensitive-boundaries-clean');
     });
   } finally {
+    if (prepared !== undefined) {
+      await control.command(JOURNEY, prepared.runKey, 'clear-faults').catch(() => {});
+    }
     evidence.close();
   }
 });

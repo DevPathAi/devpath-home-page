@@ -22,6 +22,8 @@ import {
   StagingControl,
   activateFlutterSemantics,
   assertAnalyticsSequence,
+  scrollFlutterSemanticsToEnd,
+  waitForFlutterSemanticsTarget,
 } from '../e2e/release/support/staging-control.js';
 import {
   SanitizedEvidence,
@@ -517,6 +519,93 @@ describe('staging control contract', () => {
     ]);
   });
 
+  it('re-activates semantics when a route swaps its target after old nodes remain', async () => {
+    let placeholderAttached = false;
+    let targetVisible = false;
+    let activations = 0;
+    const page = {
+      locator(selector) {
+        const kind = selector;
+        return {
+          first() {
+            return this;
+          },
+          async count() {
+            if (kind === 'flt-semantics') return 1;
+            if (kind === 'flt-semantics-placeholder') {
+              return placeholderAttached ? 1 : 0;
+            }
+            return 1;
+          },
+          async waitFor() {},
+          async focus() {},
+          async evaluate(callback) {
+            callback({
+              click() {
+                activations += 1;
+                placeholderAttached = false;
+                targetVisible = true;
+              },
+            });
+          },
+        };
+      },
+      async waitForTimeout() {
+        placeholderAttached = true;
+      },
+    };
+    const target = { isVisible: async () => targetVisible };
+
+    await expect(waitForFlutterSemanticsTarget(page, target, { timeout: 1_000 }))
+      .resolves.toBe(target);
+    expect(activations).toBe(1);
+  });
+
+  it('scrolls the Flutter semantics container that owns the visible content anchor', async () => {
+    let scrollEvents = 0;
+    const waits = [];
+    const container = {
+      tagName: 'FLT-SEMANTICS',
+      parentElement: null,
+      scrollHeight: 2_400,
+      clientHeight: 600,
+      scrollTop: 0,
+      querySelector(selector) {
+        return selector === ':scope > flt-semantics-scroll-overflow' ? {} : null;
+      },
+      dispatchEvent() { scrollEvents += 1; },
+    };
+    const leaf = {
+      tagName: 'FLT-SEMANTICS',
+      parentElement: container,
+      querySelector() { return null; },
+    };
+    const anchor = {
+      async evaluate(callback) {
+        return callback(leaf);
+      },
+    };
+    const page = {
+      locator(selector) {
+        return {
+          first() {
+            return this;
+          },
+          async count() {
+            return selector === 'flt-semantics' ? 1 : 0;
+          },
+        };
+      },
+      async waitForTimeout(duration) { waits.push(duration); },
+    };
+
+    await expect(scrollFlutterSemanticsToEnd(page, anchor, { timeout: 1_000 }))
+      .resolves.toBeUndefined();
+    expect(container.scrollTop).toBe(2_400);
+    expect(scrollEvents).toBe(1);
+    expect(waits).toContain(600);
+  });
+
   it('requires OAuth, analytics spy, durable service and fault controls', async () => {
     const candidateSpecSha256 = 'e'.repeat(64);
     const responseBody = {
@@ -553,6 +642,47 @@ describe('staging control contract', () => {
     expect(requests[0].options.headers['x-candidate-spec-sha256'])
       .toBe(candidateSpecSha256);
     expect(requests[0].options.headers).not.toHaveProperty('x-release-manifest-sha256');
+  });
+
+  it('sends only an exact positive prior session binding with review fault commands', async () => {
+    const candidateSpecSha256 = 'e'.repeat(64);
+    const requests = [];
+    const request = {
+      async get() {},
+      async post(url, options) {
+        requests.push({ url, options });
+        return {
+          ok: () => true,
+          json: async () => ({
+            schema_version: 'mission-spine.staging-control.v1',
+            candidate_spec_sha256: candidateSpecSha256,
+            accepted: true,
+          }),
+        };
+      },
+    };
+    const control = new StagingControl({
+      request,
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256,
+    });
+    const args = ['mission-spine-workspace', 'R'.repeat(43), 'fail-next-review'];
+
+    await expect(control.command(...args)).rejects.toThrow(/prior sandbox session/i);
+    await expect(control.command(...args, { prior_sandbox_session_id: 0 }))
+      .rejects.toThrow(/prior sandbox session/i);
+    await expect(control.command(
+      'mission-spine-workspace',
+      'R'.repeat(43),
+      'next-run-timeout',
+      { prior_sandbox_session_id: 80 },
+    )).rejects.toThrow(/payload/i);
+    await expect(control.command(...args, { prior_sandbox_session_id: 80 }))
+      .resolves.toMatchObject({ accepted: true });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].options.data).toEqual({ prior_sandbox_session_id: 80 });
   });
 
   it('fails closed when a prerequisite, spy, or candidate pin is absent', async () => {
@@ -731,30 +861,146 @@ describe('staging control contract', () => {
     expect(closed).toBe(true);
   });
 
-  it('arms review failure before a UI action, retains evidence, then retries in the browser', () => {
+  it('does not close the page when Chromium cancels an intercepted request', async () => {
+    const candidateSpecSha256 = 'e'.repeat(64);
+    const control = new StagingControl({
+      request: { async get() {} },
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256,
+    });
+    let pausedHandler;
+    const sent = [];
+    const session = {
+      on(_event, handler) {
+        pausedHandler = handler;
+      },
+      async send(method, parameters) {
+        sent.push({ method, parameters });
+        if (method === 'Fetch.continueRequest') {
+          throw new Error(
+            'cdpSession.send: Protocol error (Fetch.continueRequest): Invalid InterceptionId.',
+          );
+        }
+      },
+    };
+    let closed = false;
+    const page = {
+      context: () => ({ newCDPSession: async () => session }),
+      addInitScript: vi.fn(async () => {}),
+      close: vi.fn(async () => { closed = true; }),
+    };
+    await control.bindBrowserRun(page, 'A'.repeat(22), {
+      landingOrigin: 'https://leva.ai.kr',
+      appOrigin: 'https://app.leva.ai.kr',
+      apiOrigin: 'https://api.leva.ai.kr',
+      oauthOrigin: 'https://oauth.staging.leva.ai.kr',
+      analyticsSpyOrigin: 'https://analytics-spy.staging.leva.ai.kr',
+    });
+
+    await pausedHandler({
+      requestId: 'canceled',
+      request: { url: 'https://leva.ai.kr/app.js', headers: {} },
+    });
+
+    expect(closed).toBe(false);
+    expect(sent.map(({ method }) => method)).toEqual([
+      'Fetch.enable',
+      'Fetch.continueRequest',
+    ]);
+  });
+
+  it('binds review failure away from the recovered prior session before the truncated rerun', () => {
     const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
-    const start = source.indexOf("step: 'outbox-review-durable'");
+    const start = source.indexOf("step: 'immediate-disconnect-timeout-recovery'");
     const end = source.indexOf("step: 'private-context-preview-commit'", start);
     const reviewStep = source.slice(start, end);
     const orderedOperations = [
+      "'owner-recovery-timed-out'",
+      'priorSandboxSessionId',
+      "'next-run-midstream-disconnect'",
       "'fail-next-review'",
-      'triggerReviewProducingRun(page)',
+      'prior_sandbox_session_id:',
+      'previousSessionValues',
+      "request.method() === 'POST'",
+      "'midstream-disconnect-completed'",
+      "step: 'outbox-review-durable'",
       "'partial-review-retains-run-and-review'",
       "'clear-faults'",
       'retryReviewInBrowser(page)',
       "'kafka-outbox-review-correlated'",
     ];
-    const positions = orderedOperations.map((operation) => reviewStep.indexOf(operation));
+    let cursor = 0;
+    const positions = orderedOperations.map((operation) => {
+      const position = reviewStep.indexOf(operation, cursor);
+      if (position >= 0) cursor = position + operation.length;
+      return position;
+    });
 
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    expect(source).not.toMatch(/async function triggerReviewProducingRun/);
     expect(source).toMatch(
-      /async function triggerReviewProducingRun[\s\S]*getByRole\('button', \{ name: '다시 실행'/,
+      /waitForFlutterSemanticsTarget\(page, rerunButton, \{ timeout: 45_000 \}\)/,
     );
     expect(source).toMatch(
-      /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '리뷰 다시 시도'/,
+      /waitForFlutterSemanticsTarget\(page, mentorPrompt\)/,
+    );
+    expect(source).toMatch(
+      /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '다시 시도'/,
+    );
+    expect(source).toMatch(
+      /finally \{[\s\S]*control\.command\(JOURNEY, prepared\.runKey, 'clear-faults'\)[\s\S]*evidence\.close\(\)/,
+    );
+  });
+
+  it('advances every diagnostic question through an observed answer mutation', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /async function completeFifteenQuestions[\s\S]*waitForFlutterSemanticsTarget\(page, progress\)[\s\S]*expect\(answerButton\)\.toBeEnabled\(\)[\s\S]*waitForRequest[\s\S]*endsWith\('\/answer'\)[\s\S]*answerButton\.click\(\)/,
+    );
+  });
+
+  it('opens Today through the bounded Flutter palette and returns by browser history', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /async function openToday[\s\S]*attempt < 3[\s\S]*locator\('flt-semantics'\)\.first\(\)\.focus\(\)[\s\S]*keyboard\.press\('Control\+K'\)[\s\S]*waitForFlutterSemanticsTarget\(page, commandSearch/,
+    );
+    expect(source).toMatch(
+      /step: 'content-linked-completion-replay'[\s\S]*const progressLabel = page\.getByText\(\/\^\\d\+% 진행\$\|\^완료\$\/[\s\S]*waitForResponse\(async[\s\S]*endsWith\('\/progress'\)[\s\S]*body\.completed === true[\s\S]*timeout: 75_000[\s\S]*scrollFlutterSemanticsToEnd\(page, progressLabel\)[\s\S]*completed\)\.toBe\(true\)[\s\S]*goBack\(\{ waitUntil: 'domcontentloaded' \}\)[\s\S]*activateFlutterSemantics\(page\)/,
+    );
+    expect(source).not.toMatch(/const highProgress = page\.getByText/);
+  });
+
+  it('accepts both authoritative path branches and extended mission action names', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(/name: \/\^\(\?:학습\|기존\) 경로로 계속\$\//);
+    expect(source.match(/name: \/\^미션 완료\//g)).toHaveLength(2);
+    expect(source).not.toContain("name: '학습 경로로 계속', exact: true");
+    expect(source).not.toContain("name: '미션 완료', exact: true");
+  });
+
+  it('drives the Flutter mentor field through accessibility and waits for retry completion', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /getByRole\('button', \{[\s\S]*name: '전송 전에 수정'[\s\S]*\}\)\.first\(\)\.click\(\)/,
+    );
+    expect(source).toMatch(
+      /const mentorPrompt = page\.getByRole\('textbox', \{[\s\S]*mentorPrompt\.click\(\)[\s\S]*page\.keyboard\.type/,
+    );
+    expect(source).toMatch(
+      /const retryMentor = page\.getByRole\('button', \{[\s\S]*expect\(retryMentor\)\.toBeVisible[\s\S]*retryMentor\.click\(\)[\s\S]*name: '맥락 미리보기'[\s\S]*mentor-provider-payload-exact/,
+    );
+    expect(source).not.toContain("getByPlaceholder('현재 미션에서 막힌 점을 질문하세요')");
+    expect(source).not.toContain('mentorPrompt.fill(');
+  });
+
+  it('submits consent only through a visible enabled control and observed mutation', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /const consentButton = page\.getByRole\('button', \{[\s\S]*name: '동의하고 계속하기'[\s\S]*waitForFlutterSemanticsTarget\(page, consentButton\)[\s\S]*expect\(consentButton\)\.toBeEnabled\(\)[\s\S]*waitForRequest[\s\S]*endsWith\('\/consents'\)[\s\S]*consentButton\.evaluate\(\(element\) => element\.click\(\)\)/,
     );
   });
 

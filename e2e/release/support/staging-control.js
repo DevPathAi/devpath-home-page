@@ -151,6 +151,10 @@ function requestHeadersForHop(headers, candidateSpecSha256, runKey) {
   return entries;
 }
 
+function isCanceledInterception(error) {
+  return error instanceof Error && error.message.includes('Invalid InterceptionId');
+}
+
 // Fetch.continueRequest header overrides are scoped to one network hop. This
 // keeps Chromium's own DNS/TLS stack in use while every redirect is rechecked.
 export async function installHostBoundRunHeaders(page, {
@@ -230,12 +234,18 @@ export async function installHostBoundRunHeaders(page, {
     }
     requests.set(requestId, { origin, bound });
 
-    await session.send('Fetch.continueRequest', {
-      requestId,
-      ...(bound
-        ? { headers: requestHeadersForHop(request.headers, candidateSpecSha256, runKey) }
-        : {}),
-    });
+    try {
+      await session.send('Fetch.continueRequest', {
+        requestId,
+        ...(bound
+          ? { headers: requestHeadersForHop(request.headers, candidateSpecSha256, runKey) }
+          : {}),
+      });
+    } catch (error) {
+      requests.delete(requestId);
+      if (isCanceledInterception(error)) return;
+      throw error;
+    }
   };
 
   session.on('Fetch.requestPaused', (event) => (
@@ -323,14 +333,16 @@ export function assertAnalyticsSequence(events, expectedEvents) {
 
 export async function activateFlutterSemantics(page) {
   const semantics = page.locator('flt-semantics').first();
-  if (await semantics.count() > 0) return;
-
   const placeholder = page.locator('flt-semantics-placeholder');
-  await page.locator('flt-semantics, flt-semantics-placeholder').first().waitFor({
-    state: 'attached',
-    timeout: 15_000,
-  });
-  if (await semantics.count() > 0) return;
+  if (await semantics.count() > 0) {
+    if (await placeholder.count() === 0) return;
+  } else {
+    await page.locator('flt-semantics, flt-semantics-placeholder').first().waitFor({
+      state: 'attached',
+      timeout: 15_000,
+    });
+    if (await semantics.count() > 0 && await placeholder.count() === 0) return;
+  }
 
   // Flutter places the accessibility activator just outside the viewport, so
   // Playwright's pointer click is not actionable. Dispatch its native DOM click
@@ -341,6 +353,50 @@ export async function activateFlutterSemantics(page) {
     state: 'attached',
     timeout: 15_000,
   });
+}
+
+export async function waitForFlutterSemanticsTarget(
+  page,
+  target,
+  { timeout = 30_000 } = {},
+) {
+  const deadline = Date.now() + timeout;
+  do {
+    await activateFlutterSemantics(page);
+    if (await target.isVisible()) return target;
+    await page.waitForTimeout(Math.min(100, Math.max(0, deadline - Date.now())));
+  } while (Date.now() < deadline);
+  throw new Error('Flutter semantics target did not become visible');
+}
+
+export async function scrollFlutterSemanticsToEnd(
+  page,
+  anchor,
+  { timeout = 15_000 } = {},
+) {
+  const deadline = Date.now() + timeout;
+  do {
+    await activateFlutterSemantics(page);
+    await page.waitForTimeout(600);
+    const scrolled = await anchor.evaluate((element) => {
+      let target = element;
+      while (target) {
+        if (
+          target.tagName === 'FLT-SEMANTICS'
+          && target.querySelector(':scope > flt-semantics-scroll-overflow')
+          && target.scrollHeight > target.clientHeight
+        ) break;
+        target = target.parentElement;
+      }
+      if (!target) return false;
+      target.scrollTop = target.scrollHeight;
+      target.dispatchEvent(new Event('scroll'));
+      return true;
+    });
+    if (scrolled) return;
+    await page.waitForTimeout(Math.min(100, Math.max(0, deadline - Date.now())));
+  } while (Date.now() < deadline);
+  throw new Error('Flutter semantics scroll container did not become available');
 }
 
 export async function assertProductionTlsNavigation(page, url, expectedHostname) {
@@ -443,13 +499,28 @@ export class StagingControl {
     });
   }
 
-  async command(journey, runKey, command) {
+  async command(journey, runKey, command, data = {}) {
     requireJourney(journey);
     requireRunKey(runKey);
     if (!COMMANDS[journey].has(command)) throw new Error('unapproved staging command');
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('staging command payload is invalid');
+    }
+    const keys = Object.keys(data);
+    if (command === 'fail-next-review') {
+      if (keys.length !== 1
+          || keys[0] !== 'prior_sandbox_session_id'
+          || !Number.isSafeInteger(data.prior_sandbox_session_id)
+          || data.prior_sandbox_session_id <= 0) {
+        throw new Error('prior sandbox session id is invalid');
+      }
+    } else if (keys.length !== 0) {
+      throw new Error('staging command payload is not allowed');
+    }
     const body = await this.#post(
       `/v1/release/journeys/${journey}/commands/${command}`,
       runKey,
+      data,
     );
     if (body.accepted !== true) throw new Error('staging command was not accepted');
     return body;

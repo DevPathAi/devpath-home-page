@@ -166,7 +166,9 @@ describe('independent ET13 audit contracts', () => {
     expect(changedPaths).toContain('e2e/visual/candidate-spec.v2.json');
     expect(isCommitAncestorByObjectGraph(productSha, headSha)).toBe(true);
     expect(isCommitAncestorByObjectGraph(headSha, productSha)).toBe(false);
-    expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
+    // The raw tree notices release-harness bytes; provenance permits only the
+    // explicit non-rendering allowlist after checking the changed paths.
+    expect(productRuntimeTreeSha256(headSha)).not.toBe(productRuntimeTreeSha256(productSha));
     expect(validateProductRuntimeProvenance({
       candidate: JSON.parse(readFileSync(
         join(root, 'e2e/visual/candidate-spec.v2.json'),

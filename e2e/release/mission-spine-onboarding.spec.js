@@ -8,6 +8,8 @@ import {
   activateFlutterSemantics,
   assertAnalyticsSequence,
   assertProductionTlsNavigation,
+  scrollFlutterSemanticsToEnd,
+  waitForFlutterSemanticsTarget,
 } from './support/staging-control.js';
 
 const JOURNEY = 'mission-spine-onboarding';
@@ -30,15 +32,31 @@ async function refreshFlutter(page, pathname) {
 
 async function chooseBackendTrack(page) {
   await page.getByRole('button', { name: /진단할 트랙/ }).click();
-  await page.getByRole('button', { name: /백엔드.*Spring/i }).click();
+  await page.getByRole('menuitem', { name: /백엔드.*Spring/i }).click();
 }
 
 async function completeFifteenQuestions(page) {
   for (let index = 1; index <= 15; index += 1) {
-    await expect(page.getByText(new RegExp(`${index} \\/ 15`))).toBeVisible();
-    await page.getByRole('button', { name: '잘 모르겠어요', exact: true }).click();
+    const progress = page.getByText(new RegExp(`${index} \\/ 15`));
+    await waitForFlutterSemanticsTarget(page, progress);
+    const answerButton = page.getByRole('button', {
+      name: '잘 모르겠어요',
+      exact: true,
+    });
+    await waitForFlutterSemanticsTarget(page, answerButton);
+    await expect(answerButton).toBeEnabled();
+    await Promise.all([
+      page.waitForRequest((request) => (
+        new URL(request.url()).pathname.endsWith('/answer')
+        && request.method() === 'POST'
+      )),
+      answerButton.click(),
+    ]);
   }
-  await expect(page.getByText('진단 결과', { exact: true })).toBeVisible();
+  await waitForFlutterSemanticsTarget(
+    page,
+    page.getByText('진단 결과', { exact: true }),
+  );
 }
 
 async function previewProjection(page) {
@@ -49,7 +67,25 @@ async function previewProjection(page) {
 }
 
 async function openToday(page) {
-  await page.getByText('오늘', { exact: true }).first().click();
+  const commandSearch = page.getByPlaceholder('명령·이동 검색');
+  let opened = false;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await activateFlutterSemantics(page);
+    await page.locator('flt-semantics').first().focus();
+    await page.keyboard.press('Control+K');
+    try {
+      await waitForFlutterSemanticsTarget(page, commandSearch, { timeout: 1_000 });
+      opened = true;
+      break;
+    } catch {
+      // A route transition can replace the focused Flutter semantics tree.
+    }
+  }
+  if (!opened) throw new Error('Flutter command palette did not open');
+  await commandSearch.fill('오늘');
+  const todayCommand = page.getByText('오늘', { exact: true }).last();
+  await waitForFlutterSemanticsTarget(page, todayCommand);
+  await todayCommand.click();
   await expect.poll(() => new URL(page.url()).pathname).toMatch(
     /^\/(?:dashboard|path\/\d+\/today)$/,
   );
@@ -60,6 +96,7 @@ test.beforeAll(() => {
 });
 
 test('Landing guest diagnosis is claimed once and advances authoritative Today', async ({
+  context: browserContext,
   page,
   request,
 }) => {
@@ -109,11 +146,33 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     });
 
     await control.command(JOURNEY, prepared.runKey, 'grant-analytics-permission');
-    await page.reload({ waitUntil: 'networkidle' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(async () => (
+      (await control.analyticsEvents(JOURNEY, prepared.runKey))
+        .map((event) => event.event)
+    ), { timeout: 15_000 }).toContain('landing_viewed');
 
     await evidence.step({ page, step: 'opaque-journey-handoff' }, async () => {
-      await page.locator('.hero [data-diagnostic-cta="primary"]').click();
+      const primaryCta = page.locator('.hero [data-diagnostic-cta="primary"]');
+      await primaryCta.evaluate((link) => {
+        link.addEventListener('click', (event) => event.preventDefault(), {
+          capture: true,
+          once: true,
+        });
+      });
+      await primaryCta.click();
+      await expect.poll(async () => (
+        (await control.analyticsEvents(JOURNEY, prepared.runKey))
+          .map((event) => event.event)
+      ), { timeout: 15_000 }).toContain('landing_diagnostic_cta_clicked');
+      const handoffUrl = await primaryCta.getAttribute('href');
+      const handoff = new URL(handoffUrl);
+      expect(handoff.origin).toBe(context.appOrigin);
+      expect(handoff.pathname).toBe('/diagnostic');
+      expect([...handoff.searchParams.keys()]).toEqual(['journeyId']);
+      expect(handoff.searchParams.get('journeyId')).toMatch(/^[A-Za-z0-9_-]{22}$/);
       const appHostname = new URL(context.appOrigin).hostname;
+      await assertProductionTlsNavigation(page, handoffUrl, appHostname);
       await page.waitForURL((url) => (
         url.hostname === appHostname
         && url.pathname === '/diagnostic'
@@ -148,10 +207,27 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       ));
       await control.checkpoint(JOURNEY, prepared.runKey, 'deterministic-oauth-complete');
       await control.command(JOURNEY, prepared.runKey, 'replay-oauth-callback');
-      await page.goto(`${context.appOrigin}/auth/callback`, { waitUntil: 'domcontentloaded' });
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForURL((url) => url.pathname === '/consent');
-      await activateFlutterSemantics(page);
+      const [replayPage] = await Promise.all([
+        browserContext.waitForEvent('page'),
+        page.evaluate(() => window.open('about:blank', '_blank')),
+      ]);
+      await expect.poll(() => replayPage.evaluate(() => (
+        window.sessionStorage.getItem('leva.diagnostic.continuation.v1') !== null
+      ))).toBe(true);
+      await control.bindBrowserRun(replayPage, prepared.runKey, {
+        landingOrigin: context.landingOrigin,
+        appOrigin: context.appOrigin,
+        apiOrigin: context.apiOrigin,
+        oauthOrigin: context.oauthOrigin,
+        analyticsSpyOrigin: context.analyticsSpyOrigin,
+      });
+      await replayPage.goto(`${context.appOrigin}/auth/callback`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await replayPage.waitForURL((url) => url.pathname === '/consent');
+      await page.close();
+      page = replayPage;
+      await activateFlutterSemantics(replayPage);
     });
 
     await evidence.step({ page, step: 'required-consent-claim-replay' }, async () => {
@@ -160,7 +236,20 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.getByRole('checkbox', { name: /개인정보 수집·이용 동의/ }).click();
       await page.getByLabel('출생 연도 (필수)').fill('1995');
       await control.command(JOURNEY, prepared.runKey, 'replay-claim');
-      await page.getByRole('button', { name: '동의하고 계속하기', exact: true }).click();
+      const consentButton = page.getByRole('button', {
+        name: '동의하고 계속하기',
+        exact: true,
+      });
+      await waitForFlutterSemanticsTarget(page, consentButton);
+      await expect(consentButton).toBeEnabled();
+      await Promise.all([
+        page.waitForURL((url) => url.pathname === '/diagnostic'),
+        page.waitForRequest((browserRequest) => (
+          new URL(browserRequest.url()).pathname.endsWith('/consents')
+          && browserRequest.method() === 'POST'
+        )),
+        consentButton.evaluate((element) => element.click()),
+      ]);
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.waitForURL((url) => url.pathname === '/diagnostic');
       await activateFlutterSemantics(page);
@@ -172,29 +261,65 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
 
     await evidence.step({ page, step: 'explicit-path-to-today' }, async () => {
       await refreshFlutter(page, '/diagnostic');
-      await page.getByRole('button', { name: '학습 경로로 계속', exact: true }).click();
+      await page.getByRole('button', {
+        name: /^(?:학습|기존) 경로로 계속$/,
+      }).click();
       await page.waitForURL((url) => url.pathname === '/path');
       await activateFlutterSemantics(page);
+      const pathMission = page.getByRole('button', { name: /^미션 열기/ });
+      const pathFailure = page.getByText(
+        /경로 생성에 실패했어요|생성이 중단됐어요|경로 생성이 중단됐어요|경로를 불러오지 못했어요/,
+      ).first();
+      await expect(pathMission.or(pathFailure)).toBeVisible({
+        timeout: 90_000,
+      });
+      if (await pathFailure.isVisible()) {
+        throw new Error(`path generation failed: ${await pathFailure.textContent()}`);
+      }
+      await expect.poll(() => page.evaluate(() => (
+        window.sessionStorage.getItem('leva.diagnostic.continuation.v1')
+      )), { timeout: 45_000 }).toBeNull();
       await openToday(page);
-      await expect(page.getByRole('button', { name: '미션 열기', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^미션 열기/ })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'authoritative-first-task');
     });
 
     await evidence.step({ page, step: 'content-linked-completion-replay' }, async () => {
-      await page.getByRole('button', { name: '미션 열기', exact: true }).click();
+      await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
+      const progressLabel = page.getByText(/^\d+% 진행$|^완료$/);
+      await waitForFlutterSemanticsTarget(page, progressLabel);
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-below-threshold');
-      await page.mouse.wheel(0, 100_000);
-      await page.waitForTimeout(1_500);
-      await openToday(page);
+      const [progressResponse] = await Promise.all([
+        page.waitForResponse(async (response) => {
+          if (
+            !new URL(response.url()).pathname.endsWith('/progress')
+            || response.request().method() !== 'POST'
+            || !response.ok()
+          ) return false;
+          const body = await response.json();
+          return body.completed === true;
+        }, { timeout: 75_000 }),
+        // Scrolling virtualizes the progress label out of Flutter's semantics
+        // tree. The pinned successful response is the durable completion proof.
+        scrollFlutterSemanticsToEnd(page, progressLabel),
+      ]);
+      expect(progressResponse.ok()).toBe(true);
+      const progress = await progressResponse.json();
+      expect(progress.completed).toBe(true);
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => new URL(page.url()).pathname).toMatch(
+        /^\/(?:dashboard|path\/\d+\/today)$/,
+      );
+      await activateFlutterSemantics(page);
       await control.command(JOURNEY, prepared.runKey, 'replay-content-linked-completion');
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-advanced-once');
-      await expect(page.getByRole('button', { name: '미션 완료', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^미션 완료/ })).toBeVisible();
     });
 
     await evidence.step({ page, step: 'contentless-completion-replay' }, async () => {
-      await page.getByRole('button', { name: '미션 완료', exact: true }).click();
+      await page.getByRole('button', { name: /^미션 완료/ }).click();
       await control.command(JOURNEY, prepared.runKey, 'replay-contentless-completion');
       await control.checkpoint(JOURNEY, prepared.runKey, 'contentless-advanced-once');
       await control.checkpoint(JOURNEY, prepared.runKey, 'completion-replays-noop');
