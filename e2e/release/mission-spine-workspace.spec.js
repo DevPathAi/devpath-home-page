@@ -47,7 +47,10 @@ async function reachAuthenticatedToday(page, appOrigin) {
 }
 
 async function explicitlySelectCurrentContent(page) {
-  await page.getByRole('button', { name: '전송 전에 수정', exact: true }).click();
+  await page.getByRole('button', {
+    name: '전송 전에 수정',
+    exact: true,
+  }).first().click();
   const currentContent = page.getByRole('checkbox', { name: /현재 콘텐츠/ });
   if (await currentContent.isChecked()) {
     await currentContent.click();
@@ -228,9 +231,13 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await page.getByRole('button', { name: 'AI 멘토에게 질문', exact: true }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/mentor$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      const mentorPrompt = page.getByPlaceholder('현재 미션에서 막힌 점을 질문하세요');
+      const mentorPrompt = page.getByRole('textbox', {
+        name: '현재 미션에서 막힌 점을 질문하세요',
+        exact: true,
+      });
       await waitForFlutterSemanticsTarget(page, mentorPrompt);
-      await mentorPrompt.fill(
+      await mentorPrompt.click();
+      await page.keyboard.type(
         '다음 디버깅 단계를 알려주세요.',
       );
       await explicitlySelectCurrentContent(page);
@@ -248,13 +255,21 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
         name: '비공개로 질문 보내기',
         exact: true,
       }).click();
-      await expect(page.getByText(/부분답변|받은 답변은 그대로|다시 시도/)).toBeVisible({
+      const retryMentor = page.getByRole('button', {
+        name: '같은 질문 다시 보내기',
+        exact: true,
+      });
+      await expect(retryMentor).toBeVisible({
         timeout: 45_000,
       });
       await control.checkpoint(JOURNEY, prepared.runKey, 'private-mentor-prompt-committed');
       await control.checkpoint(JOURNEY, prepared.runKey, 'mentor-partial-retained');
       await control.command(JOURNEY, prepared.runKey, 'clear-faults');
-      await page.getByRole('button', { name: '같은 질문 다시 보내기', exact: true }).click();
+      await retryMentor.click();
+      await expect(page.getByRole('button', {
+        name: '맥락 미리보기',
+        exact: true,
+      })).toBeVisible({ timeout: 45_000 });
       await control.checkpoint(JOURNEY, prepared.runKey, 'mentor-provider-payload-exact');
       await control.checkpoint(JOURNEY, prepared.runKey, 'mentor-terminal-complete');
     });
