@@ -453,13 +453,28 @@ export class StagingControl {
     });
   }
 
-  async command(journey, runKey, command) {
+  async command(journey, runKey, command, data = {}) {
     requireJourney(journey);
     requireRunKey(runKey);
     if (!COMMANDS[journey].has(command)) throw new Error('unapproved staging command');
+    if (data === null || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('staging command payload is invalid');
+    }
+    const keys = Object.keys(data);
+    if (command === 'fail-next-review') {
+      if (keys.length !== 1
+          || keys[0] !== 'prior_sandbox_session_id'
+          || !Number.isSafeInteger(data.prior_sandbox_session_id)
+          || data.prior_sandbox_session_id <= 0) {
+        throw new Error('prior sandbox session id is invalid');
+      }
+    } else if (keys.length !== 0) {
+      throw new Error('staging command payload is not allowed');
+    }
     const body = await this.#post(
       `/v1/release/journeys/${journey}/commands/${command}`,
       runKey,
+      data,
     );
     if (body.accepted !== true) throw new Error('staging command was not accepted');
     return body;

@@ -56,6 +56,20 @@ async function retryReviewInBrowser(page) {
   await page.getByRole('button', { name: '다시 시도', exact: true }).click();
 }
 
+async function currentSandboxSessionId(page) {
+  return page.evaluate(() => {
+    const values = Object.entries(window.sessionStorage)
+      .filter(([key]) => key.startsWith('leva.sandbox.session.v2.'))
+      .map(([, value]) => Number(value));
+    if (values.length !== 1
+        || !Number.isSafeInteger(values[0])
+        || values[0] <= 0) {
+      throw new Error('current sandbox session id is unavailable');
+    }
+    return values[0];
+  });
+}
+
 test.beforeAll(() => {
   assertLiveReleaseContext(releaseContext);
 });
@@ -78,6 +92,7 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
   });
 
   let prepared;
+  let priorSandboxSessionId;
   try {
     await control.assertPrerequisites(JOURNEY);
     prepared = await control.prepareJourney(JOURNEY);
@@ -139,12 +154,15 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await control.checkpoint(JOURNEY, prepared.runKey, 'session-id-within-one-second');
       await control.checkpoint(JOURNEY, prepared.runKey, 'immediate-disconnect-timed-out');
       await control.checkpoint(JOURNEY, prepared.runKey, 'owner-recovery-timed-out');
+      priorSandboxSessionId = await currentSandboxSessionId(page);
     });
 
     await evidence.step({ page, step: 'midstream-disconnect-truncated-recovery' }, async () => {
       await control.command(JOURNEY, prepared.runKey, 'next-run-midstream-disconnect');
       await control.command(JOURNEY, prepared.runKey, 'next-run-truncated');
-      await control.command(JOURNEY, prepared.runKey, 'fail-next-review');
+      await control.command(JOURNEY, prepared.runKey, 'fail-next-review', {
+        prior_sandbox_session_id: priorSandboxSessionId,
+      });
       const previousSessionValues = await page.evaluate(() => Object.fromEntries(
         Object.entries(window.sessionStorage).filter(([key]) => (
           key.startsWith('leva.sandbox.session.v2.')

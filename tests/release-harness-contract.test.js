@@ -555,6 +555,47 @@ describe('staging control contract', () => {
     expect(requests[0].options.headers).not.toHaveProperty('x-release-manifest-sha256');
   });
 
+  it('sends only an exact positive prior session binding with review fault commands', async () => {
+    const candidateSpecSha256 = 'e'.repeat(64);
+    const requests = [];
+    const request = {
+      async get() {},
+      async post(url, options) {
+        requests.push({ url, options });
+        return {
+          ok: () => true,
+          json: async () => ({
+            schema_version: 'mission-spine.staging-control.v1',
+            candidate_spec_sha256: candidateSpecSha256,
+            accepted: true,
+          }),
+        };
+      },
+    };
+    const control = new StagingControl({
+      request,
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256,
+    });
+    const args = ['mission-spine-workspace', 'R'.repeat(43), 'fail-next-review'];
+
+    await expect(control.command(...args)).rejects.toThrow(/prior sandbox session/i);
+    await expect(control.command(...args, { prior_sandbox_session_id: 0 }))
+      .rejects.toThrow(/prior sandbox session/i);
+    await expect(control.command(
+      'mission-spine-workspace',
+      'R'.repeat(43),
+      'next-run-timeout',
+      { prior_sandbox_session_id: 80 },
+    )).rejects.toThrow(/payload/i);
+    await expect(control.command(...args, { prior_sandbox_session_id: 80 }))
+      .resolves.toMatchObject({ accepted: true });
+
+    expect(requests).toHaveLength(1);
+    expect(requests[0].options.data).toEqual({ prior_sandbox_session_id: 80 });
+  });
+
   it('fails closed when a prerequisite, spy, or candidate pin is absent', async () => {
     const capabilities = [...REQUIRED_CAPABILITIES['mission-spine-onboarding']];
     capabilities.pop();
@@ -780,14 +821,17 @@ describe('staging control contract', () => {
     ]);
   });
 
-  it('arms review failure before the completed truncated run, retains evidence, then retries in the browser', () => {
+  it('binds review failure away from the recovered prior session before the truncated rerun', () => {
     const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
-    const start = source.indexOf("step: 'midstream-disconnect-truncated-recovery'");
+    const start = source.indexOf("step: 'immediate-disconnect-timeout-recovery'");
     const end = source.indexOf("step: 'private-context-preview-commit'", start);
     const reviewStep = source.slice(start, end);
     const orderedOperations = [
+      "'owner-recovery-timed-out'",
+      'priorSandboxSessionId',
       "'next-run-midstream-disconnect'",
       "'fail-next-review'",
+      'prior_sandbox_session_id:',
       'previousSessionValues',
       "request.method() === 'POST'",
       "'midstream-disconnect-completed'",
@@ -797,7 +841,12 @@ describe('staging control contract', () => {
       'retryReviewInBrowser(page)',
       "'kafka-outbox-review-correlated'",
     ];
-    const positions = orderedOperations.map((operation) => reviewStep.indexOf(operation));
+    let cursor = 0;
+    const positions = orderedOperations.map((operation) => {
+      const position = reviewStep.indexOf(operation, cursor);
+      if (position >= 0) cursor = position + operation.length;
+      return position;
+    });
 
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
