@@ -49,7 +49,9 @@ async function previewProjection(page) {
 }
 
 async function openToday(page) {
-  await page.getByText('오늘', { exact: true }).first().click();
+  await page.keyboard.press('Control+K');
+  await page.getByPlaceholder('명령·이동 검색').fill('오늘');
+  await page.getByText('오늘', { exact: true }).last().click();
   await expect.poll(() => new URL(page.url()).pathname).toMatch(
     /^\/(?:dashboard|path\/\d+\/today)$/,
   );
@@ -60,6 +62,7 @@ test.beforeAll(() => {
 });
 
 test('Landing guest diagnosis is claimed once and advances authoritative Today', async ({
+  context: browserContext,
   page,
   request,
 }) => {
@@ -110,10 +113,32 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
 
     await control.command(JOURNEY, prepared.runKey, 'grant-analytics-permission');
     await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect.poll(async () => (
+      (await control.analyticsEvents(JOURNEY, prepared.runKey))
+        .map((event) => event.event)
+    ), { timeout: 15_000 }).toContain('landing_viewed');
 
     await evidence.step({ page, step: 'opaque-journey-handoff' }, async () => {
-      await page.locator('.hero [data-diagnostic-cta="primary"]').click();
+      const primaryCta = page.locator('.hero [data-diagnostic-cta="primary"]');
+      await primaryCta.evaluate((link) => {
+        link.addEventListener('click', (event) => event.preventDefault(), {
+          capture: true,
+          once: true,
+        });
+      });
+      await primaryCta.click();
+      await expect.poll(async () => (
+        (await control.analyticsEvents(JOURNEY, prepared.runKey))
+          .map((event) => event.event)
+      ), { timeout: 15_000 }).toContain('landing_diagnostic_cta_clicked');
+      const handoffUrl = await primaryCta.getAttribute('href');
+      const handoff = new URL(handoffUrl);
+      expect(handoff.origin).toBe(context.appOrigin);
+      expect(handoff.pathname).toBe('/diagnostic');
+      expect([...handoff.searchParams.keys()]).toEqual(['journeyId']);
+      expect(handoff.searchParams.get('journeyId')).toMatch(/^[A-Za-z0-9_-]{22}$/);
       const appHostname = new URL(context.appOrigin).hostname;
+      await assertProductionTlsNavigation(page, handoffUrl, appHostname);
       await page.waitForURL((url) => (
         url.hostname === appHostname
         && url.pathname === '/diagnostic'
@@ -148,10 +173,27 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       ));
       await control.checkpoint(JOURNEY, prepared.runKey, 'deterministic-oauth-complete');
       await control.command(JOURNEY, prepared.runKey, 'replay-oauth-callback');
-      await page.goto(`${context.appOrigin}/auth/callback`, { waitUntil: 'domcontentloaded' });
-      await page.reload({ waitUntil: 'domcontentloaded' });
-      await page.waitForURL((url) => url.pathname === '/consent');
-      await activateFlutterSemantics(page);
+      const [replayPage] = await Promise.all([
+        browserContext.waitForEvent('page'),
+        page.evaluate(() => window.open('about:blank', '_blank')),
+      ]);
+      await expect.poll(() => replayPage.evaluate(() => (
+        window.sessionStorage.getItem('leva.diagnostic.continuation.v1') !== null
+      ))).toBe(true);
+      await control.bindBrowserRun(replayPage, prepared.runKey, {
+        landingOrigin: context.landingOrigin,
+        appOrigin: context.appOrigin,
+        apiOrigin: context.apiOrigin,
+        oauthOrigin: context.oauthOrigin,
+        analyticsSpyOrigin: context.analyticsSpyOrigin,
+      });
+      await replayPage.goto(`${context.appOrigin}/auth/callback`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await replayPage.waitForURL((url) => url.pathname === '/consent');
+      await page.close();
+      page = replayPage;
+      await activateFlutterSemantics(replayPage);
     });
 
     await evidence.step({ page, step: 'required-consent-claim-replay' }, async () => {
@@ -160,7 +202,10 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.getByRole('checkbox', { name: /개인정보 수집·이용 동의/ }).click();
       await page.getByLabel('출생 연도 (필수)').fill('1995');
       await control.command(JOURNEY, prepared.runKey, 'replay-claim');
-      await page.getByRole('button', { name: '동의하고 계속하기', exact: true }).click();
+      await Promise.all([
+        page.waitForURL((url) => url.pathname === '/diagnostic'),
+        page.getByRole('button', { name: '동의하고 계속하기', exact: true }).click(),
+      ]);
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.waitForURL((url) => url.pathname === '/diagnostic');
       await activateFlutterSemantics(page);
@@ -175,6 +220,19 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.getByRole('button', { name: '학습 경로로 계속', exact: true }).click();
       await page.waitForURL((url) => url.pathname === '/path');
       await activateFlutterSemantics(page);
+      const pathMission = page.getByRole('button', { name: /^미션 열기/ });
+      const pathFailure = page.getByText(
+        /경로 생성에 실패했어요|생성이 중단됐어요|경로 생성이 중단됐어요|경로를 불러오지 못했어요/,
+      ).first();
+      await expect(pathMission.or(pathFailure)).toBeVisible({
+        timeout: 90_000,
+      });
+      if (await pathFailure.isVisible()) {
+        throw new Error(`path generation failed: ${await pathFailure.textContent()}`);
+      }
+      await expect.poll(() => page.evaluate(() => (
+        window.sessionStorage.getItem('leva.diagnostic.continuation.v1')
+      )), { timeout: 45_000 }).toBeNull();
       await openToday(page);
       await expect(page.getByRole('button', { name: /^미션 열기/ })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'authoritative-first-task');

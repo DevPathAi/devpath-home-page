@@ -731,6 +731,55 @@ describe('staging control contract', () => {
     expect(closed).toBe(true);
   });
 
+  it('does not close the page when Chromium cancels an intercepted request', async () => {
+    const candidateSpecSha256 = 'e'.repeat(64);
+    const control = new StagingControl({
+      request: { async get() {} },
+      origin: 'https://release-control.staging.leva.ai.kr',
+      credential: 'not-for-evidence',
+      candidateSpecSha256,
+    });
+    let pausedHandler;
+    const sent = [];
+    const session = {
+      on(_event, handler) {
+        pausedHandler = handler;
+      },
+      async send(method, parameters) {
+        sent.push({ method, parameters });
+        if (method === 'Fetch.continueRequest') {
+          throw new Error(
+            'cdpSession.send: Protocol error (Fetch.continueRequest): Invalid InterceptionId.',
+          );
+        }
+      },
+    };
+    let closed = false;
+    const page = {
+      context: () => ({ newCDPSession: async () => session }),
+      addInitScript: vi.fn(async () => {}),
+      close: vi.fn(async () => { closed = true; }),
+    };
+    await control.bindBrowserRun(page, 'A'.repeat(22), {
+      landingOrigin: 'https://leva.ai.kr',
+      appOrigin: 'https://app.leva.ai.kr',
+      apiOrigin: 'https://api.leva.ai.kr',
+      oauthOrigin: 'https://oauth.staging.leva.ai.kr',
+      analyticsSpyOrigin: 'https://analytics-spy.staging.leva.ai.kr',
+    });
+
+    await pausedHandler({
+      requestId: 'canceled',
+      request: { url: 'https://leva.ai.kr/app.js', headers: {} },
+    });
+
+    expect(closed).toBe(false);
+    expect(sent.map(({ method }) => method)).toEqual([
+      'Fetch.enable',
+      'Fetch.continueRequest',
+    ]);
+  });
+
   it('arms review failure before a UI action, retains evidence, then retries in the browser', () => {
     const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
     const start = source.indexOf("step: 'outbox-review-durable'");
@@ -751,7 +800,7 @@ describe('staging control contract', () => {
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
     expect(source).toMatch(
-      /async function triggerReviewProducingRun[\s\S]*getByRole\('button', \{ name: '다시 실행'/,
+      /async function triggerReviewProducingRun[\s\S]*getByRole\('button', \{ name: \/\^다시 실행\//,
     );
     expect(source).toMatch(
       /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '리뷰 다시 시도'/,
