@@ -22,6 +22,8 @@ import {
   StagingControl,
   activateFlutterSemantics,
   assertAnalyticsSequence,
+  scrollFlutterSemanticsToEnd,
+  waitForFlutterSemanticsTarget,
 } from '../e2e/release/support/staging-control.js';
 import {
   SanitizedEvidence,
@@ -517,6 +519,93 @@ describe('staging control contract', () => {
     ]);
   });
 
+  it('re-activates semantics when a route swaps its target after old nodes remain', async () => {
+    let placeholderAttached = false;
+    let targetVisible = false;
+    let activations = 0;
+    const page = {
+      locator(selector) {
+        const kind = selector;
+        return {
+          first() {
+            return this;
+          },
+          async count() {
+            if (kind === 'flt-semantics') return 1;
+            if (kind === 'flt-semantics-placeholder') {
+              return placeholderAttached ? 1 : 0;
+            }
+            return 1;
+          },
+          async waitFor() {},
+          async focus() {},
+          async evaluate(callback) {
+            callback({
+              click() {
+                activations += 1;
+                placeholderAttached = false;
+                targetVisible = true;
+              },
+            });
+          },
+        };
+      },
+      async waitForTimeout() {
+        placeholderAttached = true;
+      },
+    };
+    const target = { isVisible: async () => targetVisible };
+
+    await expect(waitForFlutterSemanticsTarget(page, target, { timeout: 1_000 }))
+      .resolves.toBe(target);
+    expect(activations).toBe(1);
+  });
+
+  it('scrolls the Flutter semantics container that owns the visible content anchor', async () => {
+    let scrollEvents = 0;
+    const waits = [];
+    const container = {
+      tagName: 'FLT-SEMANTICS',
+      parentElement: null,
+      scrollHeight: 2_400,
+      clientHeight: 600,
+      scrollTop: 0,
+      querySelector(selector) {
+        return selector === ':scope > flt-semantics-scroll-overflow' ? {} : null;
+      },
+      dispatchEvent() { scrollEvents += 1; },
+    };
+    const leaf = {
+      tagName: 'FLT-SEMANTICS',
+      parentElement: container,
+      querySelector() { return null; },
+    };
+    const anchor = {
+      async evaluate(callback) {
+        return callback(leaf);
+      },
+    };
+    const page = {
+      locator(selector) {
+        return {
+          first() {
+            return this;
+          },
+          async count() {
+            return selector === 'flt-semantics' ? 1 : 0;
+          },
+        };
+      },
+      async waitForTimeout(duration) { waits.push(duration); },
+    };
+
+    await expect(scrollFlutterSemanticsToEnd(page, anchor, { timeout: 1_000 }))
+      .resolves.toBeUndefined();
+    expect(container.scrollTop).toBe(2_400);
+    expect(scrollEvents).toBe(1);
+    expect(waits).toContain(600);
+  });
+
   it('requires OAuth, analytics spy, durable service and fault controls', async () => {
     const candidateSpecSha256 = 'e'.repeat(64);
     const responseBody = {
@@ -854,10 +943,41 @@ describe('staging control contract', () => {
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
     expect(source).not.toMatch(/async function triggerReviewProducingRun/);
     expect(source).toMatch(
+      /waitForFlutterSemanticsTarget\(page, rerunButton, \{ timeout: 45_000 \}\)/,
+    );
+    expect(source).toMatch(
+      /waitForFlutterSemanticsTarget\(page, mentorPrompt\)/,
+    );
+    expect(source).toMatch(
       /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '다시 시도'/,
     );
     expect(source).toMatch(
       /finally \{[\s\S]*control\.command\(JOURNEY, prepared\.runKey, 'clear-faults'\)[\s\S]*evidence\.close\(\)/,
+    );
+  });
+
+  it('advances every diagnostic question through an observed answer mutation', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /async function completeFifteenQuestions[\s\S]*waitForFlutterSemanticsTarget\(page, progress\)[\s\S]*expect\(answerButton\)\.toBeEnabled\(\)[\s\S]*waitForRequest[\s\S]*endsWith\('\/answer'\)[\s\S]*answerButton\.click\(\)/,
+    );
+  });
+
+  it('opens Today through the bounded Flutter palette and returns by browser history', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /async function openToday[\s\S]*attempt < 3[\s\S]*locator\('flt-semantics'\)\.first\(\)\.focus\(\)[\s\S]*keyboard\.press\('Control\+K'\)[\s\S]*waitForFlutterSemanticsTarget\(page, commandSearch/,
+    );
+    expect(source).toMatch(
+      /step: 'content-linked-completion-replay'[\s\S]*const progressLabel = page\.getByText\(\/\^\\d\+% 진행\$\|\^완료\$\/[\s\S]*waitForResponse\(async[\s\S]*endsWith\('\/progress'\)[\s\S]*body\.completed === true[\s\S]*timeout: 75_000[\s\S]*scrollFlutterSemanticsToEnd\(page, progressLabel\)[\s\S]*completed\)\.toBe\(true\)[\s\S]*goBack\(\{ waitUntil: 'domcontentloaded' \}\)[\s\S]*activateFlutterSemantics\(page\)/,
+    );
+    expect(source).not.toMatch(/const highProgress = page\.getByText/);
+  });
+
+  it('submits consent only through a visible enabled control and observed mutation', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /const consentButton = page\.getByRole\('button', \{[\s\S]*name: '동의하고 계속하기'[\s\S]*waitForFlutterSemanticsTarget\(page, consentButton\)[\s\S]*expect\(consentButton\)\.toBeEnabled\(\)[\s\S]*waitForRequest[\s\S]*endsWith\('\/consents'\)[\s\S]*consentButton\.evaluate\(\(element\) => element\.click\(\)\)/,
     );
   });
 

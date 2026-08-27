@@ -8,6 +8,8 @@ import {
   activateFlutterSemantics,
   assertAnalyticsSequence,
   assertProductionTlsNavigation,
+  scrollFlutterSemanticsToEnd,
+  waitForFlutterSemanticsTarget,
 } from './support/staging-control.js';
 
 const JOURNEY = 'mission-spine-onboarding';
@@ -35,10 +37,26 @@ async function chooseBackendTrack(page) {
 
 async function completeFifteenQuestions(page) {
   for (let index = 1; index <= 15; index += 1) {
-    await expect(page.getByText(new RegExp(`${index} \\/ 15`))).toBeVisible();
-    await page.getByRole('button', { name: '잘 모르겠어요', exact: true }).click();
+    const progress = page.getByText(new RegExp(`${index} \\/ 15`));
+    await waitForFlutterSemanticsTarget(page, progress);
+    const answerButton = page.getByRole('button', {
+      name: '잘 모르겠어요',
+      exact: true,
+    });
+    await waitForFlutterSemanticsTarget(page, answerButton);
+    await expect(answerButton).toBeEnabled();
+    await Promise.all([
+      page.waitForRequest((request) => (
+        new URL(request.url()).pathname.endsWith('/answer')
+        && request.method() === 'POST'
+      )),
+      answerButton.click(),
+    ]);
   }
-  await expect(page.getByText('진단 결과', { exact: true })).toBeVisible();
+  await waitForFlutterSemanticsTarget(
+    page,
+    page.getByText('진단 결과', { exact: true }),
+  );
 }
 
 async function previewProjection(page) {
@@ -49,9 +67,25 @@ async function previewProjection(page) {
 }
 
 async function openToday(page) {
-  await page.keyboard.press('Control+K');
-  await page.getByPlaceholder('명령·이동 검색').fill('오늘');
-  await page.getByText('오늘', { exact: true }).last().click();
+  const commandSearch = page.getByPlaceholder('명령·이동 검색');
+  let opened = false;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await activateFlutterSemantics(page);
+    await page.locator('flt-semantics').first().focus();
+    await page.keyboard.press('Control+K');
+    try {
+      await waitForFlutterSemanticsTarget(page, commandSearch, { timeout: 1_000 });
+      opened = true;
+      break;
+    } catch {
+      // A route transition can replace the focused Flutter semantics tree.
+    }
+  }
+  if (!opened) throw new Error('Flutter command palette did not open');
+  await commandSearch.fill('오늘');
+  const todayCommand = page.getByText('오늘', { exact: true }).last();
+  await waitForFlutterSemanticsTarget(page, todayCommand);
+  await todayCommand.click();
   await expect.poll(() => new URL(page.url()).pathname).toMatch(
     /^\/(?:dashboard|path\/\d+\/today)$/,
   );
@@ -202,9 +236,19 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.getByRole('checkbox', { name: /개인정보 수집·이용 동의/ }).click();
       await page.getByLabel('출생 연도 (필수)').fill('1995');
       await control.command(JOURNEY, prepared.runKey, 'replay-claim');
+      const consentButton = page.getByRole('button', {
+        name: '동의하고 계속하기',
+        exact: true,
+      });
+      await waitForFlutterSemanticsTarget(page, consentButton);
+      await expect(consentButton).toBeEnabled();
       await Promise.all([
         page.waitForURL((url) => url.pathname === '/diagnostic'),
-        page.getByRole('button', { name: '동의하고 계속하기', exact: true }).click(),
+        page.waitForRequest((browserRequest) => (
+          new URL(browserRequest.url()).pathname.endsWith('/consents')
+          && browserRequest.method() === 'POST'
+        )),
+        consentButton.evaluate((element) => element.click()),
       ]);
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.waitForURL((url) => url.pathname === '/diagnostic');
@@ -242,10 +286,31 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
+      const progressLabel = page.getByText(/^\d+% 진행$|^완료$/);
+      await waitForFlutterSemanticsTarget(page, progressLabel);
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-below-threshold');
-      await page.keyboard.press('End');
-      await page.waitForTimeout(1_500);
-      await openToday(page);
+      const [progressResponse] = await Promise.all([
+        page.waitForResponse(async (response) => {
+          if (
+            !new URL(response.url()).pathname.endsWith('/progress')
+            || response.request().method() !== 'POST'
+            || !response.ok()
+          ) return false;
+          const body = await response.json();
+          return body.completed === true;
+        }, { timeout: 75_000 }),
+        // Scrolling virtualizes the progress label out of Flutter's semantics
+        // tree. The pinned successful response is the durable completion proof.
+        scrollFlutterSemanticsToEnd(page, progressLabel),
+      ]);
+      expect(progressResponse.ok()).toBe(true);
+      const progress = await progressResponse.json();
+      expect(progress.completed).toBe(true);
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await expect.poll(() => new URL(page.url()).pathname).toMatch(
+        /^\/(?:dashboard|path\/\d+\/today)$/,
+      );
+      await activateFlutterSemantics(page);
       await control.command(JOURNEY, prepared.runKey, 'replay-content-linked-completion');
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-advanced-once');
       await expect(page.getByRole('button', { name: '미션 완료', exact: true })).toBeVisible();
