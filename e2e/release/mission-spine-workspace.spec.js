@@ -18,6 +18,12 @@ const WORKSPACE_EVENTS = Object.freeze([
   'contextual_review_viewed',
 ]);
 
+async function waitForAnalyticsSequence(control, runKey, expectedEvents) {
+  await expect.poll(async () => (
+    (await control.analyticsEvents(JOURNEY, runKey)).map((event) => event.event)
+  ), { timeout: 15_000 }).toEqual(expectedEvents);
+}
+
 async function refreshFlutter(page) {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await activateFlutterSemantics(page);
@@ -142,6 +148,11 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
         /현재 과제.*현재 단원.*실행 환경.*starter 출처/,
       )).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'workspace-context-parity');
+      await waitForAnalyticsSequence(
+        control,
+        prepared.runKey,
+        WORKSPACE_EVENTS.slice(0, 1),
+      );
     });
 
     await evidence.step({ page, step: 'immediate-disconnect-timeout-recovery' }, async () => {
@@ -225,6 +236,7 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await expect(reviewFailure).toBeHidden({ timeout: 75_000 });
       await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'kafka-outbox-review-correlated');
+      await waitForAnalyticsSequence(control, prepared.runKey, WORKSPACE_EVENTS);
     });
 
     await evidence.step({ page, step: 'private-context-preview-commit' }, async () => {
@@ -275,6 +287,7 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     });
 
     await evidence.step({ page, step: 'workspace-analytics-and-boundaries' }, async () => {
+      await waitForAnalyticsSequence(control, prepared.runKey, WORKSPACE_EVENTS);
       const events = await control.analyticsEvents(JOURNEY, prepared.runKey);
       assertAnalyticsSequence(events, WORKSPACE_EVENTS);
       await control.checkpoint(JOURNEY, prepared.runKey, 'urls-logs-artifacts-clean');

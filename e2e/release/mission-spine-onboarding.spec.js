@@ -19,10 +19,16 @@ const ONBOARDING_EVENTS = Object.freeze([
   'diagnostic_started',
   'diagnostic_completed',
   'result_claimed',
-  'path_generated',
+  'existing_path_continued',
   'path_first_viewed',
   'first_mission_started',
 ]);
+
+async function waitForAnalyticsSequence(control, runKey, expectedEvents) {
+  await expect.poll(async () => (
+    (await control.analyticsEvents(JOURNEY, runKey)).map((event) => event.event)
+  ), { timeout: 15_000 }).toEqual(expectedEvents);
+}
 
 async function refreshFlutter(page, pathname) {
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -191,6 +197,11 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await refreshFlutter(page, '/diagnostic');
       await completeFifteenQuestions(page);
       await control.checkpoint(JOURNEY, prepared.runKey, 'guest-preview-owned-by-guest');
+      await waitForAnalyticsSequence(
+        control,
+        prepared.runKey,
+        ONBOARDING_EVENTS.slice(0, 4),
+      );
     });
 
     let guestPreview;
@@ -276,6 +287,11 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       if (await pathFailure.isVisible()) {
         throw new Error(`path generation failed: ${await pathFailure.textContent()}`);
       }
+      await waitForAnalyticsSequence(
+        control,
+        prepared.runKey,
+        ONBOARDING_EVENTS.slice(0, 7),
+      );
       await expect.poll(() => page.evaluate(() => (
         window.sessionStorage.getItem('leva.diagnostic.continuation.v1')
       )), { timeout: 45_000 }).toBeNull();
@@ -319,13 +335,23 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     });
 
     await evidence.step({ page, step: 'contentless-completion-replay' }, async () => {
-      await page.getByRole('button', { name: /^미션 완료/ }).click();
+      const [completionResponse] = await Promise.all([
+        page.waitForResponse((response) => {
+          const target = new URL(response.url());
+          return /^\/learning-paths\/tasks\/\d+\/complete$/.test(target.pathname)
+            && response.request().method() === 'POST'
+            && response.ok();
+        }, { timeout: 45_000 }),
+        page.getByRole('button', { name: /^미션 완료/ }).click(),
+      ]);
+      expect(completionResponse.ok()).toBe(true);
       await control.command(JOURNEY, prepared.runKey, 'replay-contentless-completion');
       await control.checkpoint(JOURNEY, prepared.runKey, 'contentless-advanced-once');
       await control.checkpoint(JOURNEY, prepared.runKey, 'completion-replays-noop');
     });
 
     await evidence.step({ page, step: 'onboarding-analytics-ordered' }, async () => {
+      await waitForAnalyticsSequence(control, prepared.runKey, ONBOARDING_EVENTS);
       const events = await control.analyticsEvents(JOURNEY, prepared.runKey);
       assertAnalyticsSequence(events, ONBOARDING_EVENTS);
       await control.checkpoint(JOURNEY, prepared.runKey, 'sensitive-boundaries-clean');

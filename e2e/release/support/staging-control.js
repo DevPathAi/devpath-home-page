@@ -326,7 +326,9 @@ export function assertAnalyticsSequence(events, expectedEvents) {
     actualEvents.length !== expectedEvents.length
     || actualEvents.some((event, index) => event !== expectedEvents[index])
   ) {
-    throw new Error('analytics spy event order does not match the approved contract');
+    throw new Error(
+      `analytics spy event order does not match the approved contract: ${JSON.stringify(actualEvents)}`,
+    );
   }
   return true;
 }
@@ -536,7 +538,9 @@ export class StagingControl {
       `/v1/release/journeys/${journey}/checkpoints/${checkpoint}`,
       runKey,
     );
-    if (body.result !== 'passed') throw new Error('staging checkpoint failed');
+    if (body.result !== 'passed') {
+      throw new Error(`staging checkpoint failed: ${checkpoint}`);
+    }
     return body;
   }
 
