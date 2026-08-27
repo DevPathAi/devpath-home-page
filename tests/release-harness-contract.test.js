@@ -780,14 +780,18 @@ describe('staging control contract', () => {
     ]);
   });
 
-  it('arms review failure before a UI action, retains evidence, then retries in the browser', () => {
+  it('arms review failure before the completed truncated run, retains evidence, then retries in the browser', () => {
     const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
-    const start = source.indexOf("step: 'outbox-review-durable'");
+    const start = source.indexOf("step: 'midstream-disconnect-truncated-recovery'");
     const end = source.indexOf("step: 'private-context-preview-commit'", start);
     const reviewStep = source.slice(start, end);
     const orderedOperations = [
+      "'next-run-midstream-disconnect'",
       "'fail-next-review'",
-      'triggerReviewProducingRun(page)',
+      'previousSessionValues',
+      "request.method() === 'POST'",
+      "'midstream-disconnect-completed'",
+      "step: 'outbox-review-durable'",
       "'partial-review-retains-run-and-review'",
       "'clear-faults'",
       'retryReviewInBrowser(page)',
@@ -799,11 +803,12 @@ describe('staging control contract', () => {
     expect(end).toBeGreaterThan(start);
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect(positions).toEqual([...positions].sort((left, right) => left - right));
+    expect(source).not.toMatch(/async function triggerReviewProducingRun/);
     expect(source).toMatch(
-      /async function triggerReviewProducingRun[\s\S]*getByRole\('button', \{ name: \/\^다시 실행\//,
+      /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '다시 시도'/,
     );
     expect(source).toMatch(
-      /async function retryReviewInBrowser[\s\S]*getByRole\('button', \{ name: '리뷰 다시 시도'/,
+      /finally \{[\s\S]*control\.command\(JOURNEY, prepared\.runKey, 'clear-faults'\)[\s\S]*evidence\.close\(\)/,
     );
   });
 

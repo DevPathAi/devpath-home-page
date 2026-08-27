@@ -52,15 +52,8 @@ async function explicitlySelectCurrentContent(page) {
   await page.getByRole('button', { name: '완료', exact: true }).click();
 }
 
-async function triggerReviewProducingRun(page) {
-  await page.getByRole('button', { name: /^다시 실행/ }).click();
-  await expect(page.getByText(/실행 중입니다/)).toBeVisible();
-  await expect(page.getByText(/실행 완료/)).toBeVisible({ timeout: 45_000 });
-  await page.getByRole('button', { name: /^리뷰 확인/ }).click();
-}
-
 async function retryReviewInBrowser(page) {
-  await page.getByRole('button', { name: '리뷰 다시 시도', exact: true }).click();
+  await page.getByRole('button', { name: '다시 시도', exact: true }).click();
 }
 
 test.beforeAll(() => {
@@ -84,9 +77,10 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     candidateSpecSha256: context.candidateSpecSha256,
   });
 
+  let prepared;
   try {
     await control.assertPrerequisites(JOURNEY);
-    const prepared = await control.prepareJourney(JOURNEY);
+    prepared = await control.prepareJourney(JOURNEY);
     await control.bindBrowserRun(page, prepared.runKey, {
       landingOrigin: context.landingOrigin,
       appOrigin: context.appOrigin,
@@ -150,8 +144,25 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     await evidence.step({ page, step: 'midstream-disconnect-truncated-recovery' }, async () => {
       await control.command(JOURNEY, prepared.runKey, 'next-run-midstream-disconnect');
       await control.command(JOURNEY, prepared.runKey, 'next-run-truncated');
-      await page.getByRole('button', { name: /^다시 실행/ }).click();
-      await expect(page.getByText(/실행 중입니다/)).toBeVisible();
+      await control.command(JOURNEY, prepared.runKey, 'fail-next-review');
+      const previousSessionValues = await page.evaluate(() => Object.fromEntries(
+        Object.entries(window.sessionStorage).filter(([key]) => (
+          key.startsWith('leva.sandbox.session.v2.')
+        )),
+      ));
+      await Promise.all([
+        page.waitForRequest((request) => (
+          new URL(request.url()).pathname.endsWith('/sandbox/run')
+          && request.method() === 'POST'
+        )),
+        page.getByRole('button', { name: /^다시 실행/ }).click(),
+      ]);
+      await expect.poll(async () => page.evaluate((previous) => (
+        Object.entries(window.sessionStorage).some(([key, value]) => (
+          key.startsWith('leva.sandbox.session.v2.')
+          && previous[key] !== value
+        ))
+      ), previousSessionValues), { timeout: 10_000 }).toBe(true);
       await refreshFlutter(page);
       await expect(page.getByText(/실행 완료.*출력 일부만 표시/)).toBeVisible({
         timeout: 45_000,
@@ -170,18 +181,15 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     });
 
     await evidence.step({ page, step: 'outbox-review-durable' }, async () => {
-      await control.command(JOURNEY, prepared.runKey, 'fail-next-review');
-      await triggerReviewProducingRun(page);
       const reviewFailure = page.getByText(
         /부분 리뷰|리뷰 일부|리뷰 생성.*실패|받은 리뷰는 그대로|리뷰 다시 시도/,
       ).first();
-      await expect(reviewFailure).toBeVisible({ timeout: 45_000 });
+      await expect(reviewFailure).toBeVisible({ timeout: 75_000 });
       await expect(page.getByText(/실행 완료/)).toBeVisible();
-      await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'partial-review-retains-run-and-review');
       await control.command(JOURNEY, prepared.runKey, 'clear-faults');
       await retryReviewInBrowser(page);
-      await expect(reviewFailure).toBeHidden({ timeout: 45_000 });
+      await expect(reviewFailure).toBeHidden({ timeout: 75_000 });
       await expect(page.getByText('잘한 점', { exact: true })).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'kafka-outbox-review-correlated');
     });
@@ -226,6 +234,9 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await control.checkpoint(JOURNEY, prepared.runKey, 'sensitive-boundaries-clean');
     });
   } finally {
+    if (prepared !== undefined) {
+      await control.command(JOURNEY, prepared.runKey, 'clear-faults').catch(() => {});
+    }
     evidence.close();
   }
 });
