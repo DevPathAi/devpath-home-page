@@ -333,14 +333,16 @@ export function assertAnalyticsSequence(events, expectedEvents) {
 
 export async function activateFlutterSemantics(page) {
   const semantics = page.locator('flt-semantics').first();
-  if (await semantics.count() > 0) return;
-
   const placeholder = page.locator('flt-semantics-placeholder');
-  await page.locator('flt-semantics, flt-semantics-placeholder').first().waitFor({
-    state: 'attached',
-    timeout: 15_000,
-  });
-  if (await semantics.count() > 0) return;
+  if (await semantics.count() > 0) {
+    if (await placeholder.count() === 0) return;
+  } else {
+    await page.locator('flt-semantics, flt-semantics-placeholder').first().waitFor({
+      state: 'attached',
+      timeout: 15_000,
+    });
+    if (await semantics.count() > 0 && await placeholder.count() === 0) return;
+  }
 
   // Flutter places the accessibility activator just outside the viewport, so
   // Playwright's pointer click is not actionable. Dispatch its native DOM click
@@ -351,6 +353,50 @@ export async function activateFlutterSemantics(page) {
     state: 'attached',
     timeout: 15_000,
   });
+}
+
+export async function waitForFlutterSemanticsTarget(
+  page,
+  target,
+  { timeout = 30_000 } = {},
+) {
+  const deadline = Date.now() + timeout;
+  do {
+    await activateFlutterSemantics(page);
+    if (await target.isVisible()) return target;
+    await page.waitForTimeout(Math.min(100, Math.max(0, deadline - Date.now())));
+  } while (Date.now() < deadline);
+  throw new Error('Flutter semantics target did not become visible');
+}
+
+export async function scrollFlutterSemanticsToEnd(
+  page,
+  anchor,
+  { timeout = 15_000 } = {},
+) {
+  const deadline = Date.now() + timeout;
+  do {
+    await activateFlutterSemantics(page);
+    await page.waitForTimeout(600);
+    const scrolled = await anchor.evaluate((element) => {
+      let target = element;
+      while (target) {
+        if (
+          target.tagName === 'FLT-SEMANTICS'
+          && target.querySelector(':scope > flt-semantics-scroll-overflow')
+          && target.scrollHeight > target.clientHeight
+        ) break;
+        target = target.parentElement;
+      }
+      if (!target) return false;
+      target.scrollTop = target.scrollHeight;
+      target.dispatchEvent(new Event('scroll'));
+      return true;
+    });
+    if (scrolled) return;
+    await page.waitForTimeout(Math.min(100, Math.max(0, deadline - Date.now())));
+  } while (Date.now() < deadline);
+  throw new Error('Flutter semantics scroll container did not become available');
 }
 
 export async function assertProductionTlsNavigation(page, url, expectedHostname) {

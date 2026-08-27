@@ -8,6 +8,7 @@ import {
   activateFlutterSemantics,
   assertAnalyticsSequence,
   assertProductionTlsNavigation,
+  waitForFlutterSemanticsTarget,
 } from './support/staging-control.js';
 
 const JOURNEY = 'mission-spine-workspace';
@@ -39,6 +40,10 @@ async function reachAuthenticatedToday(page, appOrigin) {
     url.pathname === '/dashboard' || /^\/path\/\d+\/today$/.test(url.pathname)
   ));
   await activateFlutterSemantics(page);
+  await waitForFlutterSemanticsTarget(
+    page,
+    page.getByRole('button', { name: /^미션 열기/ }),
+  );
 }
 
 async function explicitlySelectCurrentContent(page) {
@@ -116,7 +121,7 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await expect(page.getByRole('checkbox').first()).toBeVisible();
+      await waitForFlutterSemanticsTarget(page, page.getByRole('checkbox').first());
       const contentPath = new URL(page.url()).pathname;
       const taskMatch = /^\/mission\/(\d+)\/content\/\d+$/.exec(contentPath);
       if (taskMatch === null) throw new Error('canonical content route is invalid');
@@ -126,7 +131,10 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       );
       await page.waitForURL((url) => /^\/mission\/\d+\/sandbox$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await expect(page.getByRole('button', { name: /^이번 실습 맥락/ })).toBeVisible();
+      await waitForFlutterSemanticsTarget(
+        page,
+        page.getByRole('button', { name: /^이번 실습 맥락/ }),
+      );
       await expect(page.getByText(
         /현재 과제.*현재 단원.*실행 환경.*starter 출처/,
       )).toBeVisible();
@@ -150,7 +158,9 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       )), { timeout: 10_000 }).toBe(true);
       await page.reload({ waitUntil: 'domcontentloaded' });
       await activateFlutterSemantics(page);
-      await expect(page.getByText(/시간 초과/)).toBeVisible({ timeout: 45_000 });
+      await waitForFlutterSemanticsTarget(page, page.getByText(/시간 초과/), {
+        timeout: 45_000,
+      });
       await control.checkpoint(JOURNEY, prepared.runKey, 'session-id-within-one-second');
       await control.checkpoint(JOURNEY, prepared.runKey, 'immediate-disconnect-timed-out');
       await control.checkpoint(JOURNEY, prepared.runKey, 'owner-recovery-timed-out');
@@ -168,12 +178,14 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
           key.startsWith('leva.sandbox.session.v2.')
         )),
       ));
+      const rerunButton = page.getByRole('button', { name: /^다시 실행/ });
+      await waitForFlutterSemanticsTarget(page, rerunButton, { timeout: 45_000 });
       await Promise.all([
         page.waitForRequest((request) => (
           new URL(request.url()).pathname.endsWith('/sandbox/run')
           && request.method() === 'POST'
         )),
-        page.getByRole('button', { name: /^다시 실행/ }).click(),
+        rerunButton.click(),
       ]);
       await expect.poll(async () => page.evaluate((previous) => (
         Object.entries(window.sessionStorage).some(([key, value]) => (
@@ -216,7 +228,9 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await page.getByRole('button', { name: 'AI 멘토에게 질문', exact: true }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/mentor$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await page.getByPlaceholder('현재 미션에서 막힌 점을 질문하세요').fill(
+      const mentorPrompt = page.getByPlaceholder('현재 미션에서 막힌 점을 질문하세요');
+      await waitForFlutterSemanticsTarget(page, mentorPrompt);
+      await mentorPrompt.fill(
         '다음 디버깅 단계를 알려주세요.',
       );
       await explicitlySelectCurrentContent(page);
