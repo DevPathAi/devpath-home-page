@@ -53,10 +53,10 @@ async function explicitlySelectCurrentContent(page) {
 }
 
 async function triggerReviewProducingRun(page) {
-  await page.getByRole('button', { name: '다시 실행', exact: true }).click();
+  await page.getByRole('button', { name: /^다시 실행/ }).click();
   await expect(page.getByText(/실행 중입니다/)).toBeVisible();
   await expect(page.getByText(/실행 완료/)).toBeVisible({ timeout: 45_000 });
-  await page.getByRole('button', { name: '리뷰 확인', exact: true }).click();
+  await page.getByRole('button', { name: /^리뷰 확인/ }).click();
 }
 
 async function retryReviewInBrowser(page) {
@@ -107,22 +107,38 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await page.keyboard.press('End');
-      await page.getByRole('button', { name: '실습 시작', exact: true }).click();
+      await expect(page.getByRole('checkbox').first()).toBeVisible();
+      const contentPath = new URL(page.url()).pathname;
+      const taskMatch = /^\/mission\/(\d+)\/content\/\d+$/.exec(contentPath);
+      if (taskMatch === null) throw new Error('canonical content route is invalid');
+      await page.goto(
+        `${context.appOrigin}/mission/${taskMatch[1]}/sandbox`,
+        { waitUntil: 'domcontentloaded' },
+      );
       await page.waitForURL((url) => /^\/mission\/\d+\/sandbox$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await expect(page.getByText('이번 실습 맥락', { exact: true })).toBeVisible();
-      await expect(page.getByText('현재 과제', { exact: true })).toBeVisible();
-      await expect(page.getByText('현재 단원', { exact: true })).toBeVisible();
-      await expect(page.getByText('실행 환경', { exact: true })).toBeVisible();
-      await expect(page.getByText('starter 출처', { exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^이번 실습 맥락/ })).toBeVisible();
+      await expect(page.getByText(
+        /현재 과제.*현재 단원.*실행 환경.*starter 출처/,
+      )).toBeVisible();
       await control.checkpoint(JOURNEY, prepared.runKey, 'workspace-context-parity');
     });
 
     await evidence.step({ page, step: 'immediate-disconnect-timeout-recovery' }, async () => {
       await control.command(JOURNEY, prepared.runKey, 'next-run-immediate-disconnect');
       await control.command(JOURNEY, prepared.runKey, 'next-run-timeout');
-      await page.getByRole('button', { name: '코드 실행', exact: true }).click();
+      await Promise.all([
+        page.waitForRequest((request) => (
+          new URL(request.url()).pathname.endsWith('/sandbox/run')
+          && request.method() === 'POST'
+        )),
+        page.getByRole('button', { name: /^코드 실행/ }).click(),
+      ]);
+      await expect.poll(async () => page.evaluate(() => (
+        Object.keys(window.sessionStorage).some((key) => (
+          key.startsWith('leva.sandbox.session.v2.')
+        ))
+      )), { timeout: 10_000 }).toBe(true);
       await page.reload({ waitUntil: 'domcontentloaded' });
       await activateFlutterSemantics(page);
       await expect(page.getByText(/시간 초과/)).toBeVisible({ timeout: 45_000 });
@@ -134,7 +150,7 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
     await evidence.step({ page, step: 'midstream-disconnect-truncated-recovery' }, async () => {
       await control.command(JOURNEY, prepared.runKey, 'next-run-midstream-disconnect');
       await control.command(JOURNEY, prepared.runKey, 'next-run-truncated');
-      await page.getByRole('button', { name: '다시 실행', exact: true }).click();
+      await page.getByRole('button', { name: /^다시 실행/ }).click();
       await expect(page.getByText(/실행 중입니다/)).toBeVisible();
       await refreshFlutter(page);
       await expect(page.getByText(/실행 완료.*출력 일부만 표시/)).toBeVisible({

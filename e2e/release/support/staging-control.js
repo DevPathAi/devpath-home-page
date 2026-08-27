@@ -151,6 +151,10 @@ function requestHeadersForHop(headers, candidateSpecSha256, runKey) {
   return entries;
 }
 
+function isCanceledInterception(error) {
+  return error instanceof Error && error.message.includes('Invalid InterceptionId');
+}
+
 // Fetch.continueRequest header overrides are scoped to one network hop. This
 // keeps Chromium's own DNS/TLS stack in use while every redirect is rechecked.
 export async function installHostBoundRunHeaders(page, {
@@ -230,12 +234,18 @@ export async function installHostBoundRunHeaders(page, {
     }
     requests.set(requestId, { origin, bound });
 
-    await session.send('Fetch.continueRequest', {
-      requestId,
-      ...(bound
-        ? { headers: requestHeadersForHop(request.headers, candidateSpecSha256, runKey) }
-        : {}),
-    });
+    try {
+      await session.send('Fetch.continueRequest', {
+        requestId,
+        ...(bound
+          ? { headers: requestHeadersForHop(request.headers, candidateSpecSha256, runKey) }
+          : {}),
+      });
+    } catch (error) {
+      requests.delete(requestId);
+      if (isCanceledInterception(error)) return;
+      throw error;
+    }
   };
 
   session.on('Fetch.requestPaused', (event) => (
