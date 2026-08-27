@@ -974,6 +974,29 @@ describe('staging control contract', () => {
     expect(source).not.toMatch(/const highProgress = page\.getByText/);
   });
 
+  it('accepts both authoritative path branches and extended mission action names', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    expect(source).toMatch(/name: \/\^\(\?:학습\|기존\) 경로로 계속\$\//);
+    expect(source.match(/name: \/\^미션 완료\//g)).toHaveLength(2);
+    expect(source).not.toContain("name: '학습 경로로 계속', exact: true");
+    expect(source).not.toContain("name: '미션 완료', exact: true");
+  });
+
+  it('drives the Flutter mentor field through accessibility and waits for retry completion', () => {
+    const source = readFileSync(root('e2e/release/mission-spine-workspace.spec.js'), 'utf8');
+    expect(source).toMatch(
+      /getByRole\('button', \{[\s\S]*name: '전송 전에 수정'[\s\S]*\}\)\.first\(\)\.click\(\)/,
+    );
+    expect(source).toMatch(
+      /const mentorPrompt = page\.getByRole\('textbox', \{[\s\S]*mentorPrompt\.click\(\)[\s\S]*page\.keyboard\.type/,
+    );
+    expect(source).toMatch(
+      /const retryMentor = page\.getByRole\('button', \{[\s\S]*expect\(retryMentor\)\.toBeVisible[\s\S]*retryMentor\.click\(\)[\s\S]*name: '맥락 미리보기'[\s\S]*mentor-provider-payload-exact/,
+    );
+    expect(source).not.toContain("getByPlaceholder('현재 미션에서 막힌 점을 질문하세요')");
+    expect(source).not.toContain('mentorPrompt.fill(');
+  });
+
   it('submits consent only through a visible enabled control and observed mutation', () => {
     const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
     expect(source).toMatch(

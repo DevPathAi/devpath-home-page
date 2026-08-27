@@ -261,7 +261,9 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
 
     await evidence.step({ page, step: 'explicit-path-to-today' }, async () => {
       await refreshFlutter(page, '/diagnostic');
-      await page.getByRole('button', { name: '학습 경로로 계속', exact: true }).click();
+      await page.getByRole('button', {
+        name: /^(?:학습|기존) 경로로 계속$/,
+      }).click();
       await page.waitForURL((url) => url.pathname === '/path');
       await activateFlutterSemantics(page);
       const pathMission = page.getByRole('button', { name: /^미션 열기/ });
@@ -313,11 +315,11 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await activateFlutterSemantics(page);
       await control.command(JOURNEY, prepared.runKey, 'replay-content-linked-completion');
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-advanced-once');
-      await expect(page.getByRole('button', { name: '미션 완료', exact: true })).toBeVisible();
+      await expect(page.getByRole('button', { name: /^미션 완료/ })).toBeVisible();
     });
 
     await evidence.step({ page, step: 'contentless-completion-replay' }, async () => {
-      await page.getByRole('button', { name: '미션 완료', exact: true }).click();
+      await page.getByRole('button', { name: /^미션 완료/ }).click();
       await control.command(JOURNEY, prepared.runKey, 'replay-contentless-completion');
       await control.checkpoint(JOURNEY, prepared.runKey, 'contentless-advanced-once');
       await control.checkpoint(JOURNEY, prepared.runKey, 'completion-replays-noop');
