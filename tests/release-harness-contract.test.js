@@ -142,8 +142,11 @@ function validCandidateSpec(overrides = {}) {
       deletion_runbook: 'documents/privacy/posthog-deletion-v1',
     },
     ai_release_eval_config: {
-      primary_model: 'claude-sonnet-release',
-      fallback_models: ['qwen-release-fallback'],
+      runtime_primary_model: 'qwen2.5:3b',
+      runtime_fallback_models: ['claude-sonnet-4-6'],
+      development_model: 'devpath-mentor-eval:mentor-development-tuning-v1',
+      tuning_revision: 'mentor-development-tuning-v1',
+      tuning_sha256: '7'.repeat(64),
       prompt_sha256: '3'.repeat(64),
       fixture_revision: 'mentor-eval.v1',
       fixture_sha256: '4'.repeat(64),
@@ -425,6 +428,46 @@ describe('release context fail-closed contract', () => {
       () => {
         const candidate = validCandidateSpec();
         candidate.frontend.selected_on_digest = `sha256:${'e'.repeat(64)}`;
+        return candidate;
+      },
+    ],
+    [
+      'Claude development model',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.ai_release_eval_config.development_model = 'claude-sonnet-4-6';
+        return candidate;
+      },
+    ],
+    [
+      'development tuning revision drift',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.ai_release_eval_config.tuning_revision = 'mentor-development-tuning-v2';
+        return candidate;
+      },
+    ],
+    [
+      'zero development tuning digest',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.ai_release_eval_config.tuning_sha256 = '0'.repeat(64);
+        return candidate;
+      },
+    ],
+    [
+      'legacy AI model contract',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.ai_release_eval_config = {
+          primary_model: candidate.ai_release_eval_config.runtime_primary_model,
+          fallback_models: candidate.ai_release_eval_config.runtime_fallback_models,
+          prompt_sha256: candidate.ai_release_eval_config.prompt_sha256,
+          fixture_revision: candidate.ai_release_eval_config.fixture_revision,
+          fixture_sha256: candidate.ai_release_eval_config.fixture_sha256,
+          rendered_config_sha256: candidate.ai_release_eval_config.rendered_config_sha256,
+          ollama_endpoint_sha256: candidate.ai_release_eval_config.ollama_endpoint_sha256,
+        };
         return candidate;
       },
     ],
