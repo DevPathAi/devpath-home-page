@@ -1006,6 +1006,39 @@ describe('staging control contract', () => {
     );
   });
 
+  it('reactivates replaced diagnostic semantics and observes OAuth completion by path', () => {
+    const onboarding = readFileSync(
+      root('e2e/release/mission-spine-onboarding.spec.js'),
+      'utf8',
+    );
+    expect(onboarding).toContain(
+      'const firstQuestionProgress = page.getByText(/1 \\/ 15/);',
+    );
+    expect(onboarding).toContain(
+      'await waitForFlutterSemanticsTarget(page, firstQuestionProgress);',
+    );
+    expect(onboarding).not.toContain(
+      'await expect(page.getByText(/1 \\/ 15/)).toBeVisible();',
+    );
+
+    const workspace = readFileSync(
+      root('e2e/release/mission-spine-workspace.spec.js'),
+      'utf8',
+    );
+    const start = workspace.indexOf('async function reachAuthenticatedToday');
+    const end = workspace.indexOf('async function explicitlySelectCurrentContent', start);
+    const authentication = workspace.slice(start, end);
+    expect(authentication).toContain(
+      'await expect.poll(() => new URL(page.url()).pathname, { timeout: 45_000 })',
+    );
+    expect(authentication).toContain(
+      ".toMatch(/^\\/(?:dashboard|path\\/\\d+\\/today)$/);",
+    );
+    expect(authentication).not.toContain(
+      "await page.waitForURL((url) => (\n    url.pathname === '/dashboard'",
+    );
+  });
+
   it('opens Today through the bounded Flutter palette and returns by browser history', () => {
     const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
     expect(source).toMatch(

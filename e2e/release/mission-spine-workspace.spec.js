@@ -42,9 +42,8 @@ async function reachAuthenticatedToday(page, appOrigin) {
   if (new URL(page.url()).pathname === '/login') {
     await page.getByRole('button', { name: 'GitHub로 계속하기', exact: true }).click();
   }
-  await page.waitForURL((url) => (
-    url.pathname === '/dashboard' || /^\/path\/\d+\/today$/.test(url.pathname)
-  ));
+  await expect.poll(() => new URL(page.url()).pathname, { timeout: 45_000 })
+    .toMatch(/^\/(?:dashboard|path\/\d+\/today)$/);
   await activateFlutterSemantics(page);
   await waitForFlutterSemanticsTarget(
     page,
