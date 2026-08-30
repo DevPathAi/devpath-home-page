@@ -193,7 +193,8 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await refreshFlutter(page, '/diagnostic');
       await chooseBackendTrack(page);
       await page.getByRole('button', { name: '진단 시작하기', exact: true }).click();
-      await expect(page.getByText(/1 \/ 15/)).toBeVisible();
+      const firstQuestionProgress = page.getByText(/1 \/ 15/);
+      await waitForFlutterSemanticsTarget(page, firstQuestionProgress);
       await refreshFlutter(page, '/diagnostic');
       await completeFifteenQuestions(page);
       await control.checkpoint(JOURNEY, prepared.runKey, 'guest-preview-owned-by-guest');
