@@ -18,6 +18,8 @@ const SAFE_IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.:/-]{1,127}$/;
 const WEB_TAG = /^[0-9a-f]{40}(?:-mission-(?:off|on))?$/;
 const JSON_PATH = /^[A-Za-z0-9_./-]+\.json$/;
 const HOSTNAME = /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9]{2,63}$/;
+const DEVELOPMENT_MODEL = 'devpath-mentor-eval:mentor-development-tuning-v1';
+const TUNING_REVISION = 'mentor-development-tuning-v1';
 
 const CANDIDATE_TOP_LEVEL = Object.freeze([
   '$schema',
@@ -491,23 +493,51 @@ function validatePrivacy(value) {
 
 function validateAiReleaseConfig(value) {
   exactKeys(value, [
-    'primary_model',
-    'fallback_models',
+    'runtime_primary_model',
+    'runtime_fallback_models',
+    'development_model',
+    'tuning_revision',
+    'tuning_sha256',
     'prompt_sha256',
     'fixture_revision',
     'fixture_sha256',
     'rendered_config_sha256',
     'ollama_endpoint_sha256',
   ], 'ai_release_eval_config');
-  const primary = exactString(value.primary_model, 'ai_release_eval_config.primary_model', SAFE_IDENTIFIER);
-  if (!Array.isArray(value.fallback_models) || value.fallback_models.length === 0) {
-    throw new Error('ai_release_eval_config.fallback_models is required');
+  const primary = exactString(
+    value.runtime_primary_model,
+    'ai_release_eval_config.runtime_primary_model',
+    SAFE_IDENTIFIER,
+  );
+  if (
+    !Array.isArray(value.runtime_fallback_models)
+    || value.runtime_fallback_models.length === 0
+  ) {
+    throw new Error('ai_release_eval_config.runtime_fallback_models is required');
   }
-  const fallbacks = value.fallback_models.map((model, index) => (
-    exactString(model, `ai_release_eval_config.fallback_models[${index}]`, SAFE_IDENTIFIER)
+  const fallbacks = value.runtime_fallback_models.map((model, index) => (
+    exactString(
+      model,
+      `ai_release_eval_config.runtime_fallback_models[${index}]`,
+      SAFE_IDENTIFIER,
+    )
   ));
   if (new Set(fallbacks).size !== fallbacks.length || fallbacks.includes(primary)) {
     throw new Error('AI fallback models must be unique and distinct from primary');
+  }
+  if (value.development_model !== DEVELOPMENT_MODEL) {
+    throw new Error('AI development model must be the pinned trained Ollama model');
+  }
+  if (value.tuning_revision !== TUNING_REVISION) {
+    throw new Error('AI development tuning revision is not canonical');
+  }
+  const tuningSha256 = exactString(
+    value.tuning_sha256,
+    'ai_release_eval_config.tuning_sha256',
+    SHA256,
+  );
+  if (tuningSha256 === '0'.repeat(64)) {
+    throw new Error('AI development tuning SHA256 must be non-zero');
   }
   exactString(value.prompt_sha256, 'ai_release_eval_config.prompt_sha256', SHA256);
   exactString(value.fixture_revision, 'ai_release_eval_config.fixture_revision', SAFE_IDENTIFIER);
