@@ -21,8 +21,8 @@ const STAGES = [
 // 하지 않은 일을 했다고 말하는 쪽이 반대보다 훨씬 나쁘다.
 export function successMessage(mailSent) {
   return mailSent === true
-    ? '진단 초대와 로드맵 안내를 이메일로 보내드릴게요. 확인 메일을 발송했으니 스팸함도 한 번 확인해 주세요.'
-    : '담당자가 확인 후 이메일로 진단 초대와 로드맵 안내를 드릴게요.';
+    ? 'AI 멘토 베타 초대 대기자 등록이 완료됐어요. 확인 메일을 발송했으니 스팸함도 한 번 확인해 주세요.'
+    : 'AI 멘토 베타 초대 대기자 등록이 완료됐어요. 담당자가 확인 후 초대 일정을 이메일로 안내드릴게요.';
 }
 
 function field(labelHtml, controlHtml, errorId, hintHtml = '') {
@@ -62,7 +62,7 @@ function formMarkup() {
         <p class="lf-field-error" id="lf-consent-err" role="alert"></p>
       </div>
       <p class="lf-error" id="lf-error" role="alert" hidden></p>
-      <button class="btn btn-secondary lf-submit" type="submit">진단 초대받기</button>
+      <button class="btn btn-secondary lf-submit" type="submit">AI 멘토 초대받기</button>
     </form>
     <div class="lead-form__success surface" id="lf-success" tabindex="-1" hidden>
       <h3>신청이 접수됐어요 ✓</h3>
@@ -174,7 +174,7 @@ export function mount(root) {
       formError.hidden = false;
       submitBtn.disabled = false;
       delete submitBtn.dataset.loading;
-      submitBtn.textContent = '진단 초대받기';
+      submitBtn.textContent = 'AI 멘토 초대받기';
     }
   });
 }

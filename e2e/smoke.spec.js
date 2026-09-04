@@ -187,14 +187,14 @@ test.describe('Mission Spine 랜딩 스모크', () => {
     await page.locator('#lead').scrollIntoViewIfNeeded();
     await expect(page.locator('#lf-email')).toBeVisible({ timeout: 5000 });
 
-    await page.getByRole('button', { name: '진단 초대받기' }).click();
+    await page.getByRole('button', { name: 'AI 멘토 초대받기' }).click();
     await expect(page.locator('#lf-email-err')).toContainText('이메일');
     await expect(page.locator('#lf-email')).toHaveAttribute('aria-invalid', 'true');
 
     await page.locator('#lf-email').fill('tester@example.com');
     await page.locator('#lf-stage').selectOption('learning');
     await page.locator('#lf-consent').check();
-    await page.getByRole('button', { name: '진단 초대받기' }).click();
+    await page.getByRole('button', { name: 'AI 멘토 초대받기' }).click();
     await expect(page.locator('#lf-success')).toBeVisible();
   });
 

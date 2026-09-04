@@ -151,7 +151,7 @@ function sendLeadEmails_(lead) {
   const admin = adminEmail_();
   MailApp.sendEmail({
     to: applicant,
-    subject: 'Leva 진단 초대 신청이 접수됐습니다',
+    subject: 'Leva AI 멘토 베타 초대 대기자 등록이 접수됐습니다',
     body: applicantMailBody_(lead, admin),
     name: 'Leva',
     replyTo: admin,
@@ -167,9 +167,10 @@ function sendLeadEmails_(lead) {
 
 function applicantMailBody_(lead, admin) {
   return [
-    '진단 초대 신청이 접수됐습니다.',
+    'AI 멘토 베타 초대 대기자 등록이 접수됐습니다.',
     '',
-    '남겨주신 내용을 확인한 뒤, 진단 초대와 학습 로드맵 안내를 이메일로 보내드립니다.',
+    '게스트 진단은 지금 바로 이용할 수 있습니다: https://app.leva.ai.kr/diagnostic',
+    'AI 멘토는 남겨주신 내용을 확인한 뒤 순차 초대하며, 일정을 이메일로 안내해 드립니다.',
     '베타 기간에는 순차적으로 초대를 보내고 있어 며칠 걸릴 수 있습니다.',
     '',
     '접수 내용',
