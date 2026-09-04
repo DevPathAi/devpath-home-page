@@ -38,7 +38,7 @@ function writeCache(stats) {
 const FALLBACK_HTML = `
   <p class="traction__fallback">
     지금 베타를 진행 중입니다. 먼저 진단을 받아본 분들의 피드백으로 매주 다듬고 있어요.
-    <a href="#lead">초대받기</a>
+    <a href="#lead">AI 멘토 초대받기</a>
   </p>`;
 
 function statHtml(num, label) {

@@ -35,6 +35,13 @@ describe('/beta 페이지', () => {
     expect(html).toMatch(/<script[^>]+src="\/src\/main\.js"/);
   });
 
+  it('공개 진단과 AI 멘토 초대 경로를 명확히 구분한다', () => {
+    expect(html).toContain('href="https://app.leva.ai.kr/diagnostic"');
+    expect(html).toContain('AI 멘토 베타 초대받기');
+    expect(html).toContain('AI 멘토는 대기자 등록 후 순차 초대');
+    expect(html).not.toContain('진단 초대');
+  });
+
   // 「며칠」 같은 낱말 자체를 막으면 무관한 문장까지 걸린다(실제로 커뮤니티
   // 문단의 "며칠을 줄이기도 합니다"가 걸렸다). 기간을 약속하는 형태만 막는다.
   it('확정되지 않은 초대 기간을 약속하지 않는다', () => {

@@ -53,6 +53,9 @@ describe('이메일 경로는 남긴다', () => {
 
   // 「초대받기」는 베타 대기열 신청이므로 이메일이 맞다.
   it('초대 문구는 이메일 폼으로 남는다', () => {
-    expect(read('src/widgets/traction.js')).toContain('href="#lead"');
+    const traction = read('src/widgets/traction.js');
+
+    expect(traction).toContain('href="#lead"');
+    expect(traction).toContain('AI 멘토 초대받기');
   });
 });
