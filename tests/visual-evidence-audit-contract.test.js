@@ -24,8 +24,8 @@ import {
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = '546c62fbf2afbb1c97df3e23041bcd670cb81226';
-const productTreeSha = 'd1866865089619bbf5d382988f91a044ca10058db80ffcbceb18e5c3162185f6';
+const productSha = '8d9e538057df862b307ee0457c4396f3e5e42eed';
+const productTreeSha = 'dfe91489abdc51d456697ecbd001de2be8208fb733b3885d8d66ff8203f0f4af';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -166,9 +166,9 @@ describe('independent ET13 audit contracts', () => {
     expect(changedPaths).toContain('e2e/visual/candidate-spec.v2.json');
     expect(isCommitAncestorByObjectGraph(productSha, headSha)).toBe(true);
     expect(isCommitAncestorByObjectGraph(headSha, productSha)).toBe(false);
-    // The raw tree notices release-harness bytes; provenance permits only the
-    // explicit non-rendering allowlist after checking the changed paths.
-    expect(productRuntimeTreeSha256(headSha)).not.toBe(productRuntimeTreeSha256(productSha));
+    // This evidence-only descendant must preserve the exact rendered product
+    // tree while provenance still checks the changed-path allowlist.
+    expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
     expect(validateProductRuntimeProvenance({
       candidate: JSON.parse(readFileSync(
         join(root, 'e2e/visual/candidate-spec.v2.json'),
