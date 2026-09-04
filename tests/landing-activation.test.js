@@ -108,12 +108,17 @@ describe('Mission Spine 랜딩 활성화 계약', () => {
     expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
   });
 
-  it('업데이트 리드 폼은 진단 CTA보다 낮은 보조 action이다', () => {
+  it('AI 멘토 대기자 폼은 공개 진단 CTA와 역할을 혼동하지 않는다', () => {
     const lead = document.querySelector('#lead');
     const leadFormSource = read('src/widgets/lead-form.js');
 
-    expect(lead.textContent).toContain('베타 업데이트');
+    expect(lead.querySelector('h2').textContent.trim()).toBe('AI 멘토 베타 초대받기');
+    expect(lead.textContent).toContain('게스트 진단은 지금 바로');
+    expect(lead.textContent).toContain('AI 멘토는 대기자 등록 후 순차 초대');
+    expect(lead.textContent).not.toContain('진단 초대');
     expect(lead.querySelector('.lead-form__fallback .btn-secondary')).not.toBeNull();
+    expect(leadFormSource).toContain('AI 멘토 초대받기');
+    expect(leadFormSource).not.toContain('진단 초대받기');
     expect(leadFormSource).toContain('btn btn-secondary lf-submit');
     expect(leadFormSource).not.toContain('btn btn-primary lf-submit');
   });

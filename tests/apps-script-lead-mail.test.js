@@ -121,7 +121,9 @@ describe('신규 리드 접수', () => {
 
     const toApplicant = ctx.sent.find((m) => m.to === 'applicant@example.com');
     expect(toApplicant).toBeDefined();
-    expect(toApplicant.subject).toContain('Leva');
+    expect(toApplicant.subject).toContain('Leva AI 멘토 베타 초대');
+    expect(toApplicant.body).toContain('AI 멘토 베타 초대 대기자 등록');
+    expect(toApplicant.body).not.toContain('진단 초대');
   });
 
   it('관리자에게 신규 신청 알림을 보낸다', () => {
