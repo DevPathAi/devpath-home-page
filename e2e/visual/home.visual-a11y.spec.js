@@ -340,7 +340,7 @@ test.describe('Home production-dist automated accessibility evidence', () => {
           .map((heading) => Number(heading.tagName.slice(1)));
         const skipped = levels.some((level, index) => index > 0 && level > levels[index - 1] + 1);
         const primaryCounts = [...document.querySelectorAll('header, main > section')].map((region) => (
-          [...region.querySelectorAll('.btn.primary')]
+          [...region.querySelectorAll('a.btn.primary, button.btn.primary')]
             .filter((element) => getComputedStyle(element).display !== 'none').length
         ));
         return {
