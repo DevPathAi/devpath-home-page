@@ -341,7 +341,8 @@ test.describe('Home production-dist automated accessibility evidence', () => {
         const skipped = levels.some((level, index) => index > 0 && level > levels[index - 1] + 1);
         const primaryCounts = [...document.querySelectorAll('header, main > section')].map((region) => (
           [...region.querySelectorAll('a.btn.primary, button.btn.primary')]
-            .filter((element) => getComputedStyle(element).display !== 'none').length
+            .filter((element) => getComputedStyle(element).display !== 'none'
+              && element.getClientRects().length > 0).length
         ));
         return {
           h1Count: levels.filter((level) => level === 1).length,
