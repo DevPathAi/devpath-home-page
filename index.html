@@ -128,8 +128,9 @@
       background: var(--paper);
     }
     .nav { display: flex; min-height: 72px; align-items: center; gap: 26px; }
-    .brand { margin-right: 14px; font-size: 24px; font-weight: 950; letter-spacing: -.06em; }
+    .brand { display: inline-flex; min-width: 44px; min-height: 44px; margin-right: 14px; align-items: center; font-size: 24px; font-weight: 950; letter-spacing: -.06em; }
     .nav-links { display: flex; align-items: center; gap: 24px; color: var(--ink-secondary); font-size: 14px; font-weight: 700; }
+    .nav-links a { display: inline-flex; min-height: 44px; align-items: center; }
     .nav-actions { display: flex; margin-left: auto; align-items: center; gap: 14px; }
     .login { min-height: 44px; display: inline-flex; align-items: center; padding: 0 4px; font-size: 14px; font-weight: 800; }
     .nav .btn { min-height: 44px; padding-inline: 18px; font-size: 14px; }
@@ -257,6 +258,7 @@
     .portrait { display: grid; min-height: 400px; place-items: center; border: 1px dashed var(--portrait-line); background: var(--soft); color: var(--muted); text-align: center; }
     blockquote { margin: 0 0 28px; font-size: clamp(28px, 3vw, 44px); font-weight: 850; line-height: 1.35; letter-spacing: -.035em; }
     .founder-name { margin-top: 26px; font-weight: 900; }
+    .text-link { display: inline-flex; min-height: 44px; align-items: center; }
 
     .faq { background: var(--soft); }
     .faq-list { margin-top: 34px; border-top: 2px solid var(--ink); }
@@ -276,7 +278,7 @@
     .footer-brand { font-size: 28px; font-weight: 950; }
     footer .fine { color: var(--dark-muted); }
     .footer-col strong { display: block; margin-bottom: 16px; color: var(--dark-muted); font-size: 13px; letter-spacing: .08em; }
-    .footer-col a { display: block; min-height: 34px; color: var(--footer-link); font-size: 14px; }
+    .footer-col a { display: flex; min-height: 44px; align-items: center; color: var(--footer-link); font-size: 14px; }
     .company { margin-top: 54px; padding-top: 26px; border-top: 1px solid var(--dark-line); color: var(--dark-muted); font-size: 13px; }
     .company-grid { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 10px 28px; }
     .company-grid span, .company-grid a { min-width: 0; overflow-wrap: anywhere; }
@@ -337,7 +339,7 @@
     }
     @media (prefers-reduced-motion: reduce) {
       html { scroll-behavior: auto; }
-      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+      *, *::before, *::after { animation-duration: 0s !important; animation-iteration-count: 1 !important; transition-duration: 0s !important; }
     }
   </style>
 </head>
