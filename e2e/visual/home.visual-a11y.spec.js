@@ -99,6 +99,7 @@ async function visibleFocusOrder(page) {
         return element.tabIndex >= 0
           && style.display !== 'none'
           && style.visibility !== 'hidden'
+          && (element.tagName === 'SUMMARY' || !element.closest('details:not([open])'))
           && element.getClientRects().length > 0;
       });
     controls.forEach((element, index) => {
@@ -361,6 +362,9 @@ test.describe('Home production-dist automated accessibility evidence', () => {
           statsFixture: { ok: true, signups: 0, diagnoses_completed: 0, satisfaction: null },
         });
         if (entry.viewport.width < 840) await page.locator('.mobile-nav__toggle').click();
+        await page.locator('.faq-list details').evaluateAll((details) => {
+          details.forEach((element) => element.setAttribute('open', ''));
+        });
         const audit = await page.evaluate(({ selector, exceptionRules, requiredSelectors }) => {
           const elements = [...new Set(document.querySelectorAll(selector))]
             .filter((element) => {
