@@ -41,6 +41,10 @@ const EVIDENCE_ONLY_PATHS = Object.freeze([
   { exact: 'tests/visual-evidence-release-binding.test.js' },
 ]);
 const NON_RENDERING_RELEASE_PATHS = Object.freeze([
+  { exact: 'AGENTS.md' },
+  { exact: 'CLAUDE.md' },
+  { exact: 'HANDOFF.md' },
+  { prefix: 'docs/plan/' },
   { prefix: 'e2e/release/' },
   { exact: 'tests/release-harness-contract.test.js' },
 ]);
@@ -267,13 +271,13 @@ export function resolveEvidenceCandidateBinding(environment = process.env) {
   };
 }
 
-function isEvidenceOnlyPath(path) {
+export function isEvidenceOnlyPath(path) {
   return EVIDENCE_ONLY_PATHS.some((rule) => (
     rule.exact === path || (rule.prefix && path.startsWith(rule.prefix))
   ));
 }
 
-function isNonRenderingReleasePath(path) {
+export function isNonRenderingReleasePath(path) {
   return NON_RENDERING_RELEASE_PATHS.some((rule) => (
     rule.exact === path || (rule.prefix && path.startsWith(rule.prefix))
   ));
