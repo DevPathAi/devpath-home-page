@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "mentor-waitlist-cta-20260904",
+  "review_id": "homepage-phase0-20260905",
   "reviewer": "codex",
-  "reason": "User-directed mentor waitlist copy reviewed against the 90-second CTA and local browser rendering",
-  "reviewed_at": "2026-09-04T05:30:00.000Z",
-  "rendered_product_sha": "8d9e538057df862b307ee0457c4396f3e5e42eed",
-  "rendered_product_tree_sha256": "dfe91489abdc51d456697ecbd001de2be8208fb733b3885d8d66ff8203f0f4af",
-  "candidate_spec_sha256": "5eb80d9791cae4db3c8bb1fd5a6627baea9c19634c4c48de4bcf3cc1c3e9efe7",
+  "reason": "User approved and locked the A layout; mentor invite round UI and homepage copy verified",
+  "reviewed_at": "2026-09-05T10:02:51.797Z",
+  "rendered_product_sha": "3056a639dc5f01faf48e8bcbe280b378c4982763",
+  "rendered_product_tree_sha256": "ee6d051058e789dfa7a6c4f4306f2dd1668eaf9c479776e7bf029cc18019ca88",
+  "candidate_spec_sha256": "6af1325223b8b7553e5e4bc6915272f273dd0619b431c9b1401ba0e9d393c638",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "2b848400ddf43c971f01887e85d8694a6550f364112b67110b167519aab5a8bb"
+      "sha256": "b4e54c670d94a4fc8017ed2c06297992c79de7c16b2f08a6dcc1204caeec60da"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "97104ee9b17a095a65d86d4e4b8808deb6cbf2f7ecac1a1efbbf4f1881a12fca"
+      "sha256": "2efda6a9a66ec8a6de9ea475ca70cbb8b64dcc363a3e3d9d3463b5c1204083e3"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "c7699a5a429edd7c48c0e469316944c70289c771811af5e58f55aa619f61fac8"
+      "sha256": "f02640e3c69d0543c3a9560d6d375bc6412d7b40bdd05fd89cea190cbb3d3d95"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "cec01773d8a46ac6f8de5e68589bab69b2a264a7a7ec0a80033115b97401e183"
+      "sha256": "d38a4e1f14fd857d201e2004b5fe91888d0dbc8e095158104592e96dd57dffdb"
     }
   ]
 }
