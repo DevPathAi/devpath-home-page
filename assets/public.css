@@ -61,6 +61,10 @@ textarea { min-height: 180px; resize: vertical; }
 .btn { min-height: 50px; padding: 0 22px; border: 1px solid var(--green); background: var(--green); color: var(--ink); font: inherit; font-weight: 900; cursor: pointer; }
 .btn:disabled { cursor: not-allowed; opacity: .55; }
 .update-list { margin-top: 48px; border-top: 1px solid var(--line); }
+.invite-rounds { padding: 28px; border: 1px solid var(--line); background: var(--soft); }
+.invite-rounds h2 { font-size: 24px; }
+.invite-rounds p { margin: 0; color: var(--muted); }
+.invite-rounds ul { margin: 18px 0 0; padding-left: 22px; font-weight: 800; }
 .update { padding: 38px 0; border-bottom: 1px solid var(--line); }
 .update__meta { display: flex; gap: 14px; align-items: center; color: var(--muted); font-size: 13px; }
 .update__type { padding: 4px 9px; background: var(--soft); color: var(--green-text); font-weight: 800; }

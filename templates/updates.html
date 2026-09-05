@@ -25,6 +25,11 @@
     <p class="eyebrow">운영 정보</p>
     <h1>공지·변경 기록</h1>
     <p class="intro">초대 일정과 서비스 변경 사항을 운영 사실에 맞춰 남깁니다.</p>
+    <section class="invite-rounds" aria-labelledby="invite-rounds-title">
+      <h2 id="invite-rounds-title">최근 초대 회차</h2>
+      <p data-invite-rounds-status aria-live="polite">초대 회차 기록을 불러오는 중입니다.</p>
+      <ul data-invite-rounds hidden></ul>
+    </section>
     <div class="update-list">
 {{items}}
     </div>
@@ -44,5 +49,6 @@
       <p class="site-footer__copy">© 2026 레바</p>
     </div>
   </footer>
+  <script type="module" src="/src/invite-rounds.js"></script>
 </body>
 </html>

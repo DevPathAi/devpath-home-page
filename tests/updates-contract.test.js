@@ -7,6 +7,7 @@ import {
   renderUpdatesFeed,
   renderUpdatesPage,
 } from '../scripts/updates.mjs';
+import { formatInviteRound } from '../src/invite-rounds.js';
 
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 
@@ -25,6 +26,16 @@ ctaHref: /beta
 `;
 
 describe('공지·변경 기록 source 계약', () => {
+  it('실제 발송 성공 집계만 N차 로그 문구로 표시한다', () => {
+    expect(formatInviteRound({
+      roundNumber: 3,
+      date: '2026-09-05',
+      deliveredCount: 7,
+      lastSentAt: '2026-09-05T02:01:00Z',
+    })).toBe('3차 초대 7명 발송 · 2026.09.05');
+    expect(() => formatInviteRound({ roundNumber: 1, deliveredCount: -1 })).toThrow();
+  });
+
   it('허용된 type과 안전한 CTA만 받는다', () => {
     expect(parseUpdate(valid, 'invite').type).toBe('notice');
     expect(() => parseUpdate(valid.replace('type: notice', 'type: post'), 'bad')).toThrow(/type/);
