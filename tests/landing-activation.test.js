@@ -1,125 +1,70 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = (path) => resolve(process.cwd(), path);
-const read = (path) => readFileSync(root(path), 'utf-8');
-const html = read('index.html');
-const styles = read('assets/styles.css');
-const main = read('src/main.js');
+const html = readFileSync(root('index.html'), 'utf8');
 const document = new DOMParser().parseFromString(html, 'text/html');
-
+const visibleCopy = document.body.textContent.replace(/\s+/g, ' ');
 const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
 
-describe('Mission Spine 랜딩 활성화 계약', () => {
-  it('모든 1차 진단 CTA가 같은 문구와 canonical 진단 경로를 쓴다', () => {
+describe('확정된 홈페이지 활성화 계약', () => {
+  it('네 개의 1차 진단 CTA가 같은 문구와 앱 경로를 쓴다', () => {
     const ctas = [...document.querySelectorAll('[data-diagnostic-cta="primary"]')];
-
-    expect(ctas.length).toBeGreaterThanOrEqual(4);
-    expect(ctas.map((cta) => cta.textContent.trim()))
-      .toEqual(ctas.map(() => '가입 없이 진단 시작'));
-    expect(ctas.map((cta) => cta.getAttribute('href')))
-      .toEqual(ctas.map(() => DIAGNOSTIC_URL));
+    expect(ctas).toHaveLength(4);
+    expect(ctas.map((cta) => cta.textContent.trim())).toEqual(ctas.map(() => '가입 없이 진단 시작'));
+    expect(ctas.map((cta) => cta.getAttribute('href'))).toEqual(ctas.map(() => DIAGNOSTIC_URL));
   });
 
-  it('측정 전 시간 약속 대신 15문항·로그인 시점·산출물을 명시한다', () => {
-    const visibleCopy = document.body.textContent.replace(/\s+/g, ' ');
-
-    expect(visibleCopy).toContain('15문항');
-    expect(visibleCopy).toContain('결과를 저장할 때만 로그인');
+  it('진단 문항·로그인 시점·12주 경로·미션을 과장 없이 명시한다', () => {
+    expect(visibleCopy).toContain('로그인 없이 15문항');
     expect(visibleCopy).toContain('12주 학습 경로');
-    expect(visibleCopy).toContain('오늘의 미션');
-    expect(visibleCopy).not.toContain('20초');
-    expect(visibleCopy).not.toMatch(/(?:약\s*)?\d+\s*분|몇\s*분/);
+    expect(visibleCopy).toContain('결과를 저장할 때 로그인');
+    expect(visibleCopy).toContain('오늘 시작할 한 가지 미션');
+    expect(visibleCopy).not.toMatch(/20초|(?:약\s*)?\d+\s*분|몇\s*분/);
   });
 
-  it('canned quiz 대신 앱 LearningPath 구조를 따르는 sample Outcome Preview를 노출한다', () => {
-    const preview = document.querySelector('[data-fixture-schema="learning-path.v1"]');
-    const fields = [...preview.querySelectorAll('[data-field]')]
-      .map((node) => node.dataset.field);
-
-    expect(preview.textContent).toContain('예시 결과');
-    expect(fields).toEqual([
-      'diagnosis.diagnosedLevel',
-      'milestones[0]',
-      'milestones[0].tasks[2]',
-      'context',
-    ]);
-    expect(preview.textContent).toContain('비동기 기초');
-    expect(preview.textContent).toContain('에러 처리 패턴 적용');
-    expect(preview.textContent).toContain('현재 목표');
-    expect(preview.textContent).toContain('최근 학습');
-    expect(main).not.toContain("'mini-diagnostic':");
-    expect(existsSync(root('src/widgets/mini-diagnostic.js'))).toBe(false);
+  it('내부 fixture 표기 없이 실제 1·4·7·10주차를 보여 준다', () => {
+    const roadmap = document.querySelector('.roadmap-grid');
+    expect([...roadmap.querySelectorAll('.weeks')].map((node) => node.textContent.trim()))
+      .toEqual(['WEEK 01', 'WEEK 04', 'WEEK 07', 'WEEK 10']);
+    expect(roadmap.textContent).toContain('Spring Data JPA');
+    expect(html).not.toMatch(/fixture|data-fixture-schema/i);
   });
 
-  it('약어보다 사용자 언어를 먼저 쓰고 실제 경로 링크를 제공한다', () => {
-    const visibleCopy = document.body.textContent.replace(/\s+/g, ' ');
-    const plainLanguage = visibleCopy.indexOf('현재 목표와 최근 학습을 함께 전달');
-    const abbreviation = visibleCopy.indexOf('학습 맥락(LCS)');
-    const secondary = document.querySelector('.hero__actions .btn-secondary');
-
-    expect(plainLanguage).toBeGreaterThanOrEqual(0);
-    expect(abbreviation).toBeGreaterThan(plainLanguage);
-    expect(secondary.textContent.trim()).toBe('실제 12주 경로 보기');
-    expect(secondary.getAttribute('href')).toBe('#path-preview');
+  it('같은 질문 뒤에만 자동 첨부 맥락을 설명한다', () => {
+    const comparison = document.querySelector('#lcs');
+    expect(comparison.textContent).toContain('맥락 없이 물으면');
+    expect(comparison.textContent).toContain('같은 질문을, 레바에서');
+    expect(comparison.querySelector('.answer.before').textContent).not.toContain('자동 첨부된 맥락');
+    expect(comparison.querySelector('.answer.after').textContent).toContain('자동 첨부된 맥락');
   });
 
-  it('수치가 없는 정적 fallback 제목과 실제 2-tier 가격을 유지한다', () => {
-    expect(document.querySelector('.traction__title').textContent.trim())
-      .toBe('베타 진행 상황');
-    expect(document.querySelectorAll('.pricing__tier')).toHaveLength(2);
-    expect(document.querySelector('#pricing').textContent).toContain('0원');
-    expect(document.querySelector('#pricing').textContent).toContain('9,900원');
+  it('traction·비교 카드 없이 승인된 3행 가격표만 둔다', () => {
+    expect(document.querySelector('#traction')).toBeNull();
+    expect(document.querySelectorAll('#pricing .price-row')).toHaveLength(3);
+    expect(document.querySelector('#pricing').textContent).toContain('무료 베타');
+    expect(document.querySelector('#pricing').textContent).toContain('월 9,900원 예정');
   });
 
-  it('모바일 header가 44px menu와 보조 navigation의 no-JS fallback을 가진다', () => {
+  it('모바일 메뉴는 44px control과 승인된 순서를 가진다', () => {
     const details = document.querySelector('details.mobile-nav');
-    const summary = details?.querySelector('summary.mobile-nav__toggle');
-    const labels = [...details.querySelectorAll('nav a')].map((link) => link.textContent.trim());
-
-    expect(summary).not.toBeNull();
-    expect(labels).toEqual(expect.arrayContaining(['작동 방식', '실제 경로', '요금', '개발 기록', '소개']));
-    expect(styles).toMatch(/\.mobile-nav__toggle\s*\{[^}]*min-width:\s*44px[^}]*min-height:\s*44px/s);
+    const labels = [...details.querySelectorAll('nav a:not(.btn)')].map((link) => link.textContent.trim());
+    expect(details.querySelector('summary')).not.toBeNull();
+    expect(labels).toEqual(['작동 방식', 'LCS', '요금', '개발 기록', '소개', '로그인']);
+    expect(html).toMatch(/\.mobile-nav summary\s*\{[^}]*min-height:\s*44px/s);
   });
 
-  it('semantic token stylesheet를 먼저 읽고 styles.css는 값 재정의 없이 소비한다', () => {
-    const tokenLink = html.indexOf('/assets/tokens.css');
-    const stylesLink = html.indexOf('/assets/styles.css');
-
-    expect(tokenLink).toBeGreaterThan(-1);
-    expect(stylesLink).toBeGreaterThan(tokenLink);
-    expect(styles).toContain('var(--dp-color-bg)');
-    expect(styles).toContain('var(--dp-space-lg)');
-    expect(styles).not.toMatch(/--dp-[\w-]+\s*:/);
-    expect(styles).not.toMatch(/--(?:indigo|slate|bg|surface|border|text|brand|space|radius|container|hairline)[\w-]*\s*:/);
-    expect(styles).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+  it('승인 팔레트만 쓰고 갈색·크림 계열을 쓰지 않는다', () => {
+    expect(html).toContain('--ink: #12231E');
+    expect(html).toContain('--green: #1FA97A');
+    expect(html).toContain('--amber: #F5A524');
+    expect(html).not.toMatch(/#FDF1E0|#78350F|#F2D0A0|#2E2007/i);
   });
 
-  it('작은 본문과 라벨에 저대비 faint 텍스트 토큰을 쓰지 않는다', () => {
-    expect(styles).not.toContain('var(--dp-color-text-faint)');
-  });
-
-  it('네 window class 경계와 reduced-motion 규칙을 가진다', () => {
-    expect(styles).toContain('@media (min-width: 600px)');
-    expect(styles).toContain('@media (min-width: 840px)');
-    expect(styles).toContain('@media (min-width: 1240px)');
-    expect(styles).toContain('@media (prefers-reduced-motion: reduce)');
-  });
-
-  it('AI 멘토 대기자 폼은 공개 진단 CTA와 역할을 혼동하지 않는다', () => {
-    const lead = document.querySelector('#lead');
-    const leadFormSource = read('src/widgets/lead-form.js');
-
-    expect(lead.querySelector('h2').textContent.trim()).toBe('AI 멘토 베타 초대받기');
-    expect(lead.textContent).toContain('게스트 진단은 지금 바로');
-    expect(lead.textContent).toContain('AI 멘토는 대기자 등록 후 순차 초대');
-    expect(lead.textContent).not.toContain('진단 초대');
-    expect(lead.querySelector('.lead-form__fallback .btn-secondary')).not.toBeNull();
-    expect(leadFormSource).toContain('AI 멘토 초대받기');
-    expect(leadFormSource).not.toContain('진단 초대받기');
-    expect(leadFormSource).toContain('btn btn-secondary lf-submit');
-    expect(leadFormSource).not.toContain('btn btn-primary lf-submit');
+  it('Home 리드폼 없이 앱 로그인으로 AI 멘토 초대를 신청한다', () => {
+    expect(document.querySelector('[data-widget="lead-form"]')).toBeNull();
+    expect(document.querySelector('#pricing a[href="https://app.leva.ai.kr/login"]')).not.toBeNull();
   });
 });

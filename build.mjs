@@ -5,13 +5,18 @@ import { cp, rm, mkdir, writeFile, readdir, readFile, rename } from 'node:fs/pro
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { collectNotes, renderNote, renderIndex, renderSitemap } from './scripts/notes.mjs';
+import { collectNotes, renderNote, renderIndex, renderSitemap, renderHomepageNotes } from './scripts/notes.mjs';
+import { collectUpdates, renderUpdatesFeed, renderUpdatesPage } from './scripts/updates.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
-const dist = root + 'dist';
+const outputDir = process.env.BUILD_OUTPUT_DIR || 'dist';
+if (!/^(?:dist|build\/[a-z0-9-]+)$/.test(outputDir)) {
+  throw new Error(`허용되지 않은 BUILD_OUTPUT_DIR: ${outputDir}`);
+}
+const dist = root + outputDir;
 
 // 배포에 포함할 최상위 엔트리(존재하는 것만 복사).
-const DEPLOY_ENTRIES = ['index.html', 'privacy.html', 'terms.html', 'beta.html', 'about.html', '404.html', 'src', 'assets', '_headers', '_redirects', '_routes.json', 'robots.txt', 'favicon.ico', 'ads.txt'];
+const DEPLOY_ENTRIES = ['index.html', 'privacy.html', 'terms.html', 'beta.html', 'about.html', 'contact.html', '404.html', 'src', 'assets', '_headers', '_redirects', '_routes.json', 'robots.txt', 'favicon.ico', 'ads.txt'];
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
@@ -39,6 +44,19 @@ for (const note of notes) {
 await writeFile(dist + '/notes/index.html', renderIndex(notes, indexTemplate));
 await writeFile(dist + '/sitemap.xml', renderSitemap(notes));
 console.log(`rendered ${notes.length} notes`);
+
+const homepagePath = dist + '/index.html';
+const homepage = await readFile(homepagePath, 'utf8');
+const notesMarker = '<!-- LATEST_NOTES_PLACEHOLDER -->';
+if (!homepage.includes(notesMarker)) throw new Error('홈페이지에 최신 개발 기록 자리표시자가 없다');
+await writeFile(homepagePath, homepage.replace(notesMarker, renderHomepageNotes(notes)));
+
+const updates = collectUpdates(root + 'content/updates');
+const updatesTemplate = readFileSync(root + 'templates/updates.html', 'utf8');
+await mkdir(dist + '/updates', { recursive: true });
+await writeFile(dist + '/updates/index.html', renderUpdatesPage(updates, updatesTemplate));
+await writeFile(dist + '/updates/feed.json', renderUpdatesFeed(updates));
+console.log(`rendered ${updates.length} updates`);
 
 // _headers 는 /assets/* 를 max-age=31536000, immutable 로 선언한다. 그런데 파일명이
 // styles.css 로 고정이면 내용을 고쳐도 이미 받아 간 브라우저는 1년간 옛 파일을 쓴다 —
@@ -81,6 +99,7 @@ renamed.set(CSS_ENTRY, hashedStyles);
 const htmlPaths = [
   ...(await readdir(dist)).filter((f) => f.endsWith('.html')).map((f) => `${dist}/${f}`),
   ...(await readdir(dist + '/notes')).map((f) => `${dist}/notes/${f}`),
+  `${dist}/updates/index.html`,
 ];
 for (const path of htmlPaths) {
   let html = await readFile(path, 'utf-8');

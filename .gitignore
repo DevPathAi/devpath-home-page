@@ -9,6 +9,7 @@ Thumbs.db
 # Node (for future Vitest/Playwright tooling)
 node_modules/
 dist/
+build/
 coverage/
 playwright-report/
 test-results/

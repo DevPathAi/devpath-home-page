@@ -29,23 +29,21 @@ describe('/beta 페이지', () => {
     expect(html).not.toContain('adsbygoogle"');
   });
 
-  // 위젯은 [data-widget] 셀렉터로 마운트되므로 main.js가 있어야 동작한다.
-  it('신청 폼 위젯과 그 위젯을 마운트할 스크립트가 함께 있다', () => {
-    expect(html).toContain('data-widget="lead-form"');
-    expect(html).toMatch(/<script[^>]+src="\/src\/main\.js"/);
+  it('Home 리드폼 없이 앱 로그인에서 초대를 신청한다', () => {
+    expect(html).not.toContain('data-widget="lead-form"');
+    expect(html).toContain('href="https://app.leva.ai.kr/login"');
   });
 
   it('공개 진단과 AI 멘토 초대 경로를 명확히 구분한다', () => {
     expect(html).toContain('href="https://app.leva.ai.kr/diagnostic"');
     expect(html).toContain('AI 멘토 베타 초대받기');
-    expect(html).toContain('AI 멘토는 대기자 등록 후 순차 초대');
+    expect(html).toContain('초대 대기 명단에 등록');
     expect(html).not.toContain('진단 초대');
   });
 
-  // 「며칠」 같은 낱말 자체를 막으면 무관한 문장까지 걸린다(실제로 커뮤니티
-  // 문단의 "며칠을 줄이기도 합니다"가 걸렸다). 기간을 약속하는 형태만 막는다.
-  it('확정되지 않은 초대 기간을 약속하지 않는다', () => {
-    expect(html).not.toMatch(/(며칠|영업일|\d+\s*일)\s*(안에|이내|내로)/);
+  it('초대 처리 기준과 대기 중 가능한 행동을 알린다', () => {
+    expect(html).toContain('보통 1일 안에 초대 메일이 갑니다.');
+    expect(html).toContain('로드맵 첫 주차 미션을 시작');
   });
 
   it.each(FORBIDDEN)('$name을(를) 담지 않는다', ({ re }) => {

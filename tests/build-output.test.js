@@ -36,6 +36,7 @@ describe('자산은 내용이 바뀌면 이름이 바뀐다', () => {
   const htmlFiles = () => [
     ...readdirSync(root('dist')).filter((f) => f.endsWith('.html')),
     ...readdirSync(root('dist/notes')).map((f) => `notes/${f}`),
+    'updates/index.html',
   ];
 
   it('해시 없는 이름은 남지 않는다', () => {
@@ -49,14 +50,19 @@ describe('자산은 내용이 바뀌면 이름이 바뀐다', () => {
 
   // 참조가 옛 이름에 남으면 사이트가 통째로 스타일을 잃는다.
   it('모든 HTML이 해시된 이름을 가리킨다', () => {
-    const hashed = assets().find((f) => /^styles\.[0-9a-f]{8}\.css$/.test(f));
-
     for (const file of htmlFiles()) {
       const html = readFileSync(root(`dist/${file}`), 'utf-8');
       expect(html, `${file} 이 해시 없는 자산을 가리킨다`).not.toMatch(
-        /\/assets\/(styles\.css|og-image\.png|favicon\.svg)/,
+        /\/assets\/(styles\.css|public\.css|og-image\.png|favicon\.svg)/,
       );
-      expect(html, `${file} 에 스타일시트 참조가 없다`).toContain(`/assets/${hashed}`);
+      const cssRefs = [...html.matchAll(/href="\/assets\/([^"/]+\.css)"/g)].map((match) => match[1]);
+      for (const ref of cssRefs) {
+        expect(ref, `${file} 이 해시 없는 CSS를 가리킨다`).toMatch(/\.[0-9a-f]{8}\.css$/);
+        expect(assets(), `${file} 이 없는 CSS를 가리킨다`).toContain(ref);
+      }
+      if (file !== 'index.html') {
+        expect(cssRefs, `${file} 에 스타일시트 참조가 없다`).not.toHaveLength(0);
+      }
     }
   });
 

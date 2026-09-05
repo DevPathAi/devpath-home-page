@@ -78,16 +78,16 @@ describe('홈 FAQ', () => {
     expect(html).toContain('id="faq"');
   });
 
-  it('요금과 리드 폼 사이에 놓인다', () => {
+  it('요금 뒤, 마지막 CTA 앞에 놓인다', () => {
     expect(html.indexOf('id="pricing"')).toBeLessThan(html.indexOf('id="faq"'));
-    expect(html.indexOf('id="faq"')).toBeLessThan(html.indexOf('id="lead"'));
+    expect(html.indexOf('id="faq"')).toBeLessThan(html.indexOf('class="final-cta"'));
   });
 
   it('상세는 /beta로 보낸다', () => {
     expect(html).toContain('href="/beta"');
   });
 
-  it('확정되지 않은 초대 기간을 약속하지 않는다', () => {
-    expect(html).not.toMatch(/(며칠|영업일|\d+\s*일)\s*(안에|이내|내로)/);
+  it('승인된 초대 처리 기준을 안내한다', () => {
+    expect(read('beta.html')).toContain('보통 1일 안에 초대 메일이 갑니다.');
   });
 });
