@@ -15,7 +15,7 @@ async function prepareContact(page, { turnstile = 'success', api } = {}) {
     const callback = turnstile === 'success' ? 'options.callback("test-token")' : 'options["error-callback"]()';
     return route.fulfill({
       contentType: 'application/javascript',
-      body: `window.turnstile={render:(selector,options)=>{window.__turnstileRenderOptions=options;queueMicrotask(()=>${callback});return "widget-1"},reset:()=>{}};`,
+      body: `window.__turnstileResetCount=0;window.turnstile={render:(selector,options)=>{window.__turnstileRenderOptions=options;queueMicrotask(()=>${callback});return "widget-1"},reset:()=>{window.__turnstileResetCount+=1}};`,
     });
   });
   if (api) await page.route('https://api.leva.ai.kr/support/public-requests', api);
@@ -92,6 +92,7 @@ test.describe('/contact 공개 접수', () => {
       await expect(page.locator('#contact-status')).toHaveAttribute('data-kind', 'error');
       await expect(page.locator('#contact-status')).toContainText(scenario.message);
       await expect(page.getByRole('button', { name: '문의 보내기' })).toBeEnabled();
+      await expect.poll(() => page.evaluate(() => window.__turnstileResetCount)).toBe(1);
     });
   }
 

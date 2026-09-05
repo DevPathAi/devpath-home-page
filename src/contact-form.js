@@ -152,9 +152,9 @@ export function mountContactForm(form, turnstileApi = globalThis.turnstile) {
     status.hidden = false;
     if (result.kind === 'success') {
       form.reset();
-      turnstileToken = '';
-      turnstileApi.reset(widgetId);
     }
+    turnstileToken = '';
+    turnstileApi.reset(widgetId);
     submit.disabled = false;
     status.focus?.();
   });
