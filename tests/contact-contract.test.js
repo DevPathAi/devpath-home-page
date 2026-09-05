@@ -29,6 +29,12 @@ describe('/contact 문서 계약', () => {
     expect(html).toContain('href="/#faq"');
     expect(html).not.toMatch(/mailto:/i);
   });
+
+  it('운영 Turnstile 위젯과 public_support action을 사용한다', () => {
+    expect(html).toContain('data-turnstile-sitekey="0x4AAAAAAEpnnKHgknCSpxYZ"');
+    expect(html).toContain('data-turnstile-action="public_support"');
+    expect(html).not.toContain('data-turnstile-sitekey=""');
+  });
 });
 
 describe('공개 지원 폼 상태', () => {

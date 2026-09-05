@@ -1,5 +1,6 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ALLOWED_TYPES = new Set(['ERROR', 'INQUIRY']);
+const TURNSTILE_NORMAL_WIDTH = 300;
 
 export function validatePublicSupport(data) {
   const errors = {};
@@ -80,6 +81,7 @@ export function mountContactForm(form, turnstileApi = globalThis.turnstile) {
   if (!form) return;
   const status = document.querySelector('#contact-status');
   const submit = form.querySelector('button[type="submit"]');
+  const turnstileContainer = form.querySelector('#contact-turnstile');
   let turnstileToken = '';
   let widgetId;
 
@@ -107,6 +109,7 @@ export function mountContactForm(form, turnstileApi = globalThis.turnstile) {
   widgetId = turnstileApi.render('#contact-turnstile', {
     sitekey,
     action: form.dataset.turnstileAction,
+    size: turnstileContainer?.clientWidth < TURNSTILE_NORMAL_WIDTH ? 'compact' : 'normal',
     callback(token) {
       turnstileToken = token;
       showFieldErrors({});

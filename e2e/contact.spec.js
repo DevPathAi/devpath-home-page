@@ -15,7 +15,7 @@ async function prepareContact(page, { turnstile = 'success', api } = {}) {
     const callback = turnstile === 'success' ? 'options.callback("test-token")' : 'options["error-callback"]()';
     return route.fulfill({
       contentType: 'application/javascript',
-      body: `window.turnstile={render:(selector,options)=>{queueMicrotask(()=>${callback});return "widget-1"},reset:()=>{}};`,
+      body: `window.turnstile={render:(selector,options)=>{window.__turnstileRenderOptions=options;queueMicrotask(()=>${callback});return "widget-1"},reset:()=>{}};`,
     });
   });
   if (api) await page.route('https://api.leva.ai.kr/support/public-requests', api);
@@ -31,6 +31,13 @@ async function fillValidForm(page) {
 }
 
 test.describe('/contact 공개 접수', () => {
+  test('300px보다 좁은 폼에서는 compact Turnstile을 렌더링한다', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 760 });
+    await prepareContact(page);
+
+    await expect.poll(() => page.evaluate(() => window.__turnstileRenderOptions?.size)).toBe('compact');
+  });
+
   test('필수 필드를 각각 표시하고 첫 오류로 초점을 옮긴다', async ({ page }) => {
     await prepareContact(page);
     await page.getByRole('button', { name: '문의 보내기' }).click();
