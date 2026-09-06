@@ -91,7 +91,9 @@ export function mountContactForm(form, turnstileApi = globalThis.turnstile) {
       if (!error) continue;
       error.textContent = errors[field] || '';
       error.hidden = !errors[field];
-      const control = form.elements.namedItem(field);
+      const control = field === 'turnstileToken'
+        ? turnstileContainer
+        : form.elements.namedItem(field);
       if (control && 'setAttribute' in control) {
         if (errors[field]) control.setAttribute('aria-invalid', 'true');
         else control.removeAttribute('aria-invalid');
@@ -158,6 +160,7 @@ export function mountContactForm(form, turnstileApi = globalThis.turnstile) {
     submit.disabled = false;
     status.focus?.();
   });
+  submit.disabled = false;
 }
 
 if (typeof document !== 'undefined') {

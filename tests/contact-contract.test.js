@@ -35,6 +35,14 @@ describe('/contact 문서 계약', () => {
     expect(html).toContain('data-turnstile-action="public_support"');
     expect(html).not.toContain('data-turnstile-sitekey=""');
   });
+
+  it('스크립트가 실패해도 개인정보를 URL query로 제출하지 않는다', () => {
+    expect(html).toMatch(/<form[^>]+method="post"[^>]+action="\/contact"/);
+    expect(html).toMatch(/<button[^>]+type="submit"[^>]+disabled/);
+    expect(html).toContain(
+      'id="contact-turnstile" role="group" aria-label="자동 제출 방지 확인" aria-describedby="contact-turnstile-error"',
+    );
+  });
 });
 
 describe('공개 지원 폼 상태', () => {

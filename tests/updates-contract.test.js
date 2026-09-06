@@ -26,6 +26,13 @@ ctaHref: /beta
 `;
 
 describe('공지·변경 기록 source 계약', () => {
+  it('메일 인프라가 없는 상태에서 발송 시점이나 미구현 멘토 경로를 약속하지 않는다', () => {
+    const source = readFileSync(root('content/updates/2026-09-05-mentor-invitations.md'), 'utf8');
+    expect(source).not.toContain('1일 안에');
+    expect(source).not.toContain('https://app.leva.ai.kr/mentor');
+    expect(source).toContain('https://app.leva.ai.kr/login');
+  });
+
   it('실제 발송 성공 집계만 N차 로그 문구로 표시한다', () => {
     expect(formatInviteRound({
       roundNumber: 3,

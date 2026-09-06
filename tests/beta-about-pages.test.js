@@ -42,7 +42,7 @@ describe('/beta 페이지', () => {
   });
 
   it('초대 처리 기준과 대기 중 가능한 행동을 알린다', () => {
-    expect(html).toContain('보통 1일 안에 초대 메일이 갑니다.');
+    expect(html).toContain('승인 상태는 로그인 후 확인할 수 있습니다.');
     expect(html).toContain('로드맵 첫 주차 미션을 시작');
   });
 

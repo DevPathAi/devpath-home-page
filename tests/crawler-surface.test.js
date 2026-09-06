@@ -88,6 +88,6 @@ describe('홈 FAQ', () => {
   });
 
   it('승인된 초대 처리 기준을 안내한다', () => {
-    expect(read('beta.html')).toContain('보통 1일 안에 초대 메일이 갑니다.');
+    expect(read('beta.html')).toContain('승인 상태는 로그인 후 확인할 수 있습니다.');
   });
 });

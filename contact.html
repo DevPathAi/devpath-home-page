@@ -41,7 +41,7 @@
       </section>
     </div>
 
-    <form class="contact-form" id="contact-form" novalidate data-endpoint="https://api.leva.ai.kr/support/public-requests" data-turnstile-sitekey="0x4AAAAAAEpnnKHgknCSpxYZ" data-turnstile-action="public_support">
+    <form class="contact-form" id="contact-form" method="post" action="/contact" novalidate data-endpoint="https://api.leva.ai.kr/support/public-requests" data-turnstile-sitekey="0x4AAAAAAEpnnKHgknCSpxYZ" data-turnstile-action="public_support">
       <div class="field">
         <label for="contact-type">종류</label>
         <select id="contact-type" name="type" required aria-describedby="contact-type-error">
@@ -72,9 +72,9 @@
         <span>문의 처리와 답변을 위한 개인정보 수집·이용에 동의합니다. <a href="/privacy">개인정보 처리방침</a></span>
       </label>
       <p class="field-error" id="contact-consent-error" hidden></p>
-      <div id="contact-turnstile" role="group" aria-label="자동 제출 방지 확인"></div>
+      <div id="contact-turnstile" role="group" aria-label="자동 제출 방지 확인" aria-describedby="contact-turnstile-error"></div>
       <p class="field-error" id="contact-turnstile-error" hidden></p>
-      <button class="btn" type="submit">문의 보내기</button>
+      <button class="btn" type="submit" disabled>문의 보내기</button>
       <p class="form-status" id="contact-status" role="status" aria-live="polite" hidden></p>
     </form>
   </main>
