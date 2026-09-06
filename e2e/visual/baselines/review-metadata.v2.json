@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "homepage-support-hardening-20260906",
+  "review_id": "homepage-public-support-turnstile-20260906",
   "reviewer": "codex",
-  "reason": "Verified public support no-JS safety, honest invite copy, and unchanged responsive layout.",
-  "reviewed_at": "2026-09-06T01:10:22.302Z",
-  "rendered_product_sha": "e3311f08cfb52758fafccc2fd3f1697358ec397f",
-  "rendered_product_tree_sha256": "6b0c6c34130eeefceec300d624bc1c80191197401569a41a9376bb505a404b88",
-  "candidate_spec_sha256": "996ce65df98c78c38c96b2926bdca9f513041fc341fb305cda7c964cf33c0bda",
+  "reason": "Reviewed the pinned production render after public support and Turnstile integration changes.",
+  "reviewed_at": "2026-09-06T08:20:24.435Z",
+  "rendered_product_sha": "db14f788231189a7a5165892b54c82f6237d2e6a",
+  "rendered_product_tree_sha256": "8754578a7b66cd607a8be035499fe58ff4ae4db362aeca9940336b62dd3f7a35",
+  "candidate_spec_sha256": "e52a5149bdc2da6b1d0bdb42442bd567d0c821d3827c3252dc1e53985f539233",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "b4e54c670d94a4fc8017ed2c06297992c79de7c16b2f08a6dcc1204caeec60da"
+      "sha256": "7070315886ba747f6e9ebdecca36a92ac3228b1b094c40116fcc7ee540ac72ae"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "2efda6a9a66ec8a6de9ea475ca70cbb8b64dcc363a3e3d9d3463b5c1204083e3"
+      "sha256": "39a4c005f9ca5200d9c6aae2bc45af37959e8dbd5400db65fabecc9ecf48dd08"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "f02640e3c69d0543c3a9560d6d375bc6412d7b40bdd05fd89cea190cbb3d3d95"
+      "sha256": "2a22782c90abad41bc3520d2eba15595200620e35371e04db4763640e4af07a7"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "d38a4e1f14fd857d201e2004b5fe91888d0dbc8e095158104592e96dd57dffdb"
+      "sha256": "4ea4ef06bf432aac3861fe26f3e7e23f2f76acb9b6fe62523ccf0e09ee00e627"
     }
   ]
 }
