@@ -12,3 +12,9 @@
 # ES 모듈은 짧은 캐시(배포마다 갱신)
 /src/*
   Cache-Control: public, max-age=3600
+
+# 앱 배너가 읽는 공개 feed만 app origin에 노출한다. 브라우저가 ETag 캐시를
+# 관리하므로 커스텀 요청 헤더나 광범위한 origin 허용은 필요하지 않다.
+/updates/feed.json
+  Access-Control-Allow-Origin: https://app.leva.ai.kr
+  Access-Control-Expose-Headers: ETag

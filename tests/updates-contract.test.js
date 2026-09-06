@@ -12,6 +12,7 @@ import { fetchInviteRounds, formatInviteRound } from '../src/invite-rounds.js';
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const updatesTemplate = readFileSync(root('templates/updates.html'), 'utf8');
 const publicCss = readFileSync(root('assets/public.css'), 'utf8');
+const responseHeaders = readFileSync(root('_headers'), 'utf8');
 
 const valid = `---
 title: AI 멘토 순차 초대 안내
@@ -28,6 +29,15 @@ ctaHref: /beta
 `;
 
 describe('공지·변경 기록 source 계약', () => {
+  it('앱 origin이 feed를 읽도록 최소 CORS 응답 헤더를 제공한다', () => {
+    expect(responseHeaders).toMatch(
+      /\/updates\/feed\.json\s+Access-Control-Allow-Origin: https:\/\/app\.leva\.ai\.kr/,
+    );
+    expect(responseHeaders).toMatch(
+      /\/updates\/feed\.json[\s\S]*Access-Control-Expose-Headers: ETag/,
+    );
+  });
+
   it('canonical 토큰·폰트와 초대 회차 공간 예약을 사용한다', () => {
     expect(updatesTemplate).toContain('href="/assets/tokens.css"');
     expect(updatesTemplate).toContain('pretendard@v1.3.9');
