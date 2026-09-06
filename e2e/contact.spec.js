@@ -2,17 +2,25 @@ import { test, expect } from '@playwright/test';
 
 const TEST_SITEKEY = '1x00000000000000000000AA';
 
-async function prepareContact(page, { turnstile = 'success', api } = {}) {
+async function prepareContact(page, { turnstile = 'success', sitekey = TEST_SITEKEY, api } = {}) {
   await page.route('**/contact.html', async (route) => {
     const response = await route.fetch();
     const source = await response.text();
     await route.fulfill({
       response,
-      body: source.replace('data-turnstile-sitekey=""', `data-turnstile-sitekey="${TEST_SITEKEY}"`),
+      body: source.replace(/data-turnstile-sitekey="[^"]*"/, `data-turnstile-sitekey="${sitekey}"`),
     });
   });
   await page.route('https://challenges.cloudflare.com/turnstile/v0/api.js**', (route) => {
-    const callback = turnstile === 'success' ? 'options.callback("test-token")' : 'options["error-callback"]()';
+    if (turnstile === 'missing') {
+      return route.fulfill({ contentType: 'application/javascript', body: '' });
+    }
+    const callback = {
+      success: 'options.callback("test-token")',
+      failure: 'options["error-callback"]()',
+      timeout: 'options["timeout-callback"]()',
+      expired: '(options.callback("test-token"),options["expired-callback"]())',
+    }[turnstile];
     return route.fulfill({
       contentType: 'application/javascript',
       body: `window.__turnstileResetCount=0;window.turnstile={render:(selector,options)=>{window.__turnstileRenderOptions=options;queueMicrotask(()=>${callback});return "widget-1"},reset:()=>{window.__turnstileResetCount+=1}};`,
@@ -36,6 +44,35 @@ test.describe('/contact 공개 접수', () => {
     await prepareContact(page);
 
     await expect.poll(() => page.evaluate(() => window.__turnstileRenderOptions?.size)).toBe('compact');
+  });
+
+  test('300px 이상 폼에서는 normal Turnstile을 렌더링한다', async ({ page }) => {
+    await prepareContact(page);
+
+    await expect.poll(() => page.evaluate(() => window.__turnstileRenderOptions?.size)).toBe('normal');
+  });
+
+  for (const scenario of [
+    { label: '위젯 API', turnstile: 'missing', sitekey: TEST_SITEKEY },
+    { label: 'sitekey', turnstile: 'success', sitekey: '' },
+  ]) {
+    test(`Turnstile ${scenario.label}가 없으면 제출을 막고 새로고침을 안내한다`, async ({ page }) => {
+      await prepareContact(page, scenario);
+
+      await expect(page.locator('#contact-turnstile-error')).toContainText('보안 확인을 불러오지 못했습니다');
+      await expect(page.getByRole('button', { name: '문의 보내기' })).toBeDisabled();
+    });
+  }
+
+  test('Turnstile timeout과 expired 토큰을 재확인 상태로 돌린다', async ({ page }) => {
+    await prepareContact(page, { turnstile: 'timeout' });
+    await expect(page.locator('#contact-turnstile-error')).toContainText('보안 확인 시간이 지났습니다');
+
+    await page.unrouteAll({ behavior: 'wait' });
+    await prepareContact(page, { turnstile: 'expired' });
+    await fillValidForm(page);
+    await page.getByRole('button', { name: '문의 보내기' }).click();
+    await expect(page.locator('#contact-turnstile-error')).toContainText('자동 제출 방지 확인을 완료해 주세요');
   });
 
   test('필수 필드를 각각 표시하고 첫 오류로 초점을 옮긴다', async ({ page }) => {
@@ -74,6 +111,7 @@ test.describe('/contact 공개 접수', () => {
     });
     await expect(page.getByLabel('답변받을 이메일')).toHaveValue('');
     await expect(page.getByRole('checkbox')).not.toBeChecked();
+    await expect.poll(() => page.evaluate(() => window.__turnstileResetCount)).toBe(1);
   });
 
   for (const scenario of [
@@ -116,5 +154,25 @@ test.describe('/contact 공개 접수', () => {
     await page.getByRole('button', { name: '문의 보내기' }).click();
 
     await expect(page.locator('#contact-status')).toContainText('네트워크에 연결할 수 없습니다');
+  });
+
+  test('빠른 재제출을 하나로 제한하고 실패한 토큰을 재사용하지 않는다', async ({ page }) => {
+    let apiCalls = 0;
+    await prepareContact(page, {
+      api: async (route) => {
+        apiCalls += 1;
+        await new Promise((resolve) => setTimeout(resolve, 150));
+        await route.fulfill({ status: 500, json: { code: 'INTERNAL' } });
+      },
+    });
+    await fillValidForm(page);
+
+    await page.getByRole('button', { name: '문의 보내기' }).dblclick();
+    await expect(page.locator('#contact-status')).toContainText('지금은 문의를 접수할 수 없습니다');
+    expect(apiCalls).toBe(1);
+
+    await page.getByRole('button', { name: '문의 보내기' }).click();
+    await expect(page.locator('#contact-turnstile-error')).toContainText('자동 제출 방지 확인을 완료해 주세요');
+    expect(apiCalls).toBe(1);
   });
 });

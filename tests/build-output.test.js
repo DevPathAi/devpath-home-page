@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -24,6 +24,17 @@ describe('빌드 산출물', () => {
 
   it('sitemap이 글 URL을 담는다', () => {
     expect(readFileSync(root('dist/sitemap.xml'), 'utf-8')).toContain('/notes/');
+  });
+
+  it('허용 목록 밖의 출력 경로는 파일을 만지기 전에 거부한다', () => {
+    const result = spawnSync(process.execPath, ['build.mjs'], {
+      cwd: root('.'),
+      encoding: 'utf8',
+      env: { ...process.env, BUILD_OUTPUT_DIR: '../outside' },
+    });
+
+    expect(result.status).not.toBe(0);
+    expect(`${result.stdout}${result.stderr}`).toContain('허용되지 않은 BUILD_OUTPUT_DIR');
   });
 });
 

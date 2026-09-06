@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
@@ -7,7 +7,7 @@ import {
   renderUpdatesFeed,
   renderUpdatesPage,
 } from '../scripts/updates.mjs';
-import { formatInviteRound } from '../src/invite-rounds.js';
+import { fetchInviteRounds, formatInviteRound } from '../src/invite-rounds.js';
 
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 
@@ -49,6 +49,24 @@ describe('공지·변경 기록 source 계약', () => {
     expect(() => parseUpdate(reversed, 'bad-window')).toThrow(/startsAt|endsAt/);
   });
 
+  it.each([
+    ['frontmatter 누락', '본문만 있습니다.', /frontmatter/],
+    ['frontmatter 행 형식', valid.replace('summary: 매일 한 번 초대 메일을 보냅니다.', 'summary 누락된 콜론'), /형식 오류/],
+    ['필수 요약', valid.replace('summary: 매일 한 번 초대 메일을 보냅니다.\n', ''), /summary/],
+    ['날짜 형식', valid.replace('date: 2026-09-05', 'date: 2026/09/05'), /YYYY-MM-DD/],
+    ['본문 h1', valid.replace('본문입니다.', '# 제목'), /h1/],
+    ['boolean 형식', valid.replace('bannerEnabled: true', 'bannerEnabled: yes'), /true 또는 false/],
+  ])('%s 오류를 거부한다', (_, source, message) => {
+    expect(() => parseUpdate(source, 'bad-schema')).toThrow(message);
+  });
+
+  it.each([
+    ['필수 CTA', valid.replace('ctaLabel: 베타 안내\n', ''), /배너에는 ctaLabel/],
+    ['파싱 불가 시간', valid.replace('startsAt: 2026-09-05T00:00:00+09:00', 'startsAt: tomorrow'), /시간 범위/],
+  ])('배너 %s 오류를 거부한다', (_, source, message) => {
+    expect(() => parseUpdate(source, 'bad-banner')).toThrow(message);
+  });
+
   it('한 번 수집한 컬렉션으로 HTML과 feed를 만들고 최신순 정렬한다', () => {
     const updates = collectUpdates(root('content/updates'));
     const html = renderUpdatesPage(updates, readFileSync(root('templates/updates.html'), 'utf8'));
@@ -61,5 +79,44 @@ describe('공지·변경 기록 source 계약', () => {
       expect(feed.items.find((entry) => entry.slug === item.slug)?.title).toBe(item.title);
     }
     expect(Buffer.byteLength(JSON.stringify(feed))).toBeLessThanOrEqual(32 * 1024);
+  });
+});
+
+describe('초대 회차 API', () => {
+  it('최대 12개의 정상 응답을 출력 라벨로 매핑한다', async () => {
+    const rounds = Array.from({ length: 12 }, (_, index) => ({
+      roundNumber: index + 1,
+      deliveredCount: index,
+      date: '2026-09-05',
+    }));
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => rounds,
+    });
+
+    const result = await fetchInviteRounds(fetcher);
+
+    expect(result).toHaveLength(12);
+    expect(result[0]).toEqual({ round: rounds[0], label: '1차 초대 0명 발송 · 2026.09.05' });
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.leva.ai.kr/mentor-access/invite-rounds',
+      { method: 'GET', headers: { Accept: 'application/json' }, credentials: 'omit' },
+    );
+  });
+
+  it('비정상 HTTP와 잘못된 컬렉션 크기를 거부한다', async () => {
+    await expect(fetchInviteRounds(vi.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    }))).rejects.toThrow(/503/);
+
+    for (const payload of [{ items: [] }, Array.from({ length: 13 }, () => ({}))]) {
+      await expect(fetchInviteRounds(vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => payload,
+      }))).rejects.toThrow(/응답 형식/);
+    }
   });
 });

@@ -47,6 +47,13 @@ describe('공개 지원 폼 상태', () => {
     expect(validatePublicSupport({ ...valid, turnstileToken: '' }).turnstileToken).toBeTruthy();
   });
 
+  it('제목과 내용의 최대 길이 경계를 허용하고 한 글자 초과를 거부한다', () => {
+    expect(validatePublicSupport({ ...valid, title: '가'.repeat(200) }).title).toBeUndefined();
+    expect(validatePublicSupport({ ...valid, title: '가'.repeat(201) }).title).toContain('200자');
+    expect(validatePublicSupport({ ...valid, body: '가'.repeat(5000) }).body).toBeUndefined();
+    expect(validatePublicSupport({ ...valid, body: '가'.repeat(5001) }).body).toContain('5,000자');
+  });
+
   it('성공 응답을 분류한다', async () => {
     const fetchImpl = vi.fn().mockResolvedValue({ ok: true, status: 201, json: async () => ({ id: 17 }) });
     await expect(submitPublicSupport(valid, { fetchImpl, endpoint: '/support/public-requests' }))
