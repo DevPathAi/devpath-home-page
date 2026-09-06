@@ -73,6 +73,7 @@ test.describe('/contact 공개 접수', () => {
     await fillValidForm(page);
     await page.getByRole('button', { name: '문의 보내기' }).click();
     await expect(page.locator('#contact-turnstile-error')).toContainText('자동 제출 방지 확인을 완료해 주세요');
+    await expect(page.locator('#contact-turnstile')).toBeFocused();
   });
 
   test('필수 필드를 각각 표시하고 첫 오류로 초점을 옮긴다', async ({ page }) => {

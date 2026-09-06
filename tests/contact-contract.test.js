@@ -8,6 +8,7 @@ import {
 
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
 const html = readFileSync(root('contact.html'), 'utf8');
+const publicCss = readFileSync(root('assets/public.css'), 'utf8');
 const valid = {
   type: 'INQUIRY',
   email: 'user@example.com',
@@ -40,8 +41,18 @@ describe('/contact 문서 계약', () => {
     expect(html).toMatch(/<form[^>]+method="post"[^>]+action="\/contact"/);
     expect(html).toMatch(/<button[^>]+type="submit"[^>]+disabled/);
     expect(html).toContain(
-      'id="contact-turnstile" role="group" aria-label="자동 제출 방지 확인" aria-describedby="contact-turnstile-error"',
+      'id="contact-turnstile" class="contact-turnstile" tabindex="-1" role="group" aria-label="자동 제출 방지 확인" aria-describedby="contact-turnstile-error"',
     );
+  });
+
+  it('canonical 토큰·폰트와 안정적인 focus·Turnstile 공간을 사용한다', () => {
+    expect(html).toContain('href="/assets/tokens.css"');
+    expect(html).toContain('pretendard@v1.3.9');
+    expect(html).toContain('d2coding@1.3.2');
+    expect(publicCss).toContain('outline: var(--dp-state-focus-ring-width) solid var(--dp-state-focus-ring)');
+    expect(publicCss).toMatch(/\.contact-turnstile\s*\{[^}]*min-block-size:\s*65px/s);
+    expect(publicCss).not.toContain('outline: 3px solid var(--amber)');
+    expect(publicCss).not.toContain('--green: #');
   });
 });
 

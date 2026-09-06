@@ -56,4 +56,18 @@ describe('Phase 0 승인 홈페이지 계약', () => {
     expect(html).not.toContain('data-widget="lead-form"');
     expect(html).not.toContain('id="traction"');
   });
+
+  it('canonical 디자인 토큰·폰트를 사용하고 Hero 이미지 크기를 예약한다', () => {
+    expect(html).toContain('href="/assets/tokens.css"');
+    expect(html).toContain('pretendard@v1.3.9');
+    expect(html).toContain('d2coding@1.3.2');
+    expect(html).toContain('media="print" onload="this.media=\'all\'"');
+    expect(html).toMatch(/<noscript>[\s\S]*pretendard@[\s\S]*d2coding@[\s\S]*<\/noscript>/);
+    expect(html).not.toContain('fonts.googleapis.com');
+    expect(html).not.toContain('--green: #');
+    expect(html).not.toContain('--ink: #');
+    expect(html).toMatch(
+      /<img class="product-capture"[^>]+width="1440" height="1000"[^>]*>/,
+    );
+  });
 });

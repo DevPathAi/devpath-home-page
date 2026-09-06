@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 
 const root = (path) => resolve(process.cwd(), path);
 const html = readFileSync(root('index.html'), 'utf8');
+const tokensCss = readFileSync(root('assets/tokens.css'), 'utf8');
 const document = new DOMParser().parseFromString(html, 'text/html');
 const visibleCopy = document.body.textContent.replace(/\s+/g, ' ');
 const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
@@ -56,11 +57,13 @@ describe('확정된 홈페이지 활성화 계약', () => {
     expect(html).toMatch(/\.mobile-nav summary\s*\{[^}]*min-height:\s*44px/s);
   });
 
-  it('승인 팔레트만 쓰고 갈색·크림 계열을 쓰지 않는다', () => {
-    expect(html).toContain('--ink: #12231E');
-    expect(html).toContain('--green: #1FA97A');
-    expect(html).toContain('--amber: #F5A524');
-    expect(html).not.toMatch(/#FDF1E0|#78350F|#F2D0A0|#2E2007/i);
+  it('semantic 팔레트 값을 재선언하지 않고 canonical token mirror를 소비한다', () => {
+    expect(html).toContain('href="/assets/tokens.css"');
+    expect(html).toContain('--ink: var(--dp-color-text-primary)');
+    expect(html).toContain('--green: var(--dp-color-primary)');
+    expect(html).toContain('--amber: var(--dp-color-warning)');
+    expect(html).not.toMatch(/--(?:ink|green|amber):\s*#[0-9a-f]{6}/i);
+    expect(tokensCss).toContain('--dp-color-primary: #B45309');
   });
 
   it('Home 리드폼 없이 앱 로그인으로 AI 멘토 초대를 신청한다', () => {

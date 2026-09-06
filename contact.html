@@ -7,6 +7,14 @@
   <meta name="description" content="레바 사용 중 생긴 문의와 오류를 보내 주세요.">
   <link rel="canonical" href="https://leva.ai.kr/contact">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wan2land/d2coding@1.3.2/d2coding.css" media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wan2land/d2coding@1.3.2/d2coding.css">
+  </noscript>
+  <link rel="stylesheet" href="/assets/tokens.css">
   <link rel="stylesheet" href="/assets/public.css">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 </head>
@@ -72,10 +80,10 @@
         <span>문의 처리와 답변을 위한 개인정보 수집·이용에 동의합니다. <a href="/privacy">개인정보 처리방침</a></span>
       </label>
       <p class="field-error" id="contact-consent-error" hidden></p>
-      <div id="contact-turnstile" role="group" aria-label="자동 제출 방지 확인" aria-describedby="contact-turnstile-error"></div>
+      <div id="contact-turnstile" class="contact-turnstile" tabindex="-1" role="group" aria-label="자동 제출 방지 확인" aria-describedby="contact-turnstile-error"></div>
       <p class="field-error" id="contact-turnstile-error" hidden></p>
       <button class="btn" type="submit" disabled>문의 보내기</button>
-      <p class="form-status" id="contact-status" role="status" aria-live="polite" hidden></p>
+      <p class="form-status" id="contact-status" tabindex="-1" role="status" aria-live="polite" hidden></p>
     </form>
   </main>
 

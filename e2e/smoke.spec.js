@@ -47,7 +47,7 @@ test.describe('확정 홈페이지 스모크', () => {
     await expect(ctas.first()).toHaveAttribute('href', DIAGNOSTIC_URL);
   });
 
-  test('승인 팔레트와 실제 화면 출처 배지를 사용한다', async ({ page }) => {
+  test('canonical semantic 팔레트와 실제 화면 출처 배지를 사용한다', async ({ page }) => {
     await page.goto('/');
     const colors = await page.evaluate(() => ({
       ink: getComputedStyle(document.body).color,
@@ -56,9 +56,9 @@ test.describe('확정 홈페이지 스모크', () => {
     }));
 
     expect(colors).toEqual({
-      ink: 'rgb(18, 35, 30)',
-      cta: 'rgb(31, 169, 122)',
-      accent: 'rgb(245, 165, 36)',
+      ink: 'rgb(26, 24, 21)',
+      cta: 'rgb(180, 83, 9)',
+      accent: 'rgb(180, 83, 9)',
     });
     await expect(page.locator('.shot .badge')).toHaveCount(3);
     await expect(page.locator('.shot .badge').first()).toContainText('출처 · 레바 앱 화면');

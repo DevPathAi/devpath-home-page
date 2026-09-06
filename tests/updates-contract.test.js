@@ -10,6 +10,8 @@ import {
 import { fetchInviteRounds, formatInviteRound } from '../src/invite-rounds.js';
 
 const root = (path) => fileURLToPath(new URL(`../${path}`, import.meta.url));
+const updatesTemplate = readFileSync(root('templates/updates.html'), 'utf8');
+const publicCss = readFileSync(root('assets/public.css'), 'utf8');
 
 const valid = `---
 title: AI 멘토 순차 초대 안내
@@ -26,6 +28,13 @@ ctaHref: /beta
 `;
 
 describe('공지·변경 기록 source 계약', () => {
+  it('canonical 토큰·폰트와 초대 회차 공간 예약을 사용한다', () => {
+    expect(updatesTemplate).toContain('href="/assets/tokens.css"');
+    expect(updatesTemplate).toContain('pretendard@v1.3.9');
+    expect(updatesTemplate).toContain('d2coding@1.3.2');
+    expect(publicCss).toMatch(/\.invite-rounds\s*\{[^}]*min-block-size:/s);
+  });
+
   it('메일 인프라가 없는 상태에서 발송 시점이나 미구현 멘토 경로를 약속하지 않는다', () => {
     const source = readFileSync(root('content/updates/2026-09-05-mentor-invitations.md'), 'utf8');
     expect(source).not.toContain('1일 안에');
@@ -76,7 +85,7 @@ describe('공지·변경 기록 source 계약', () => {
 
   it('한 번 수집한 컬렉션으로 HTML과 feed를 만들고 최신순 정렬한다', () => {
     const updates = collectUpdates(root('content/updates'));
-    const html = renderUpdatesPage(updates, readFileSync(root('templates/updates.html'), 'utf8'));
+    const html = renderUpdatesPage(updates, updatesTemplate);
     const feed = JSON.parse(renderUpdatesFeed(updates));
 
     expect(updates.map((item) => item.date)).toEqual([...updates.map((item) => item.date)].sort().reverse());
