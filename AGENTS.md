@@ -63,7 +63,7 @@
 - `tests/`: Vitest 계약·단위 테스트.
 - `e2e/`: Playwright 기능·접근성·시각 검증.
 - `DESIGN.md`: Home 디자인 시스템과 토큰 사용 계약.
-- `docs/plan/2026-09-04-homepage-phase0-engineering-plan.md`: Phase 0 실행 순서와 승인 결정 UX1–UX15의 기준.
+- `D:\workspace\dpa\docs\plan\2026-09-04-homepage-phase0-engineering-plan.md`: Phase 0 실행 순서와 승인 결정 UX1–UX15의 기준.
 - 승인 목업과 `approved.json`은 계획서의 `Approved Mockups` 절에 기록된 `~/.gstack/projects/.../designs/` 경로를 사용한다.
 
 README나 과거 목업이 위 기준과 충돌하면 최신 승인 계획, `approved.json`, 실제 제품 source 순으로 판정한다. 충돌을 임의로 합성하지 않는다.
@@ -114,7 +114,7 @@ npm run test:all
 - Founder 사진·이름은 승인 자료 전까지 `실제 자료로 교체 예정` placeholder다. 생성 사진·가짜 이름을 금지한다.
 - Footer는 제품/회사/법적 3열을 유지한다. 제품 Q&A는 앱 `/community`, FAQ는 Home `#faq`, 공지·변경 기록은 `/updates`, 문의·오류 신고는 `/contact`로 분리한다.
 - 회사 정보에는 검증되어 공개 가능한 값만 넣는다. 대표자명·소재지를 추측하거나 `확인 후 입력` 같은 내부 placeholder를 배포하지 않는다.
-- AI 멘토는 순차 초대하고 `보통 1일 안에 초대 메일이 갑니다.`라고 안내한다. Home은 신청 정보를 직접 수집하지 않는다.
+- AI 멘토는 신청 순서대로 순차 승인하고, 승인되면 이메일로 안내한다. Home은 신청 정보를 직접 수집하지 않는다.
 - `/updates`는 정적 원고 하나에서 HTML과 32 KiB 이하 JSON feed를 함께 생성한다. `/contact`는 Turnstile과 개인정보 동의를 거쳐 플랫폼의 기존 지원 큐로 보낸다.
 
 ## 디자인·반응형·접근성
