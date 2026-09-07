@@ -38,8 +38,8 @@ describe('Home visual/a11y evidence v2 contract', () => {
       repository: 'DevPathAi/devpath-home-page',
       route: '/',
       build: 'production-dist',
-      rendered_product_sha: 'f86144936dd47af3cd08076e0539db090f847e13',
-      rendered_product_tree_sha256: 'a4f487ad29f853a050bcbfc066a909acca4b6d66877776dccaa30250f6b641ec',
+      rendered_product_sha: 'a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee',
+      rendered_product_tree_sha256: '6fbec7d69a1025429d827935f4d7b4b48856ad397e3f77459b0b2bbf310a6546',
     });
     expect(candidate.runtime).toMatchObject({
       locale: 'ko-KR',
@@ -133,15 +133,15 @@ describe('Home visual/a11y evidence v2 contract', () => {
         recordsDirectory: records,
         outputDirectory: output,
         environment: {
-          HOME_RENDERED_PRODUCT_SHA: 'f86144936dd47af3cd08076e0539db090f847e13',
+          HOME_RENDERED_PRODUCT_SHA: 'a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee',
           HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
           MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
           MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
         },
       });
       expect(result.visual.binding).toMatchObject({
-        rendered_product_sha: 'f86144936dd47af3cd08076e0539db090f847e13',
-        rendered_product_tree_sha256: 'a4f487ad29f853a050bcbfc066a909acca4b6d66877776dccaa30250f6b641ec',
+        rendered_product_sha: 'a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee',
+        rendered_product_tree_sha256: '6fbec7d69a1025429d827935f4d7b4b48856ad397e3f77459b0b2bbf310a6546',
         evidence_producer_sha: 'a'.repeat(40),
         candidate_spec_sha256: releaseCandidateSha256,
       });
@@ -153,7 +153,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
       });
       expect(JSON.stringify(result)).not.toMatch(/private learner|"screenshot_path"|"selector"/);
       const environment = {
-        HOME_RENDERED_PRODUCT_SHA: 'f86144936dd47af3cd08076e0539db090f847e13',
+        HOME_RENDERED_PRODUCT_SHA: 'a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee',
         HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
         MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
         MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
