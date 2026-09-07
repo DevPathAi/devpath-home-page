@@ -78,7 +78,7 @@ test.describe('확정 홈페이지 스모크', () => {
     );
   });
 
-  for (const width of [320, 600, 840, 1240]) {
+  for (const width of [320, 600, 839, 840, 1240]) {
     test(`${width}px에서 가로 overflow 없이 맞는 navigation을 쓴다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
@@ -88,7 +88,7 @@ test.describe('확정 홈페이지 스모크', () => {
       );
       expect(overflow).toBe(0);
 
-      if (width <= 900) {
+      if (width < 840) {
         await expect(page.locator('.mobile-nav__toggle')).toBeVisible();
         await expect(page.locator('.nav-links')).toBeHidden();
         await expect(page.locator('.nav-actions')).toBeHidden();

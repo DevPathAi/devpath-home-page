@@ -86,3 +86,7 @@ textarea { min-height: 180px; resize: vertical; }
   .invite-rounds { min-block-size: 680px; }
   .contact-turnstile { min-block-size: 140px; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
