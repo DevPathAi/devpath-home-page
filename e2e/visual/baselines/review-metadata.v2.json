@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "mentor-waitlist-cta-20260904",
+  "review_id": "homepage-responsive-contract-20260907",
   "reviewer": "codex",
-  "reason": "User-directed mentor waitlist copy reviewed against the 90-second CTA and local browser rendering",
-  "reviewed_at": "2026-09-04T05:30:00.000Z",
-  "rendered_product_sha": "8d9e538057df862b307ee0457c4396f3e5e42eed",
-  "rendered_product_tree_sha256": "dfe91489abdc51d456697ecbd001de2be8208fb733b3885d8d66ff8203f0f4af",
-  "candidate_spec_sha256": "5eb80d9791cae4db3c8bb1fd5a6627baea9c19634c4c48de4bcf3cc1c3e9efe7",
+  "reason": "Responsive boundary and reduced-motion evidence refreshed after code review.",
+  "reviewed_at": "2026-09-07T04:48:12.020Z",
+  "rendered_product_sha": "a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee",
+  "rendered_product_tree_sha256": "6fbec7d69a1025429d827935f4d7b4b48856ad397e3f77459b0b2bbf310a6546",
+  "candidate_spec_sha256": "b13c5919fb53b97a06bb2207e671722f1de3620728a3268e814fb113a2a0d4f2",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "2b848400ddf43c971f01887e85d8694a6550f364112b67110b167519aab5a8bb"
+      "sha256": "7070315886ba747f6e9ebdecca36a92ac3228b1b094c40116fcc7ee540ac72ae"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "97104ee9b17a095a65d86d4e4b8808deb6cbf2f7ecac1a1efbbf4f1881a12fca"
+      "sha256": "8cf60210e151b09d1e3d0e4a60c20a083596f66b95afd48b6100eadfeb13c40d"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "c7699a5a429edd7c48c0e469316944c70289c771811af5e58f55aa619f61fac8"
+      "sha256": "617a63aceb7592089307747f69567010241e1dd6a22faf341cf7269ea08be249"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "cec01773d8a46ac6f8de5e68589bab69b2a264a7a7ec0a80033115b97401e183"
+      "sha256": "ea529469a3be3e34af1689968308d4cb273dbad6660f0f493bac8563eb0e50ce"
     }
   ]
 }

@@ -21,24 +21,22 @@ describe('가격 — 사업계획서 정합', () => {
     expect(html).not.toContain('14,900');
   });
 
-  it('유료 플랜 카드가 정확히 하나다', () => {
-    const paid = html.match(/pricing__tier pricing__tier--soon/g) ?? [];
-    expect(paid).toHaveLength(1);
+  it('카드 비교 없이 승인된 3행 가격표만 둔다', () => {
+    expect(html.match(/class="price-row"/g) ?? []).toHaveLength(3);
+    expect(html).not.toMatch(/pricing__tier|기능 비교/);
   });
 });
 
 // href="#"는 클릭해도 아무 일이 없는 죽은 링크다. 심사위원이 클릭할 자리다.
 // 내비게이션의 href="#pricing" 같은 앵커는 정확 일치가 아니라 무관하다.
 describe('끊어진 링크', () => {
-  it('제휴가 문의 메일로 연결된다', () => {
-    expect(html).toContain('<a href="mailto:info@leva.ai.kr">제휴</a>');
+  it('문의와 제품 Q&A를 승인된 경로로 분리한다', () => {
+    expect(html).toContain('<a href="/contact">문의·오류 신고</a>');
+    expect(html).toContain('<a href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
   });
 
-  it('StockPilot과 LearnFlow가 링크가 아닌 평문이다', () => {
-    expect(html).not.toContain('>StockPilot</a>');
-    expect(html).not.toContain('>LearnFlow</a>');
-    expect(html).toContain('StockPilot');
-    expect(html).toContain('LearnFlow');
+  it('제거하기로 한 과거 프로젝트 링크가 없다', () => {
+    expect(html).not.toMatch(/StockPilot|LearnFlow/);
   });
 
   it('연결 예정 안내 문구가 사라졌다', () => {

@@ -37,6 +37,30 @@ describe('처리방침이 앱까지 덮는다', () => {
   });
 });
 
+describe('공개 문의 접수를 정확히 고지한다', () => {
+  it('문의 폼의 필수 수집 항목과 동의 시각이 적혀 있다', () => {
+    const s = text(section('처리하는 개인정보 항목'));
+
+    for (const item of ['문의 유형', '이메일', '제목', '내용', '동의 시각']) {
+      expect(s).toContain(item);
+    }
+  });
+
+  it('Turnstile 처리와 임시 남용 방지 식별자를 고지한다', () => {
+    const s = text(section('처리하는 개인정보 항목'));
+
+    expect(s).toContain('Turnstile');
+    expect(s).toMatch(/IP 주소.*해시|해시.*IP 주소/);
+  });
+
+  it('문의 기록과 임시 남용 방지 식별자의 보유 기간이 적혀 있다', () => {
+    const s = text(section('처리 및 보유 기간'));
+
+    expect(s).toMatch(/문의·오류 신고.*답변 완료 후 1년/);
+    expect(s).toMatch(/남용 방지.*1시간/);
+  });
+});
+
 describe('국외이전을 고지한다', () => {
   // 개인정보 보호법 제28조의8 — 이전받는 자·이전 국가·이전 항목·이전 목적을
   // 알려야 한다. 위탁·보관에 따른 이전은 처리방침 공개로 갈음할 수 있다.

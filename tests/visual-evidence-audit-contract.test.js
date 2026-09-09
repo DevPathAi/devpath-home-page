@@ -13,7 +13,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   generateEvidenceManifests,
+  isEvidenceOnlyPath,
   isCommitAncestorByObjectGraph,
+  isNonRenderingReleasePath,
   loadCaseCatalog,
   productRuntimeTreeSha256,
   validateBaselineReview,
@@ -24,8 +26,8 @@ import {
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = '8d9e538057df862b307ee0457c4396f3e5e42eed';
-const productTreeSha = 'dfe91489abdc51d456697ecbd001de2be8208fb733b3885d8d66ff8203f0f4af';
+const productSha = 'a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee';
+const productTreeSha = '6fbec7d69a1025429d827935f4d7b4b48856ad397e3f77459b0b2bbf310a6546';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -66,6 +68,17 @@ function passingEvidence(environmentOverrides = {}) {
     rmSync(temporary, { recursive: true, force: true });
   }
 }
+
+describe('product runtime tree path classification', () => {
+  it('allows operational documentation without allowing runtime content', () => {
+    expect(isNonRenderingReleasePath('CLAUDE.md')).toBe(true);
+    expect(isNonRenderingReleasePath('AGENTS.md')).toBe(true);
+    expect(isNonRenderingReleasePath('HANDOFF.md')).toBe(true);
+    expect(isNonRenderingReleasePath('docs/plan/phase-0.md')).toBe(true);
+    expect(isNonRenderingReleasePath('content/notes/runtime-content.md')).toBe(false);
+    expect(isNonRenderingReleasePath('index.html')).toBe(false);
+  });
+});
 
 describe('independent ET13 audit contracts', () => {
   it('catalogs 44px target coverage at every responsive boundary', () => {
@@ -152,7 +165,7 @@ describe('independent ET13 audit contracts', () => {
     })).toThrow(/runtime drift|styles\.css/i);
   });
 
-  it('allows the exact CI-only descendant while retaining runtime drift detection', () => {
+  it('allows evidence-only and non-rendering descendants while retaining runtime drift detection', () => {
     const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
       cwd: root,
       encoding: 'utf8',
@@ -161,14 +174,17 @@ describe('independent ET13 audit contracts', () => {
       cwd: root,
       encoding: 'utf8',
     }).split(/\r?\n/).filter(Boolean);
-    // 렌더 기준 커밋과 HEAD 의 제품 차이는 없어야 하며, 배포 하네스와 증거 파일만 달라질 수 있다.
+    // 렌더 기준 커밋과 HEAD의 차이는 증거 또는 명시된 non-rendering 경로만 허용한다.
     expect(changedPaths).toContain('e2e/visual/baselines/review-metadata.v2.json');
     expect(changedPaths).toContain('e2e/visual/candidate-spec.v2.json');
+    expect(changedPaths.every((path) => (
+      isEvidenceOnlyPath(path) || isNonRenderingReleasePath(path)
+    ))).toBe(true);
     expect(isCommitAncestorByObjectGraph(productSha, headSha)).toBe(true);
     expect(isCommitAncestorByObjectGraph(headSha, productSha)).toBe(false);
-    // This evidence-only descendant must preserve the exact rendered product
-    // tree while provenance still checks the changed-path allowlist.
-    expect(productRuntimeTreeSha256(headSha)).toBe(productRuntimeTreeSha256(productSha));
+    // The historical rendered tree hash remains stable. Producer drift is
+    // accepted only when every changed path passes the explicit allowlist.
+    expect(productRuntimeTreeSha256(productSha)).toBe(productTreeSha);
     expect(validateProductRuntimeProvenance({
       candidate: JSON.parse(readFileSync(
         join(root, 'e2e/visual/candidate-spec.v2.json'),

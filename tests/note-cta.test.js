@@ -21,8 +21,8 @@ const NOTE = {
 describe('개발 기록 CTA', () => {
   const html = renderNote(NOTE, template);
 
-  it('베타 신청으로 가는 CTA가 있다', () => {
-    expect(html).toContain('href="/#lead"');
+  it('AI 멘토 신청을 앱 로그인으로 보낸다', () => {
+    expect(html).toContain('href="https://app.leva.ai.kr/login"');
   });
 
   // 본문을 다 읽은 자리가 전환 의도가 가장 높다. 목록 링크보다 먼저 와야 한다.
@@ -31,11 +31,8 @@ describe('개발 기록 CTA', () => {
     expect(html.indexOf('note__cta')).toBeLessThan(html.indexOf('note__back'));
   });
 
-  // 이 레포의 확립된 규칙: 「진단」을 약속하는 버튼은 앱으로 보내고,
-  // 「초대」만 이메일 폼에 남긴다(tests/app-cta.test.js). #lead로 가는
-  // 버튼이 진단을 약속하면 그 규칙이 깨진다.
-  it('#lead로 가는 버튼이 진단을 약속하지 않는다', () => {
-    const anchor = html.match(/<a[^>]*href="\/#lead"[^>]*>([^<]*)<\/a>/);
+  it('멘토 신청 버튼이 진단을 약속하지 않는다', () => {
+    const anchor = html.match(/<a[^>]*href="https:\/\/app\.leva\.ai\.kr\/login"[^>]*>([^<]*)<\/a>/);
 
     expect(anchor).not.toBeNull();
     expect(anchor[1]).not.toContain('진단');
@@ -57,7 +54,7 @@ describe('원고 전체 반영', () => {
 
   it('모든 글에 CTA가 실린다', () => {
     const missing = notes
-      .filter((n) => !renderNote(n, template).includes('href="/#lead"'))
+      .filter((n) => !renderNote(n, template).includes('href="https://app.leva.ai.kr/login"'))
       .map((n) => n.slug);
 
     expect(missing).toEqual([]);

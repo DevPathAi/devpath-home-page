@@ -48,21 +48,21 @@ const TARGET_SELECTOR = [
 ].join(',');
 const INLINE_TARGET_EXCEPTIONS = Object.freeze([
   {
-    selector: '.traction__fallback a',
-    case: 'wcag-2.5.8-inline-text',
-    reason: 'The traction link is embedded in fallback prose.',
-  },
-  {
-    selector: '.faq__list dd a',
+    selector: '.faq-list details p a',
     case: 'wcag-2.5.8-inline-text',
     reason: 'FAQ links are embedded in answer sentences.',
+  },
+  {
+    selector: '.company-grid a',
+    case: 'wcag-2.5.8-inline-text',
+    reason: 'The email link is embedded in company-information prose.',
   },
 ]);
 const REQUIRED_TARGET_SELECTORS = Object.freeze([
   '.skip-link',
-  '.wordmark',
-  '.founder__more a',
-  '.traction__fallback a',
+  '.brand',
+  '.text-link',
+  '.price-actions a',
 ]);
 
 function hashFile(path) {
@@ -82,9 +82,9 @@ async function assertNoHorizontalOverflow(page) {
 
 async function fontSizes(page) {
   return page.evaluate(() => Object.fromEntries([
-    ['body', '.hero__support'],
+    ['body', '.hero .lead'],
     ['label', '.eyebrow'],
-    ['heading', '#outcome-preview-title'],
+    ['heading', '.comparison-head h2'],
   ].map(([name, selector]) => [
     name,
     Number.parseFloat(getComputedStyle(document.querySelector(selector)).fontSize),
@@ -99,6 +99,7 @@ async function visibleFocusOrder(page) {
         return element.tabIndex >= 0
           && style.display !== 'none'
           && style.visibility !== 'hidden'
+          && (element.tagName === 'SUMMARY' || !element.closest('details:not([open])'))
           && element.getClientRects().length > 0;
       });
     controls.forEach((element, index) => {
@@ -283,14 +284,18 @@ test.describe('Home production-dist automated accessibility evidence', () => {
       await page.setViewportSize(entry.viewport);
       await prepareDeterministicPage(page);
       const before = await fontSizes(page);
-      await page.addStyleTag({ content: TEXT_RESIZE_200_CSS });
+      await page.addStyleTag({ content: `${TEXT_RESIZE_200_CSS}
+        .hero .lead { font-size: ${before.body * 2}px !important; }
+        .eyebrow { font-size: ${before.label * 2}px !important; }
+        .comparison-head h2 { font-size: ${before.heading * 2}px !important; }
+      ` });
       const after = await fontSizes(page);
       expect(after).toEqual({
         body: before.body * 2,
         label: before.label * 2,
         heading: before.heading * 2,
       });
-      await page.locator('.outcome-preview__context dd').first().evaluate((element) => {
+      await page.locator('.context-item').first().evaluate((element) => {
         element.textContent = '학습경로식별자-가나다라마바사아자차카타파하-ABCDEF0123456789'.repeat(4);
       });
       await assertNoHorizontalOverflow(page);
@@ -335,8 +340,9 @@ test.describe('Home production-dist automated accessibility evidence', () => {
           .map((heading) => Number(heading.tagName.slice(1)));
         const skipped = levels.some((level, index) => index > 0 && level > levels[index - 1] + 1);
         const primaryCounts = [...document.querySelectorAll('header, main > section')].map((region) => (
-          [...region.querySelectorAll('.btn-primary')]
-            .filter((element) => getComputedStyle(element).display !== 'none').length
+          [...region.querySelectorAll('a.btn.primary, button.btn.primary')]
+            .filter((element) => getComputedStyle(element).display !== 'none'
+              && element.getClientRects().length > 0).length
         ));
         return {
           h1Count: levels.filter((level) => level === 1).length,
@@ -357,6 +363,9 @@ test.describe('Home production-dist automated accessibility evidence', () => {
           statsFixture: { ok: true, signups: 0, diagnoses_completed: 0, satisfaction: null },
         });
         if (entry.viewport.width < 840) await page.locator('.mobile-nav__toggle').click();
+        await page.locator('.faq-list details').evaluateAll((details) => {
+          details.forEach((element) => element.setAttribute('open', ''));
+        });
         const audit = await page.evaluate(({ selector, exceptionRules, requiredSelectors }) => {
           const elements = [...new Set(document.querySelectorAll(selector))]
             .filter((element) => {
@@ -434,8 +443,8 @@ test.describe('Home production-dist automated accessibility evidence', () => {
       const motion = await page.evaluate(() => ({
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
         transition: getComputedStyle(document.querySelector('.btn')).transitionDuration,
-        founderOpacity: getComputedStyle(document.querySelector('.founder__beat')).opacity,
-        founderTransform: getComputedStyle(document.querySelector('.founder__beat')).transform,
+        founderOpacity: getComputedStyle(document.querySelector('.portrait')).opacity,
+        founderTransform: getComputedStyle(document.querySelector('.portrait')).transform,
         runningAnimations: document.getAnimations().filter((animation) => animation.playState === 'running').length,
       }));
       expect(motion.scroll).toBe('auto');
@@ -478,7 +487,7 @@ test.describe('Home production-dist automated accessibility evidence', () => {
       await expect(details).toHaveJSProperty('open', true);
 
       const expectedOrder = await visibleFocusOrder(page);
-      const menuFocusIds = await page.locator('.mobile-nav__toggle, .mobile-nav__panel a')
+      const menuFocusIds = await page.locator('.mobile-nav__toggle, .mobile-links a')
         .evaluateAll((elements) => elements.map((element) => element.dataset.auditFocusId));
       expect(menuFocusIds.length).toBeGreaterThan(5);
       expect(menuFocusIds.every((id) => expectedOrder.includes(id))).toBe(true);
@@ -488,7 +497,7 @@ test.describe('Home production-dist automated accessibility evidence', () => {
       await assertKeyboardActivation(page, expectedOrder, {
         beforeControl: async (control) => {
           const isMenuControl = await control.evaluate((element) => (
-            element.matches('.mobile-nav__toggle, .mobile-nav__panel a')
+            element.matches('.mobile-nav__toggle, .mobile-links a')
           ));
           if (isMenuControl && !(await details.evaluate((element) => element.open))) {
             await toggle.focus();
@@ -503,7 +512,7 @@ test.describe('Home production-dist automated accessibility evidence', () => {
       }
       await expect(details).toHaveJSProperty('open', true);
 
-      await page.locator('.mobile-nav__panel a').first().focus();
+      await page.locator('.mobile-links a').first().focus();
       await page.keyboard.press('Escape');
       await expect(details).toHaveJSProperty('open', false);
       await expect(toggle).toBeFocused();

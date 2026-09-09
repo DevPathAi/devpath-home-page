@@ -3,14 +3,14 @@
 DevPath AI 정식 마케팅 홈페이지. 제품 기능 소개 + 창업자/회사 소개를 한 사이트에서 전달하고, 주 CTA "내 실력 진단받기"로 전환한다.
 
 - **스택:** 바닐라 HTML/CSS/ES모듈 · Vitest(유닛) · Playwright(E2E) · CI(GitHub Actions) · 배포 Cloudflare Pages
-- **상태:** T1~T18 구현 완료(T8 i18n 보류) · 요금 4단계 · 유닛 32 + E2E 6 통과 · `develop` 반영
+- **상태:** Phase 0 홈페이지 · 공개 공지/변경 기록(`/updates`) · 문의/오류 신고(`/contact`) · AI 멘토 순차 초대 안내 구현
 - **플랜:** `docs/plan/plan-master.md` (CEO+Eng+Design 리뷰 + 태스크 T1~T18)
-- **배포 전 후속:** `APPS_SCRIPT_URL` 설정 + `Code.gs` 배포 · 창업자 StockPilot/LearnFlow 링크 연결
+- **배포 확인:** 생성된 `dist/` · 공개 지원 API와 Turnstile 설정 · `/updates/feed.json`의 앱 CORS 계약을 함께 검증
 
 ## 개발
 
 ```bash
-npm install
+npm ci
 npm run dev        # http://127.0.0.1:4321 정적 서버
 npm test           # Vitest 유닛
 npm run test:e2e   # Playwright E2E (자동으로 서버 기동)
@@ -21,7 +21,8 @@ npm run gen:og     # assets/og-image.png 재생성 (템플릿/카피 변경 시)
 ## 배포 (Cloudflare Pages)
 
 - **Build command:** `npm run build` · **Output directory:** `dist`
-- **Functions:** 루트 `functions/`가 `/api/lead`(POST 프록시), `/api/stats`(GET 집계)를 제공
+- **공개 지원:** `/updates`와 `/updates/feed.json`은 빌드 시 생성되고, `/contact`는 `https://api.leva.ai.kr/support/public-requests`로 Turnstile 토큰과 동의 정보를 전송
+- **Legacy Functions:** 루트 `functions/`의 `/api/lead`·`/api/stats`는 롤백 기간에만 유지
 - **환경변수:** `APPS_SCRIPT_URL` = 기존 devpath-landing-page의 Apps Script Web App `/exec` URL
   (프록시가 서버측에서 이 URL로 포워딩 → 브라우저는 same-origin 호출, CORS 불필요)
 - **Apps Script:** `apps-script/Code.gs`를 배포(단일 소스). `?action=stats`는 집계 카운트만 반환(PII 금지, F3)
