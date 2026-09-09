@@ -19,43 +19,35 @@ describe('진단 CTA는 앱으로 보낸다', () => {
   });
 
   it('히어로 1차 CTA가 앱으로 간다', () => {
-    const hero = html.slice(html.indexOf('hero__actions'), html.indexOf('hero__note'));
+    const hero = html.slice(html.indexOf('class="hero-actions"'), html.indexOf('class="hero-proof"'));
 
     expect(hero).toContain(`href="${APP}"`);
   });
 
   it('헤더 CTA가 앱으로 간다', () => {
-    const header = html.slice(html.indexOf('site-header__inner'), html.indexOf('</header>'));
+    const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
 
     expect(header).toContain(`href="${APP}"`);
   });
 
-  it('요금의 무료 티어가 앱으로 간다', () => {
+  it('요금의 AI 멘토 초대 CTA는 앱 로그인으로 간다', () => {
     const pricing = html.slice(html.indexOf('id="pricing"'), html.indexOf('id="faq"'));
 
-    expect(pricing).toContain(`href="${APP}"`);
+    expect(pricing).toContain('href="https://app.leva.ai.kr/login"');
   });
 
   it('최종 진단 CTA가 앱으로 간다', () => {
-    const finalCta = html.slice(html.indexOf('final-cta'), html.indexOf('id="lead"'));
+    const finalCta = html.slice(html.indexOf('final-cta'), html.indexOf('</main>'));
 
     expect(finalCta).toContain(`href="${APP}"`);
   });
 });
 
-describe('이메일 경로는 남긴다', () => {
+describe('AI 멘토 초대는 앱에서 신청한다', () => {
   const html = read('index.html');
 
-  it('리드 폼 섹션이 그대로 있다', () => {
-    expect(html).toContain('id="lead"');
-    expect(html).toContain('data-widget="lead-form"');
-  });
-
-  // 「초대받기」는 베타 대기열 신청이므로 이메일이 맞다.
-  it('초대 문구는 이메일 폼으로 남는다', () => {
-    const traction = read('src/widgets/traction.js');
-
-    expect(traction).toContain('href="#lead"');
-    expect(traction).toContain('AI 멘토 초대받기');
+  it('Home 리드폼 없이 로그인으로 직결한다', () => {
+    expect(html).not.toContain('data-widget="lead-form"');
+    expect(html).toContain('href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
   });
 });

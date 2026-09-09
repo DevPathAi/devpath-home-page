@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { test, expect } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
 import { installHostBoundRunHeaders } from './release/support/staging-control.js';
 
 const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
@@ -19,44 +20,52 @@ async function closeServer(server) {
   });
 }
 
-test.describe('Mission Spine 랜딩 스모크', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.route('**/api/stats', (route) =>
-      route.fulfill({ json: { ok: true, signups: 42, diagnoses_completed: 30, satisfaction: 4.6 } }),
-    );
-    await page.route('**/api/lead', (route) =>
-      route.fulfill({ json: { ok: true, lead_id: 'test-1', updated: false } }),
-    );
-  });
-
-  test('페이지가 실제 Outcome Preview와 canonical CTA를 노출한다', async ({ page }) => {
+test.describe('확정 홈페이지 스모크', () => {
+  test('승인된 히어로·Before/After·4단계와 CTA를 노출한다', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle(/Leva/);
-    await expect(page.locator('h1')).toContainText('다음 미션');
-    await expect(page.getByText('예시 결과', { exact: true })).toBeVisible();
-    await expect(page.getByText('에러 처리 패턴 적용', { exact: true })).toBeVisible();
+    await expect(page).toHaveTitle(/레바/);
+    await expect(page.locator('h1 .hero-line')).toHaveText([
+      '막힐 때마다 AI에게',
+      '내 상황을 처음부터',
+      '다시 설명하고 있나요?',
+    ]);
+    await expect(page.getByText('레바는 학습 이력과 직전 오류를 질문에 자동으로 붙입니다.', { exact: true })).toBeVisible();
+
+    const question = 'Q. Spring Boot에서 같은 이메일을 저장할 때 duplicate key 오류가 나는 이유는 무엇인가요?';
+    await expect(page.getByText(question, { exact: true })).toHaveCount(1);
+    await expect(page.locator('.answer.before')).toContainText('BEFORE · 맥락 없는 답변');
+    await expect(page.locator('.answer.before .context')).toHaveCount(0);
+    await expect(page.locator('.answer.after .context')).toContainText('자동 첨부된 맥락');
+    await expect(page.locator('.answer.after .context')).toContainText('학습 주제');
+    await expect(page.locator('.answer.after .context')).toContainText('로드맵 진도');
+    await expect(page.locator('.answer.after .context')).toContainText('직전 오류');
+    await expect(page.locator('.stage h3')).toHaveText(['진단', '로드맵', 'AI 멘토', '경로 보정']);
+
     const ctas = page.locator('[data-diagnostic-cta="primary"]');
     await expect(ctas).toHaveCount(4);
     await expect(ctas.first()).toHaveAttribute('href', DIAGNOSTIC_URL);
   });
 
-  test('source와 dist가 각각 올바른 stylesheet를 제공한다', async ({ page }, testInfo) => {
+  test('canonical semantic 팔레트와 실제 화면 출처 배지를 사용한다', async ({ page }) => {
     await page.goto('/');
-    const hrefs = await page.locator('link[rel="stylesheet"]').evaluateAll((links) =>
-      links.map((link) => link.getAttribute('href')),
-    );
+    const colors = await page.evaluate(() => ({
+      ink: getComputedStyle(document.body).color,
+      cta: getComputedStyle(document.querySelector('.btn.primary')).backgroundColor,
+      accent: getComputedStyle(document.querySelector('.signal'), '::before').backgroundColor,
+    }));
 
-    if (testInfo.project.name === 'production-dist') {
-      expect(hrefs.some((href) => /^\/assets\/tokens\.[0-9a-f]{8}\.css$/.test(href))).toBe(true);
-      expect(hrefs.some((href) => /^\/assets\/styles\.[0-9a-f]{8}\.css$/.test(href))).toBe(true);
-    } else {
-      expect(hrefs).toContain('/assets/tokens.css');
-      expect(hrefs).toContain('/assets/styles.css');
-    }
+    expect(colors).toEqual({
+      ink: 'rgb(26, 24, 21)',
+      cta: 'rgb(180, 83, 9)',
+      accent: 'rgb(180, 83, 9)',
+    });
+    await expect(page.locator('.shot .badge')).toHaveCount(3);
+    await expect(page.locator('.shot .badge').first()).toContainText('출처 · 레바 앱 화면');
+    await expect(page.locator('.shot .badge').first()).toContainText('캡처일 · 2026.09.05');
   });
 
-  test('CTA 클릭 직전에 canonical 경로를 journeyId로 장식한다', async ({ page }) => {
+  test('CTA 클릭 직전에 canonical 진단 경로를 journeyId로 장식한다', async ({ page }) => {
     await page.goto('/');
     const cta = page.locator('.hero [data-diagnostic-cta="primary"]');
     await cta.evaluate((link) => link.addEventListener('click', (event) => event.preventDefault()));
@@ -69,8 +78,8 @@ test.describe('Mission Spine 랜딩 스모크', () => {
     );
   });
 
-  for (const width of [320, 600, 840, 1240]) {
-    test(`${width}px에서 overflow 없이 해당 window class navigation을 쓴다`, async ({ page }) => {
+  for (const width of [320, 600, 839, 840, 1240]) {
+    test(`${width}px에서 가로 overflow 없이 맞는 navigation을 쓴다`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
 
@@ -81,19 +90,22 @@ test.describe('Mission Spine 랜딩 스모크', () => {
 
       if (width < 840) {
         await expect(page.locator('.mobile-nav__toggle')).toBeVisible();
-        await expect(page.locator('.site-nav')).toBeHidden();
+        await expect(page.locator('.nav-links')).toBeHidden();
+        await expect(page.locator('.nav-actions')).toBeHidden();
       } else {
         await expect(page.locator('.mobile-nav')).toBeHidden();
-        await expect(page.locator('.site-nav')).toBeVisible();
+        await expect(page.locator('.nav-links')).toBeVisible();
+        await expect(page.locator('.nav-actions')).toBeVisible();
       }
-      await expect(page.locator('.site-header__cta')).toBeVisible();
     });
   }
 
-  test('기존 정적 페이지도 320px에서 가로로 밀리지 않는다', async ({ page }) => {
+  test('공개 정적 페이지가 320px에서 가로로 밀리지 않는다', async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 320, height: 760 });
+    const paths = ['/', '/privacy.html', '/terms.html', '/beta.html', '/about.html', '/contact.html'];
+    if (testInfo.project.name === 'production-dist') paths.push('/updates/');
 
-    for (const path of ['/', '/privacy.html', '/terms.html', '/beta.html', '/about.html']) {
+    for (const path of paths) {
       await page.goto(path);
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -102,11 +114,11 @@ test.describe('Mission Spine 랜딩 스모크', () => {
     }
   });
 
-  test('320px에서 text-only 200% 확대 후에도 header가 가로로 밀리지 않는다', async ({ page }) => {
+  test('320px text-only 200% 확대에서도 페이지가 가로로 밀리지 않는다', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 900 });
     await page.goto('/');
 
-    const overflow = await page.evaluate(() => {
+    const reflow = await page.evaluate(() => {
       const textElements = [...document.querySelectorAll('*')]
         .filter((element) => [...element.childNodes].some(
           (node) => node.nodeType === Node.TEXT_NODE && node.textContent.trim(),
@@ -114,19 +126,24 @@ test.describe('Mission Spine 랜딩 스모크', () => {
       for (const element of textElements) {
         const style = getComputedStyle(element);
         const fontSize = Number.parseFloat(style.fontSize);
-        const lineHeight = style.lineHeight === 'normal'
-          ? Number.NaN
-          : Number.parseFloat(style.lineHeight);
+        const lineHeight = style.lineHeight === 'normal' ? Number.NaN : Number.parseFloat(style.lineHeight);
         if (Number.isFinite(fontSize)) element.style.fontSize = `${fontSize * 2}px`;
         if (Number.isFinite(lineHeight)) element.style.lineHeight = `${lineHeight * 2}px`;
       }
-      return document.documentElement.scrollWidth - document.documentElement.clientWidth;
+      const viewport = document.documentElement.clientWidth;
+      return {
+        overflow: document.documentElement.scrollWidth - viewport,
+        offenders: [...document.querySelectorAll('body *')]
+          .filter((element) => element.getBoundingClientRect().right > viewport + 1)
+          .slice(0, 8)
+          .map((element) => `${element.tagName}.${element.className}:${element.textContent.trim().slice(0, 30)}`),
+      };
     });
 
-    expect(overflow).toBe(0);
+    expect(reflow.overflow, `가로 초과 요소: ${reflow.offenders.join(', ')}`).toBe(0);
   });
 
-  test('모바일 menu가 keyboard, Escape, outside click과 focus 복귀를 지원한다', async ({ page }) => {
+  test('모바일 메뉴가 keyboard, Escape, outside click과 focus 복귀를 지원한다', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 760 });
     await page.goto('/');
     const details = page.locator('details.mobile-nav');
@@ -139,82 +156,61 @@ test.describe('Mission Spine 랜딩 스모크', () => {
     await page.keyboard.press('Enter');
     await expect(details).toHaveJSProperty('open', true);
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.getByRole('navigation', { name: '모바일 보조' }).getByText('실제 경로')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: '모바일 메뉴' }).getByText('개발 기록')).toBeVisible();
 
     await page.keyboard.press('Escape');
     await expect(details).toHaveJSProperty('open', false);
     await expect(toggle).toBeFocused();
 
     await toggle.click();
-    // Panel은 우측 280px 안에 있으므로 좌측 여백을 눌러 실제 outside pointer를 보낸다.
     await page.mouse.click(8, 180);
     await expect(details).toHaveJSProperty('open', false);
   });
 
-  test('JavaScript 없이도 결과와 모바일 보조 navigation을 쓸 수 있다', async ({ browser, baseURL }) => {
+  test('JavaScript 없이도 핵심 내용과 native 모바일 메뉴를 쓸 수 있다', async ({ browser, baseURL }) => {
     const context = await browser.newContext({ javaScriptEnabled: false, baseURL });
     const page = await context.newPage();
     await page.setViewportSize({ width: 320, height: 760 });
     await page.goto('/');
 
-    await expect(page.getByText('진단 후 받는 것', { exact: true })).toBeVisible();
+    await expect(page.getByText('누구에게 맞는가', { exact: true })).toBeVisible();
     const details = page.locator('details.mobile-nav');
     await page.locator('.mobile-nav__toggle').click();
     await expect(details).toHaveJSProperty('open', true);
-    await expect(page.getByRole('navigation', { name: '모바일 보조' }).getByText('개발 기록')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: '모바일 메뉴' }).getByText('개발 기록')).toBeVisible();
     await context.close();
   });
 
-  test('reduced-motion에서 scroll, transition, reveal motion을 제거한다', async ({ page }) => {
+  test('reduced-motion에서 smooth scroll과 긴 transition을 제거한다', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
 
     const motion = await page.evaluate(() => ({
       scroll: getComputedStyle(document.documentElement).scrollBehavior,
-      transition: getComputedStyle(document.querySelector('.btn')).transitionDuration,
-      founderOpacity: getComputedStyle(document.querySelector('.founder__beat')).opacity,
-      founderTransform: getComputedStyle(document.querySelector('.founder__beat')).transform,
+      transitionSeconds: Number.parseFloat(getComputedStyle(document.querySelector('.btn')).transitionDuration),
     }));
 
     expect(motion.scroll).toBe('auto');
-    expect(motion.transition.split(',').every((value) => value.trim() === '0s')).toBe(true);
-    expect(motion.founderOpacity).toBe('1');
-    expect(motion.founderTransform).toBe('none');
+    expect(motion.transitionSeconds).toBeLessThanOrEqual(0.001);
   });
 
-  test('리드폼 제출과 오류 상태를 보존한다', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('#lead').scrollIntoViewIfNeeded();
-    await expect(page.locator('#lf-email')).toBeVisible({ timeout: 5000 });
-
-    await page.getByRole('button', { name: 'AI 멘토 초대받기' }).click();
-    await expect(page.locator('#lf-email-err')).toContainText('이메일');
-    await expect(page.locator('#lf-email')).toHaveAttribute('aria-invalid', 'true');
-
-    await page.locator('#lf-email').fill('tester@example.com');
-    await page.locator('#lf-stage').selectOption('learning');
-    await page.locator('#lf-consent').check();
-    await page.getByRole('button', { name: 'AI 멘토 초대받기' }).click();
-    await expect(page.locator('#lf-success')).toBeVisible();
+  test('홈과 공개 지원 페이지에 자동 접근성 위반이 없다', async ({ page }) => {
+    for (const path of ['/', '/contact.html']) {
+      await page.goto(path);
+      const result = await new AxeBuilder({ page }).analyze();
+      expect(result.violations, `${path} 접근성 위반`).toEqual([]);
+    }
   });
 
-  test('검증된 traction 수치가 있을 때만 숫자 제목을 쓴다', async ({ page }) => {
+  test('FAQ와 푸터의 지원 경로가 확정 목적지로 연결된다', async ({ page }) => {
     await page.goto('/');
-    await page.locator('[data-widget="traction"]').scrollIntoViewIfNeeded();
-    await expect(page.locator('.traction__num').first()).toBeVisible({ timeout: 5000 });
-    await expect(page.locator('.traction__title')).toHaveText('숫자로 보는 지금');
-  });
-
-  test('학습 맥락 비교 탭이 keyboard roving focus를 유지한다', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('#lcs').scrollIntoViewIfNeeded();
-    const tabs = page.locator('.lcs-tab');
-    await expect(tabs.first()).toBeVisible({ timeout: 5000 });
-    await tabs.first().focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(tabs.nth(1)).toBeFocused();
-    await expect(tabs.nth(1)).toHaveAttribute('aria-selected', 'true');
-    await expect(page.locator('.lcs__compare')).toContainText('useEffect');
+    await expect(page.locator('#faq details')).toHaveCount(6);
+    await expect(page.locator('footer').getByRole('link', { name: '제품 Q&A' }))
+      .toHaveAttribute('href', 'https://app.leva.ai.kr/community');
+    await expect(page.locator('footer').getByRole('link', { name: '공지·변경 기록' }))
+      .toHaveAttribute('href', '/updates');
+    await expect(page.locator('footer').getByRole('link', { name: '문의·오류 신고' }))
+      .toHaveAttribute('href', '/contact');
   });
 
   test('약관 페이지가 열리고 사업자 정보를 담는다', async ({ page }) => {

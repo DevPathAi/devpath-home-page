@@ -73,7 +73,7 @@ export function renderNote(note, template) {
     description: note.description,
     datePublished: note.date,
     url,
-    author: { '@type': 'Organization', name: 'Leva' },
+    author: { '@type': 'Organization', name: '레바' },
   });
 
   return fill(template, {
@@ -100,6 +100,16 @@ export function renderIndex(notes, template) {
   return fill(template, { items });
 }
 
+export function renderHomepageNotes(notes) {
+  return notes.slice(0, 3).map((note) => [
+    `          <a class="record" href="/notes/${escapeHtml(note.slug)}">`,
+    `            <time datetime="${note.date}">${note.date.replaceAll('-', '.')}</time>`,
+    `            <h3>${escapeHtml(note.title)}</h3>`,
+    '            <span>읽기 →</span>',
+    '          </a>',
+  ].join('\n')).join('\n');
+}
+
 const SITE = 'https://leva.ai.kr';
 // 원고와 무관하게 항상 존재하는 페이지. 날짜를 고정값으로 둬 빌드마다
 // sitemap이 흔들리지 않게 한다(Date.now를 쓰지 않는 이유).
@@ -109,6 +119,8 @@ const STATIC_PAGES = [
   { path: '/terms', lastmod: '2026-08-12' },
   { path: '/beta', lastmod: '2026-08-11' },
   { path: '/about', lastmod: '2026-08-11' },
+  { path: '/contact', lastmod: '2026-09-05' },
+  { path: '/updates', lastmod: '2026-09-05' },
 ];
 
 export function renderSitemap(notes) {

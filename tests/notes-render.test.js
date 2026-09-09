@@ -123,11 +123,13 @@ describe('renderSitemap', () => {
       'https://leva.ai.kr/',
       'https://leva.ai.kr/about',
       'https://leva.ai.kr/beta',
+      'https://leva.ai.kr/contact',
       'https://leva.ai.kr/notes/',
       'https://leva.ai.kr/notes/newer',
       'https://leva.ai.kr/notes/older',
       'https://leva.ai.kr/privacy',
       'https://leva.ai.kr/terms',
+      'https://leva.ai.kr/updates',
     ]);
   });
 

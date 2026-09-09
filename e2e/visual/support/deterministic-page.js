@@ -150,8 +150,17 @@ export async function prepareDeterministicPage(
   const stylesheets = await page.locator('link[rel="stylesheet"]').evaluateAll((links) => (
     links.map((link) => link.getAttribute('href')).filter(Boolean)
   ));
-  expect(stylesheets.some((href) => /^\/assets\/tokens\.[0-9a-f]{8}\.css$/.test(href))).toBe(true);
-  expect(stylesheets.some((href) => /^\/assets\/styles\.[0-9a-f]{8}\.css$/.test(href))).toBe(true);
+  const localStylesheets = stylesheets.filter((href) => href.startsWith('/assets/'));
+  expect(localStylesheets.every((href) => /\.[0-9a-f]{8}\.css$/.test(href))).toBe(true);
+  if (localStylesheets.length === 0) {
+    // The approved Phase 0 homepage owns its compact composition inline. The
+    // HTML is not served with the immutable /assets cache policy, so there is
+    // no stale-asset risk; still pin the approved palette before screenshots.
+    const inlineCss = await page.locator('head > style').allTextContents();
+    expect(inlineCss.join('\n')).toContain('--ink: #12231E');
+    expect(inlineCss.join('\n')).toContain('--green: #1FA97A');
+    expect(inlineCss.join('\n')).toContain('--amber: #F5A524');
+  }
 
   return Object.freeze({
     candidate,
