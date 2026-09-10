@@ -311,10 +311,10 @@ function validateMigration(value) {
   ], 'shared_migration');
   if (
     value.repository !== 'DevPathAi/devpath-shared'
-    || value.shared_version !== '0.0.1-et11.20260822'
+    || value.shared_version !== '0.0.1-rm.20260907'
     || value.image_repository !== 'ghcr.io/devpathai/devpath-migration'
-    || value.flyway_target !== '202608221001'
-    || value.required_migration !== 'V202608221001__correct_question_bank_accuracy.sql'
+    || value.flyway_target !== '202609051004'
+    || value.required_migration !== 'V202609051004__mentor_invite_batches.sql'
     || value.rollback_policy !== 'additive-retained'
   ) {
     throw new Error('shared_migration does not match the canonical additive migration');
