@@ -88,12 +88,12 @@ function validCandidateSpec(overrides = {}) {
     shared_migration: {
       repository: 'DevPathAi/devpath-shared',
       source_sha: 'b'.repeat(40),
-      shared_version: '0.0.1-et11.20260822',
+      shared_version: '0.0.1-rm.20260907',
       shared_jar_sha256: 'f'.repeat(64),
       image_repository: 'ghcr.io/devpathai/devpath-migration',
       image_digest: digest('d'),
-      flyway_target: '202608221001',
-      required_migration: 'V202608221001__correct_question_bank_accuracy.sql',
+      flyway_target: '202609051004',
+      required_migration: 'V202609051004__mentor_invite_batches.sql',
       rollback_policy: 'additive-retained',
     },
     frontend: {
