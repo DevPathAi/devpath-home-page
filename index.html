@@ -240,6 +240,14 @@
     .answer-copy { min-height: 190px; padding: 20px; border: 1px solid var(--line); color: var(--ink-secondary); }
 
     .video-head { display: flex; margin-bottom: 34px; align-items: end; justify-content: space-between; gap: 24px; }
+    .video-embed { position: relative; aspect-ratio: 16 / 9; margin-bottom: 24px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--dp-radius-panel); background: var(--dark); }
+    .video-embed iframe, .video-facade { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; padding: 0; background: var(--dark); }
+    .video-facade { color: var(--dp-color-rail-text); cursor: pointer; }
+    .video-facade img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .video-facade .play { position: absolute; top: 50%; left: 50%; display: grid; width: 72px; height: 72px; place-items: center; border: 2px solid currentColor; border-radius: 50%; background: color-mix(in srgb, var(--dark) 82%, transparent); transform: translate(-50%, -50%); }
+    .video-facade .play::before { content: ""; width: 0; height: 0; margin-left: 5px; border-top: 11px solid transparent; border-bottom: 11px solid transparent; border-left: 18px solid currentColor; }
+    .video-facade:focus-visible { outline: var(--dp-state-focus-ring-width) solid var(--dp-state-focus-ring); outline-offset: -6px; }
+    .video-embed > .badge { position: absolute; z-index: 1; right: 12px; bottom: 12px; left: 12px; justify-content: center; pointer-events: none; }
     .filmstrip { display: grid; grid-template-columns: 1.35fr 1fr 1fr; gap: 14px; }
     .shot { position: relative; min-height: 270px; overflow: hidden; border: 1px solid var(--line); background: var(--shot-bg); }
     .shot:first-child { background: var(--dark); color: var(--dp-color-rail-text); }
@@ -474,8 +482,15 @@
     <section>
       <div class="wrap">
         <div class="video-head">
-          <div><p class="eyebrow">실제 화면 · 3단계</p><h2>실제 화면으로 보는 전체 흐름</h2><p class="lead">진단부터 경로 보정까지, 실제 화면으로 확인합니다.</p></div>
+          <div><p class="eyebrow">실녹화 영상 · 90초</p><h2>90초로 보는 전체 흐름</h2><p class="lead">진단부터 경로 보정까지, 실제 화면으로 확인합니다.</p></div>
           <a class="btn" href="#how">4단계 자세히 보기</a>
+        </div>
+        <div class="video-embed" data-widget="video-facade" data-video-id="MTSrOoTlZss">
+          <button type="button" class="video-facade" aria-label="레바 90초 데모 재생">
+            <img src="/assets/video-poster.jpg" width="1280" height="720" alt="" loading="lazy" decoding="async">
+            <span class="play" aria-hidden="true"></span>
+          </button>
+          <p class="badge">출처 · 레바 앱 실녹화 / 게시일 · 2026.09.04</p>
         </div>
         <div class="filmstrip">
           <figure class="shot"><span class="shot-label">무엇을 알고 무엇이 비었는지 확인</span><img class="product-capture" src="/assets/live-diagnostic-result.png" alt="레바 앱의 백엔드 Spring 진단 결과 화면"><figcaption class="badge">출처 · 레바 앱 화면 / 캡처일 · 2026.09.05</figcaption></figure>
