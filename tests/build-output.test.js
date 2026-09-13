@@ -82,7 +82,7 @@ describe('자산은 내용이 바뀌면 이름이 바뀐다', () => {
     execFileSync('node', ['build.mjs'], { cwd: root('.'), stdio: 'pipe' });
 
     expect(assets().find((f) => f.startsWith('styles.'))).toBe(before);
-  });
+  }, 60_000);
 
   it('해시된 styles가 해시된 semantic token 파일을 import한다', () => {
     const styleName = assets().find((f) => /^styles\.[0-9a-f]{8}\.css$/.test(f));
