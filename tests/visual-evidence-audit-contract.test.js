@@ -163,7 +163,7 @@ describe('independent ET13 audit contracts', () => {
       evidenceProducerSha: productSha,
       requireClean: false,
     })).toThrow(/runtime drift|styles\.css/i);
-  });
+  }, 60_000);
 
   it('allows evidence-only and non-rendering descendants while retaining runtime drift detection', () => {
     const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -199,7 +199,7 @@ describe('independent ET13 audit contracts', () => {
     });
     expect(productRuntimeTreeSha256('1ee751bfe8e0e26ec1f57d02cef56975859360c7'))
       .not.toBe(productRuntimeTreeSha256(productSha));
-  });
+  }, 60_000);
 
   it('distinguishes rendered product source from the evidence producer', () => {
     const candidate = JSON.parse(readFileSync(

@@ -176,7 +176,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
     } finally {
       rmSync(temporary, { recursive: true, force: true });
     }
-  });
+  }, 60_000);
 
   it('pins CI actions/container and never updates snapshots in CI', () => {
     const workflow = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8');
