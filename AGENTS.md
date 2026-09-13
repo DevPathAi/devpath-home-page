@@ -129,11 +129,11 @@ npm run test:all
 
 ## 실제 화면과 미디어 증거
 
-- 최초 Home은 `stills` mode이며 새로 캡처한 `진단 결과 · AI 멘토 · 경로 보정` 3장을 표시한다.
+- Home은 검증된 90초 소개 영상을 facade로 표시하고, `진단 결과 · AI 멘토 · 경로 보정` 3장의 still을 보조 증거로 유지한다.
 - GovTech 제출용 PNG 3종은 Home asset이 아니다. 기존 v1.3 TTS 검수 영상도 공개하지 않는다.
 - 실제 화면은 배포 후보 앱에서 캡처하고 role, route, viewport, capture time, app source/deployment SHA, original/derived hash를 manifest에 기록한다.
 - 허용 파생은 개인정보 검토 후 crop, resize, WebP encoding뿐이다. 화면의 값·문구·상태를 합성하거나 지우지 않는다.
-- `video` mode는 창업자 육성 11/11, 승인 문구·브랜드·자막·길이·hash와 immutable provider ID가 모두 검증된 뒤 별도 릴리스로 전환한다.
+- `video` mode는 `evidence/video-release.v1.json`에 고정한 provider ID, 제목, 길이, 영상·포스터 hash와 privacy facade 계약을 따른다. 사용자 재생 전에는 YouTube iframe이나 외부 요청을 만들지 않는다.
 
 ## 보안·개인정보
 
