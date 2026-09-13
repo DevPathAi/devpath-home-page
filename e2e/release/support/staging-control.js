@@ -1,4 +1,4 @@
-import { validateAnalyticsEvent } from '../../../src/analytics/contract.js';
+import { validateVersionedAnalyticsEvent } from '../../../src/analytics/contract.js';
 
 const CONTROL_SCHEMA = 'mission-spine.staging-control.v1';
 const SHA256 = /^[0-9a-f]{64}$/;
@@ -317,7 +317,7 @@ export function assertAnalyticsSequence(events, expectedEvents) {
     if (seen.has(entry.event)) throw new Error('analytics spy captured a duplicate event');
     seen.add(entry.event);
     assertNoBannedAnalyticsProperties(entry.properties);
-    if (!validateAnalyticsEvent(entry.event, entry.properties).valid) {
+    if (!validateVersionedAnalyticsEvent(entry.event, entry.properties).valid) {
       throw new Error('analytics spy payload violates the approved contract');
     }
     actualEvents.push(entry.event);

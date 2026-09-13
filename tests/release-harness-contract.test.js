@@ -1126,15 +1126,18 @@ describe('staging control contract', () => {
       session_id: 'AQIDBAUGBwgJCgsMDQ4PEA',
       journey_id: 'EREREREREREREREREREREQ',
     };
-    const entry = (event, properties) => ({
+    const entry = (event, properties, contractVersion = common.contract_version) => ({
       event,
-      properties: { ...common, ...properties },
+      properties: { ...common, contract_version: contractVersion, ...properties },
     });
     const events = [
-      entry('landing_viewed', { page_view_id: 'ISEhISEhISEhISEhISEhIQ' }),
+      entry('landing_viewed', {
+        page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+        referrer_host: 'direct',
+      }, 'mission-spine.analytics.v2'),
       entry('landing_diagnostic_cta_clicked', {
         page_view_id: 'ISEhISEhISEhISEhISEhIQ', cta_location: 'hero',
-      }),
+      }, 'mission-spine.analytics.v2'),
       entry('diagnostic_started', {
         track: 'BACKEND_SPRING', guest_id: '123e4567-e89b-42d3-a456-426614174000',
       }),

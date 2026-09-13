@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { instrumentLandingJourney } from '../src/analytics/landing.js';
+import { inboundContext, instrumentLandingJourney } from '../src/analytics/landing.js';
 
 class MemoryStorage {
   values = new Map();
@@ -43,6 +43,7 @@ describe('Landing instrumentation-only hook', () => {
 
     expect(analytics.capture).toHaveBeenNthCalledWith(1, 'landing_viewed', {
       page_view_id: expect.any(String),
+      referrer_host: 'direct',
     });
     expect(analytics.capture).toHaveBeenNthCalledWith(
       2,
@@ -51,6 +52,34 @@ describe('Landing instrumentation-only hook', () => {
     );
     expect(link.href).toMatch(/^https:\/\/app\.leva\.ai\.kr\/?\?journeyId=/);
     stop();
+  });
+
+  it('records only the referrer host when no UTM exists', () => {
+    expect(inboundContext(
+      new URL('https://leva.ai.kr/'),
+      'https://search.example.com/results?q=private',
+    )).toEqual({ referrer_host: 'search.example.com' });
+  });
+
+  it('normalizes allowlisted UTM values and omits unsafe values', () => {
+    expect(inboundContext(
+      new URL('https://leva.ai.kr/?utm_source=OKKY&utm_medium=Post&utm_campaign=Launch%20Now'),
+      '',
+    )).toEqual({
+      referrer_host: 'direct',
+      utm_source: 'okky',
+      utm_medium: 'post',
+    });
+  });
+
+  it('falls back to direct when the referrer cannot be parsed', () => {
+    expect(inboundContext(
+      new URL('https://leva.ai.kr/?utm_campaign=202609-2GI'),
+      'not a URL',
+    )).toEqual({
+      referrer_host: 'direct',
+      utm_campaign: '202609-2gi',
+    });
   });
 
   it('never awaits or depends on analytics delivery before handoff', () => {

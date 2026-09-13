@@ -44,7 +44,10 @@ test.describe('확정 홈페이지 스모크', () => {
 
     const ctas = page.locator('[data-diagnostic-cta="primary"]');
     await expect(ctas).toHaveCount(4);
-    await expect(ctas.first()).toHaveAttribute('href', DIAGNOSTIC_URL);
+    await expect(ctas.first()).toHaveAttribute(
+      'href',
+      DIAGNOSTIC_URL,
+    );
   });
 
   test('canonical semantic 팔레트와 실제 화면 출처 배지를 사용한다', async ({ page }) => {
@@ -206,7 +209,10 @@ test.describe('확정 홈페이지 스모크', () => {
     await page.goto('/');
     await expect(page.locator('#faq details')).toHaveCount(6);
     await expect(page.locator('footer').getByRole('link', { name: '제품 Q&A' }))
-      .toHaveAttribute('href', 'https://app.leva.ai.kr/community');
+      .toHaveAttribute(
+        'href',
+        'https://app.leva.ai.kr/community',
+      );
     await expect(page.locator('footer').getByRole('link', { name: '공지·변경 기록' }))
       .toHaveAttribute('href', '/updates');
     await expect(page.locator('footer').getByRole('link', { name: '문의·오류 신고' }))

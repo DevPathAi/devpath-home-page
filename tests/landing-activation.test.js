@@ -15,7 +15,7 @@ describe('확정된 홈페이지 활성화 계약', () => {
     const ctas = [...document.querySelectorAll('[data-diagnostic-cta="primary"]')];
     expect(ctas).toHaveLength(4);
     expect(ctas.map((cta) => cta.textContent.trim())).toEqual(ctas.map(() => '가입 없이 진단 시작'));
-    expect(ctas.map((cta) => cta.getAttribute('href'))).toEqual(ctas.map(() => DIAGNOSTIC_URL));
+    expect(ctas.every((cta) => cta.getAttribute('href') === DIAGNOSTIC_URL)).toBe(true);
   });
 
   it('진단 문항·로그인 시점·12주 경로·미션을 과장 없이 명시한다', () => {

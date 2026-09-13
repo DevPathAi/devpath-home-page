@@ -46,6 +46,13 @@ describe('/beta 페이지', () => {
     expect(html).toContain('로드맵 첫 주차 미션을 시작');
   });
 
+  it('최신 기준일과 수락 기반 경로 보정의 한계를 명시한다', () => {
+    expect(html).toContain('2026년 9월 13일 기준');
+    expect(html).toContain('<strong>경로가 자동으로 재편되지는 않습니다.</strong> 진행을 보고 다음 미션을 제안하고,');
+    expect(html).toContain('받아들일 때 경로가 바뀝니다.');
+    expect(html).not.toContain('신청하실 때');
+  });
+
   it.each(FORBIDDEN)('$name을(를) 담지 않는다', ({ re }) => {
     expect(re.test(html)).toBe(false);
   });

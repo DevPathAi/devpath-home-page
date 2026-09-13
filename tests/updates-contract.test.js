@@ -50,6 +50,7 @@ describe('공지·변경 기록 source 계약', () => {
     expect(source).not.toContain('1일 안에');
     expect(source).not.toContain('https://app.leva.ai.kr/mentor');
     expect(source).toContain('https://app.leva.ai.kr/login');
+    expect(source).not.toContain('utm_');
   });
 
   it('실제 발송 성공 집계만 N차 로그 문구로 표시한다', () => {
