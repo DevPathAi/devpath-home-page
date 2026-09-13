@@ -26,7 +26,7 @@ describe('/contact 문서 계약', () => {
     expect(html).toContain('maxlength="200"');
     expect(html).toContain('maxlength="5000"');
     expect(html).toContain('href="/privacy"');
-    expect(html).toContain('href="https://app.leva.ai.kr/community?');
+    expect(html).toContain('href="https://app.leva.ai.kr/community"');
     expect(html).toContain('href="/#faq"');
     expect(html).not.toMatch(/mailto:/i);
   });

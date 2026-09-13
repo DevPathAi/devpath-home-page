@@ -1105,6 +1105,23 @@ textarea {
   font: var(--dp-type-body-medium);
 }
 
+.note__cta .eyebrow {
+  font: var(--dp-type-label-medium);
+}
+
+.note__cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dp-space-md);
+  align-items: center;
+}
+
+.note__cta-actions .text-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
 .note__back {
   margin-top: var(--dp-space-xxxl);
 }

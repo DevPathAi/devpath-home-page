@@ -60,11 +60,11 @@ describe('Phase 0 승인 홈페이지 계약', () => {
   });
 
   it('Footer의 제품 Q&A와 지원 경로가 분리돼 있다', () => {
-    expect(html).toMatch(/href="https:\/\/app\.leva\.ai\.kr\/community\?[^\"]+">제품 Q&amp;A<\/a>/);
+    expect(html).toContain('href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
     expect(html).toContain('href="#faq">FAQ</a>');
     expect(html).toContain('href="/updates">공지·변경 기록</a>');
     expect(html).toContain('href="/contact">문의·오류 신고</a>');
-    expect(html).toMatch(/href="https:\/\/app\.leva\.ai\.kr\/login\?[^\"]+">AI 멘토 초대 신청<\/a>/);
+    expect(html).toContain('href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
   });
 
   it('개발용 편집 UI와 내부 용어를 공개하지 않는다', () => {

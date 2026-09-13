@@ -111,8 +111,6 @@ export function renderHomepageNotes(notes) {
 }
 
 const SITE = 'https://leva.ai.kr';
-// 원고와 무관하게 항상 존재하는 페이지. lastmod는 build.mjs가 배포 소스
-// 커밋 날짜를 한 번 계산해 주입한다. 같은 커밋은 언제 다시 빌드해도 같다.
 const STATIC_PAGES = [
   '/',
   '/privacy',
@@ -123,17 +121,26 @@ const STATIC_PAGES = [
   '/updates',
 ];
 
-export function renderSitemap(notes, { staticLastmod = '2026-08-10' } = {}) {
-  if (!DATE_RE.test(staticLastmod)) {
-    throw new Error(`sitemap staticLastmod는 YYYY-MM-DD여야 한다 — ${staticLastmod}`);
+export function renderSitemap(notes, { lastmods = {} } = {}) {
+  for (const [route, lastmod] of Object.entries(lastmods)) {
+    if (!DATE_RE.test(lastmod)) {
+      throw new Error(`sitemap ${route} lastmod는 YYYY-MM-DD여야 한다 — ${lastmod}`);
+    }
   }
   const latest = notes.length > 0 ? notes[0].date : '2026-08-10';
+  const dateFor = (route, fallback) => lastmods[route] ?? fallback;
   const entries = [
-    ...STATIC_PAGES.map((path) => ({ loc: `${SITE}${path}`, lastmod: staticLastmod })),
+    ...STATIC_PAGES.map((path) => ({
+      loc: `${SITE}${path}`,
+      lastmod: dateFor(path, '2026-08-10'),
+    })),
     // Pages는 디렉터리 인덱스를 /notes → /notes/로 308 리다이렉트한다(라이브 실측).
     // 슬래시 없는 형태를 담으면 크롤러가 홉을 한 번 더 탄다.
-    { loc: `${SITE}/notes/`, lastmod: latest },
-    ...notes.map((n) => ({ loc: `${SITE}/notes/${n.slug}`, lastmod: n.date })),
+    { loc: `${SITE}/notes/`, lastmod: dateFor('/notes/', latest) },
+    ...notes.map((n) => ({
+      loc: `${SITE}/notes/${n.slug}`,
+      lastmod: dateFor(`/notes/${n.slug}`, n.date),
+    })),
   ].sort((a, b) => a.loc.localeCompare(b.loc));
 
   const urls = entries

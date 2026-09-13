@@ -8,14 +8,14 @@ const html = readFileSync(root('index.html'), 'utf8');
 const tokensCss = readFileSync(root('assets/tokens.css'), 'utf8');
 const document = new DOMParser().parseFromString(html, 'text/html');
 const visibleCopy = document.body.textContent.replace(/\s+/g, ' ');
-const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic?';
+const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
 
 describe('확정된 홈페이지 활성화 계약', () => {
   it('네 개의 1차 진단 CTA가 같은 문구와 앱 경로를 쓴다', () => {
     const ctas = [...document.querySelectorAll('[data-diagnostic-cta="primary"]')];
     expect(ctas).toHaveLength(4);
     expect(ctas.map((cta) => cta.textContent.trim())).toEqual(ctas.map(() => '가입 없이 진단 시작'));
-    expect(ctas.every((cta) => cta.getAttribute('href').startsWith(DIAGNOSTIC_URL))).toBe(true);
+    expect(ctas.every((cta) => cta.getAttribute('href') === DIAGNOSTIC_URL)).toBe(true);
   });
 
   it('진단 문항·로그인 시점·12주 경로·미션을 과장 없이 명시한다', () => {
@@ -68,6 +68,6 @@ describe('확정된 홈페이지 활성화 계약', () => {
 
   it('Home 리드폼 없이 앱 로그인으로 AI 멘토 초대를 신청한다', () => {
     expect(document.querySelector('[data-widget="lead-form"]')).toBeNull();
-    expect(document.querySelector('#pricing a[href^="https://app.leva.ai.kr/login?"]')).not.toBeNull();
+    expect(document.querySelector('#pricing a[href="https://app.leva.ai.kr/login"]')).not.toBeNull();
   });
 });

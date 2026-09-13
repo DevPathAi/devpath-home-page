@@ -14,40 +14,51 @@
   <meta property="og:image" content="https://leva.ai.kr/assets/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://leva.ai.kr/assets/og-image.png">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": "https://leva.ai.kr/#organization",
-        "name": "Leva",
-        "alternateName": "레바",
-        "url": "https://leva.ai.kr/"
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://leva.ai.kr/#software-application",
-        "name": "레바",
-        "alternateName": "Leva",
-        "url": "https://leva.ai.kr/",
-        "description": "사수 없이 일하는 0~3년차 개발자를 위한 적응형 진단, 학습 경로, AI 멘토 웹 애플리케이션",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Web",
-        "isAccessibleForFree": true,
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "KRW"
-        },
-        "publisher": {
-          "@id": "https://leva.ai.kr/#organization"
-        }
-      }
-    ]
+    "@type": "Organization",
+    "@id": "https://leva.ai.kr/#org",
+    "name": "레바",
+    "alternateName": ["Leva"],
+    "url": "https://leva.ai.kr/",
+    "logo": "https://leva.ai.kr/assets/og-image.png",
+    "foundingDate": "2026-07-10",
+    "areaServed": "KR",
+    "description": "사수 없는 0~3년차 개발자의 첫 AI 사수, 레바. 학습 이력과 직전 오류를 질문에 자동으로 붙입니다.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "url": "https://leva.ai.kr/contact",
+      "availableLanguage": "ko"
+    }
   }
   </script>
-  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": "https://leva.ai.kr/#app",
+    "name": "레바",
+    "alternateName": ["Leva"],
+    "url": "https://app.leva.ai.kr/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "browserRequirements": "Requires JavaScript",
+    "inLanguage": "ko",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "KRW",
+      "availability": "https://schema.org/InStock",
+      "description": "베타 기간 무료. 정식 전환 시 월 9,900원 예정."
+    },
+    "publisher": { "@id": "https://leva.ai.kr/#org" },
+    "description": "사수 없는 0~3년차 개발자의 첫 AI 사수, 레바. 학습 이력과 직전 오류를 질문에 자동으로 붙입니다."
+  }
+  </script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2785578834914321" crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" media="print" onload="this.media='all'">
@@ -392,8 +403,8 @@
         <a href="#about">소개</a>
       </nav>
       <div class="nav-actions">
-        <a class="login" href="https://app.leva.ai.kr/login?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=header_login">로그인</a>
-        <a class="btn primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=header_diagnostic">가입 없이 진단 시작</a>
+        <a class="login" href="https://app.leva.ai.kr/login">로그인</a>
+        <a class="btn primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
       </div>
       <details class="mobile-nav">
         <summary class="mobile-nav__toggle"><span class="menu-open">메뉴 열기</span><span class="menu-close">메뉴 닫기</span></summary>
@@ -403,8 +414,8 @@
           <a href="#pricing">요금</a>
           <a href="#records">개발 기록</a>
           <a href="#about">소개</a>
-          <a href="https://app.leva.ai.kr/login?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=mobile_nav_login">로그인</a>
-          <a class="btn primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=mobile_nav_diagnostic">가입 없이 진단 시작</a>
+          <a href="https://app.leva.ai.kr/login">로그인</a>
+          <a class="btn primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
         </nav>
       </details>
     </div>
@@ -419,7 +430,7 @@
           <h1><span class="hero-line">막힐 때마다 AI에게</span><span class="hero-line">내 상황을 처음부터</span><span class="hero-line">다시 설명하고 있나요?</span></h1>
           <p class="lead">레바는 학습 이력과 직전 오류를 질문에 자동으로 붙입니다.</p>
           <div class="hero-actions">
-            <a class="btn primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=hero_diagnostic">가입 없이 진단 시작</a>
+            <a class="btn primary" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a>
             <a class="btn" href="#how">작동 방식 보기</a>
           </div>
           <p class="signal">게스트 진단은 바로 시작 · AI 멘토는 순차 초대</p>
@@ -539,7 +550,7 @@
             <div class="price-row"><strong>정식 전환 시</strong><strong>월 9,900원 예정</strong></div>
           </div>
           <div class="price-actions">
-            <a class="btn" href="https://app.leva.ai.kr/login?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=pricing_mentor">AI 멘토 초대 신청</a>
+            <a class="btn" href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>
             <p class="fine">앱에서 로그인하면 미승인 사용자는 초대 대기 명단에 등록되고, 승인되면 이메일로 안내됩니다.</p>
           </div>
           <p class="fine">정식 전환 시점과 가격은 변경될 수 있으며, 변경 전 별도로 안내합니다.</p>
@@ -577,7 +588,7 @@
     </section>
 
     <section class="final-cta">
-      <div class="wrap final-row"><h2>오늘 시작할 한 가지 미션을 확인하세요.</h2><a class="btn" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=final_diagnostic">가입 없이 진단 시작</a></div>
+      <div class="wrap final-row"><h2>오늘 시작할 한 가지 미션을 확인하세요.</h2><a class="btn" data-diagnostic-cta="primary" href="https://app.leva.ai.kr/diagnostic">가입 없이 진단 시작</a></div>
     </section>
   </main>
 
@@ -585,7 +596,7 @@
     <div class="wrap">
       <div class="footer-grid">
         <div><div class="footer-brand">레바</div><p class="fine">사수 없는 0~3년차 개발자의 첫 AI 사수</p></div>
-        <div class="footer-col"><strong>제품</strong><a href="#how">작동 방식</a><a href="#lcs">LCS</a><a href="#pricing">요금</a><a href="https://app.leva.ai.kr/community?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=footer_community">제품 Q&amp;A</a><a href="#faq">FAQ</a></div>
+        <div class="footer-col"><strong>제품</strong><a href="#how">작동 방식</a><a href="#lcs">LCS</a><a href="#pricing">요금</a><a href="https://app.leva.ai.kr/community">제품 Q&amp;A</a><a href="#faq">FAQ</a></div>
         <div class="footer-col"><strong>회사</strong><a href="#about">소개</a><a href="/notes/">개발 기록</a><a href="/beta">베타 안내</a><a href="/updates">공지·변경 기록</a><a href="/contact">문의·오류 신고</a></div>
         <div class="footer-col"><strong>법적</strong><a href="/terms">이용약관</a><a href="/privacy">개인정보 처리방침</a></div>
       </div>

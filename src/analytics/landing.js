@@ -1,6 +1,38 @@
 import { buildJourneyHandoffUrl, generateOpaqueJourneyId, getOrCreateJourneyId } from './journey-id.js';
 
 const APP_ORIGIN = 'https://app.leva.ai.kr';
+const SAFE_UTM_VALUE = /^[a-z0-9_.-]{1,64}$/;
+
+export function inboundContext(location, referrer) {
+  let params = new URLSearchParams();
+  try {
+    params = new URL(location.href).searchParams;
+  } catch (_) {
+    // A malformed location cannot block the page; it simply has no UTM context.
+  }
+
+  const pick = (key) => {
+    const value = (params.get(key) || '').trim().toLowerCase();
+    return SAFE_UTM_VALUE.test(value) ? value : null;
+  };
+
+  let referrerHost = 'direct';
+  try {
+    if (referrer) referrerHost = new URL(referrer).hostname || 'direct';
+  } catch (_) {
+    // Keep the explicit direct fallback instead of recording an unparsed URL.
+  }
+
+  const utmSource = pick('utm_source');
+  const utmMedium = pick('utm_medium');
+  const utmCampaign = pick('utm_campaign');
+  return {
+    referrer_host: referrerHost,
+    ...(utmSource ? { utm_source: utmSource } : {}),
+    ...(utmMedium ? { utm_medium: utmMedium } : {}),
+    ...(utmCampaign ? { utm_campaign: utmCampaign } : {}),
+  };
+}
 
 function ctaLocation(link) {
   if (link.closest('.site-header')) return 'header';
@@ -27,6 +59,8 @@ export function instrumentLandingJourney({
   analytics,
   storage,
   crypto = globalThis.crypto,
+  location = globalThis.location,
+  referrer = globalThis.document?.referrer ?? '',
 }) {
   const pageViewId = generateOpaqueJourneyId(crypto);
   let journeyId;
@@ -36,7 +70,10 @@ export function instrumentLandingJourney({
     // Crypto/storage denial must leave the existing product navigation intact.
   }
 
-  analytics.capture('landing_viewed', { page_view_id: pageViewId });
+  analytics.capture('landing_viewed', {
+    page_view_id: pageViewId,
+    ...inboundContext(location, referrer),
+  });
 
   const onClick = (event) => {
     const link = appLink(event.target);
@@ -48,11 +85,11 @@ export function instrumentLandingJourney({
         // Preserve the original href when decoration is unavailable.
       }
     }
-    const location = ctaLocation(link);
-    if (location) {
+    const locationName = ctaLocation(link);
+    if (locationName) {
       analytics.capture('landing_diagnostic_cta_clicked', {
         page_view_id: pageViewId,
-        cta_location: location,
+        cta_location: locationName,
       });
     }
   };

@@ -67,18 +67,39 @@ describe('index.html <head> 메타', () => {
     const organization = entities.find((entity) => entity['@type'] === 'Organization');
     const application = entities.find((entity) => entity['@type'] === 'SoftwareApplication');
 
+    expect(html.match(/<script type="application\/ld\+json">/g)).toHaveLength(2);
     expect(organization).toMatchObject({
-      '@id': `${SITE}/#organization`,
-      name: 'Leva',
-      alternateName: '레바',
+      '@id': `${SITE}/#org`,
+      name: '레바',
+      alternateName: ['Leva'],
       url: `${SITE}/`,
+      logo: `${SITE}/assets/og-image.png`,
+      foundingDate: '2026-07-10',
+      areaServed: 'KR',
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        url: `${SITE}/contact`,
+        availableLanguage: 'ko',
+      },
     });
     expect(application).toMatchObject({
-      '@id': `${SITE}/#software-application`,
+      '@id': `${SITE}/#app`,
       name: '레바',
+      alternateName: ['Leva'],
+      url: 'https://app.leva.ai.kr/',
       applicationCategory: 'EducationalApplication',
       operatingSystem: 'Web',
-      publisher: { '@id': `${SITE}/#organization` },
+      browserRequirements: 'Requires JavaScript',
+      inLanguage: 'ko',
+      isAccessibleForFree: true,
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'KRW',
+        availability: 'https://schema.org/InStock',
+      },
+      publisher: { '@id': `${SITE}/#org` },
     });
   });
 });

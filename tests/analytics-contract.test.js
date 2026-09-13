@@ -11,10 +11,11 @@ import {
   ANALYTICS_PRIVACY_POLICY_VERSION,
   ANALYTICS_VALUE_POLICY_VERSION,
   validateAnalyticsEvent,
+  validateVersionedAnalyticsEvent,
 } from '../src/analytics/contract.js';
 
 const common = {
-  contract_version: 'mission-spine.analytics.v1',
+  contract_version: 'mission-spine.analytics.v2',
   occurred_at: '2026-08-15T10:00:00.000Z',
   environment: 'production',
   app_version: 'abc123',
@@ -23,11 +24,12 @@ const common = {
 };
 
 const canonicalContractSha256 =
-  '486256fd212b96ea2fec0c6a95e22676b708989f94c0ca974276d6bd5f6b4908';
+  '4aa2a38968aa219ff5a05bbc3b7706ed5d590acb42f7c7c4761fb4b112e80149';
 
 const expectedSpecs = {
   landing_viewed: {
-    allowed: ['page_view_id'], required: ['page_view_id'], requiredAny: [],
+    allowed: ['page_view_id', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign'],
+    required: ['page_view_id'], requiredAny: [],
     dedupe: [['session_id', 'page_view_id']],
   },
   landing_diagnostic_cta_clicked: {
@@ -102,7 +104,13 @@ const expectedSpecs = {
 };
 
 const validEventProperties = {
-  landing_viewed: { page_view_id: 'ISEhISEhISEhISEhISEhIQ' },
+  landing_viewed: {
+    page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+    referrer_host: 'search.example.com',
+    utm_source: 'okky',
+    utm_medium: 'post',
+    utm_campaign: '202609-launch',
+  },
   landing_diagnostic_cta_clicked: {
     page_view_id: 'ISEhISEhISEhISEhISEhIQ', cta_location: 'hero',
   },
@@ -138,7 +146,7 @@ const validEventProperties = {
 describe('Mission Spine analytics contract', () => {
   it('matches the canonical versioned JSON contract', () => {
     const path = fileURLToPath(new URL(
-      '../src/analytics/mission-spine.analytics.v1.json',
+      '../src/analytics/mission-spine.analytics.v2.json',
       import.meta.url,
     ));
     const canonicalBytes = readFileSync(path);
@@ -156,7 +164,7 @@ describe('Mission Spine analytics contract', () => {
   });
 
   it('uses the approved version and exact event allowlist', () => {
-    expect(ANALYTICS_CONTRACT_VERSION).toBe('mission-spine.analytics.v1');
+    expect(ANALYTICS_CONTRACT_VERSION).toBe('mission-spine.analytics.v2');
     expect(Object.keys(ANALYTICS_EVENT_SPECS)).toEqual([
       'landing_viewed',
       'landing_diagnostic_cta_clicked',
@@ -186,6 +194,56 @@ describe('Mission Spine analytics contract', () => {
       page_view_id: 'ISEhISEhISEhISEhISEhIQ',
       cta_location: 'final',
     }).valid).toBe(true);
+  });
+
+  it('accepts bounded inbound context without making it required', () => {
+    expect(validateAnalyticsEvent('landing_viewed', {
+      ...common,
+      page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+      referrer_host: 'direct',
+    })).toEqual({ valid: true });
+    expect(validateAnalyticsEvent('landing_viewed', {
+      ...common,
+      page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+      referrer_host: 'news.example.com',
+      utm_source: 'form-2gi',
+      utm_medium: 'form',
+      utm_campaign: '202609-2gi',
+    })).toEqual({ valid: true });
+  });
+
+  it.each([
+    ['referrer_host', 'https://news.example.com/path'],
+    ['referrer_host', 'news.example.com/path'],
+    ['utm_source', 'OKKY'],
+    ['utm_medium', 'launch now'],
+    ['utm_campaign', 'x'.repeat(65)],
+  ])('rejects unsafe inbound context %s=%s', (name, value) => {
+    expect(validateAnalyticsEvent('landing_viewed', {
+      ...common,
+      page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+      [name]: value,
+    })).toMatchObject({ valid: false, code: 'invalid_property_value', property: name });
+  });
+
+  it('strictly validates the temporary v2 Landing and v1 app migration boundary', () => {
+    expect(validateVersionedAnalyticsEvent('landing_viewed', {
+      ...common,
+      page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+      referrer_host: 'direct',
+    })).toEqual({ valid: true });
+    expect(validateVersionedAnalyticsEvent('diagnostic_started', {
+      ...common,
+      contract_version: 'mission-spine.analytics.v1',
+      track: 'BACKEND_SPRING',
+      guest_id: '123e4567-e89b-42d3-a456-426614174000',
+    })).toEqual({ valid: true });
+    expect(validateVersionedAnalyticsEvent('landing_viewed', {
+      ...common,
+      contract_version: 'mission-spine.analytics.v1',
+      page_view_id: 'ISEhISEhISEhISEhISEhIQ',
+      utm_source: 'okky',
+    })).toMatchObject({ valid: false, code: 'unknown_property', property: 'utm_source' });
   });
 
   it('declares consent and timestamp semantics for every event', () => {
@@ -247,7 +305,7 @@ describe('Mission Spine analytics contract', () => {
   it('requires the exact contract version and all common properties', () => {
     expect(validateAnalyticsEvent('landing_viewed', {
       ...common,
-      contract_version: 'mission-spine.analytics.v0',
+      contract_version: 'mission-spine.analytics.v1',
       page_view_id: 'ISEhISEhISEhISEhISEhIQ',
     })).toMatchObject({ valid: false, code: 'contract_version_mismatch' });
 

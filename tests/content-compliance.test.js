@@ -32,7 +32,7 @@ describe('가격 — 사업계획서 정합', () => {
 describe('끊어진 링크', () => {
   it('문의와 제품 Q&A를 승인된 경로로 분리한다', () => {
     expect(html).toContain('<a href="/contact">문의·오류 신고</a>');
-    expect(html).toMatch(/<a href="https:\/\/app\.leva\.ai\.kr\/community\?[^\"]+">제품 Q&amp;A<\/a>/);
+    expect(html).toContain('<a href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
   });
 
   it('제거하기로 한 과거 프로젝트 링크가 없다', () => {

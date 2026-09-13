@@ -5,8 +5,8 @@ import { cp, rm, mkdir, writeFile, readdir, readFile, rename } from 'node:fs/pro
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import { collectNotes, renderNote, renderIndex, renderSitemap, renderHomepageNotes } from './scripts/notes.mjs';
+import { resolveSitemapLastmods } from './scripts/sitemap-lastmod.mjs';
 import { collectUpdates, renderUpdatesFeed, renderUpdatesPage } from './scripts/updates.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
@@ -15,19 +15,6 @@ if (!/^(?:dist|build\/[a-z0-9-]+)$/.test(outputDir)) {
   throw new Error(`허용되지 않은 BUILD_OUTPUT_DIR: ${outputDir}`);
 }
 const dist = root + outputDir;
-
-function sitemapBuildDate() {
-  const overridden = process.env.SITEMAP_BUILD_DATE?.trim();
-  const value = overridden || execFileSync(
-    'git',
-    ['show', '-s', '--format=%cs', 'HEAD'],
-    { cwd: root, encoding: 'utf8' },
-  ).trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new Error(`Sitemap build date가 YYYY-MM-DD가 아니다: ${value}`);
-  }
-  return value;
-}
 
 // 배포에 포함할 최상위 엔트리(존재하는 것만 복사).
 const DEPLOY_ENTRIES = ['index.html', 'privacy.html', 'terms.html', 'beta.html', 'about.html', 'contact.html', '404.html', 'src', 'assets', '_headers', '_redirects', '_routes.json', 'robots.txt', 'favicon.ico', 'ads.txt'];
@@ -50,6 +37,10 @@ for (const entry of DEPLOY_ENTRIES) {
 const notes = collectNotes(root + 'content/notes');
 const noteTemplate = readFileSync(root + 'templates/note.html', 'utf-8');
 const indexTemplate = readFileSync(root + 'templates/notes-index.html', 'utf-8');
+const sitemapLastmods = resolveSitemapLastmods(notes, {
+  root,
+  overrideDate: process.env.SITEMAP_BUILD_DATE?.trim() || undefined,
+});
 
 await mkdir(dist + '/notes', { recursive: true });
 for (const note of notes) {
@@ -58,7 +49,7 @@ for (const note of notes) {
 await writeFile(dist + '/notes/index.html', renderIndex(notes, indexTemplate));
 await writeFile(
   dist + '/sitemap.xml',
-  renderSitemap(notes, { staticLastmod: sitemapBuildDate() }),
+  renderSitemap(notes, { lastmods: sitemapLastmods }),
 );
 console.log(`rendered ${notes.length} notes`);
 

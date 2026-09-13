@@ -4,7 +4,6 @@ import AxeBuilder from '@axe-core/playwright';
 import { installHostBoundRunHeaders } from './release/support/staging-control.js';
 
 const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
-const LANDING_ATTRIBUTION = 'utm_source=leva.ai.kr&utm_medium=cta';
 
 async function listenOnLoopback(server) {
   await new Promise((resolve, reject) => {
@@ -47,7 +46,7 @@ test.describe('확정 홈페이지 스모크', () => {
     await expect(ctas).toHaveCount(4);
     await expect(ctas.first()).toHaveAttribute(
       'href',
-      `${DIAGNOSTIC_URL}?${LANDING_ATTRIBUTION}&utm_content=header_diagnostic`,
+      DIAGNOSTIC_URL,
     );
   });
 
@@ -78,7 +77,7 @@ test.describe('확정 홈페이지 스모크', () => {
 
     await expect(cta).toHaveAttribute(
       'href',
-      /^https:\/\/app\.leva\.ai\.kr\/diagnostic\?utm_source=leva\.ai\.kr&utm_medium=cta&utm_content=hero_diagnostic&journeyId=[A-Za-z0-9_-]{22}$/,
+      /^https:\/\/app\.leva\.ai\.kr\/diagnostic\?journeyId=[A-Za-z0-9_-]{22}$/,
     );
   });
 
@@ -212,7 +211,7 @@ test.describe('확정 홈페이지 스모크', () => {
     await expect(page.locator('footer').getByRole('link', { name: '제품 Q&A' }))
       .toHaveAttribute(
         'href',
-        `https://app.leva.ai.kr/community?${LANDING_ATTRIBUTION}&utm_content=footer_community`,
+        'https://app.leva.ai.kr/community',
       );
     await expect(page.locator('footer').getByRole('link', { name: '공지·변경 기록' }))
       .toHaveAttribute('href', '/updates');

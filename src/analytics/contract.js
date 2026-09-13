@@ -1,4 +1,4 @@
-export const ANALYTICS_CONTRACT_VERSION = 'mission-spine.analytics.v1';
+export const ANALYTICS_CONTRACT_VERSION = 'mission-spine.analytics.v2';
 export const ANALYTICS_PRIVACY_POLICY_VERSION =
   'mission-spine.analytics-privacy.v1';
 export const ANALYTICS_VALUE_POLICY_VERSION =
@@ -27,7 +27,7 @@ const eventSpec = (allowed, required, dedupe, requiredAny = []) => Object.freeze
 // This insertion order is part of the cross-repository replay contract.
 export const ANALYTICS_EVENT_SPECS = Object.freeze({
   landing_viewed: eventSpec(
-    ['page_view_id'],
+    ['page_view_id', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign'],
     ['page_view_id'],
     [['session_id', 'page_view_id']],
   ),
@@ -145,6 +145,13 @@ export const ANALYTICS_BANNED_PROPERTIES = Object.freeze([
 ]);
 
 const BANNED_PROPERTIES = new Set(ANALYTICS_BANNED_PROPERTIES);
+const LEGACY_ANALYTICS_CONTRACT_VERSION = 'mission-spine.analytics.v1';
+const V2_LANDING_PROPERTIES = new Set([
+  'referrer_host',
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+]);
 
 const OPAQUE_ID_PROPERTIES = new Set([
   'session_id',
@@ -174,6 +181,8 @@ const CTA_LOCATIONS = new Set(['header', 'hero', 'mini_diagnostic', 'pricing', '
 const DIAGNOSED_LEVELS = new Set(['JUNIOR', 'MID', 'SENIOR']);
 const ISO_UTC_MILLIS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const SAFE_UTM_VALUE = /^[a-z0-9_.-]{1,64}$/;
+const REFERRER_HOST = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
 const invalid = (code, property) => ({
   valid: false,
@@ -246,6 +255,14 @@ function validateKnownValue(name, value) {
   if (name === 'cta_location' && !CTA_LOCATIONS.has(value)) {
     return invalid('invalid_property_value', name);
   }
+  if (['utm_source', 'utm_medium', 'utm_campaign'].includes(name)
+      && (typeof value !== 'string' || !SAFE_UTM_VALUE.test(value))) {
+    return invalid('invalid_property_value', name);
+  }
+  if (name === 'referrer_host'
+      && (typeof value !== 'string' || !REFERRER_HOST.test(value))) {
+    return invalid('invalid_property_value', name);
+  }
   if (name === 'diagnosed_level' && !DIAGNOSED_LEVELS.has(value)) {
     return invalid('invalid_property_value', name);
   }
@@ -300,6 +317,28 @@ export function validateAnalyticsEvent(event, properties) {
     return invalid('contract_version_mismatch', 'contract_version');
   }
   return { valid: true };
+}
+
+// The Home can deploy before the app image. During that bounded migration the
+// Landing emits v2 while downstream app events still carry v1. Each payload is
+// validated against its own version; v1 never gains the new inbound fields.
+export function validateVersionedAnalyticsEvent(event, properties) {
+  if (!properties || typeof properties !== 'object' || Array.isArray(properties)) {
+    return invalid('invalid_properties');
+  }
+  if (properties.contract_version === ANALYTICS_CONTRACT_VERSION) {
+    return validateAnalyticsEvent(event, properties);
+  }
+  if (properties.contract_version !== LEGACY_ANALYTICS_CONTRACT_VERSION) {
+    return invalid('contract_version_mismatch', 'contract_version');
+  }
+  for (const name of V2_LANDING_PROPERTIES) {
+    if (hasProperty(properties, name)) return invalid('unknown_property', name);
+  }
+  return validateAnalyticsEvent(event, {
+    ...properties,
+    contract_version: ANALYTICS_CONTRACT_VERSION,
+  });
 }
 
 export function analyticsDeduplicationKey(event, properties) {
