@@ -2,6 +2,7 @@ import { buildJourneyHandoffUrl, generateOpaqueJourneyId, getOrCreateJourneyId }
 
 const APP_ORIGIN = 'https://app.leva.ai.kr';
 const SAFE_UTM_VALUE = /^[a-z0-9_.-]{1,64}$/;
+const INBOUND_UTM_KEYS = Object.freeze(['utm_source', 'utm_medium', 'utm_campaign']);
 
 export function inboundContext(location, referrer) {
   let params = new URLSearchParams();
@@ -23,15 +24,12 @@ export function inboundContext(location, referrer) {
     // Keep the explicit direct fallback instead of recording an unparsed URL.
   }
 
-  const utmSource = pick('utm_source');
-  const utmMedium = pick('utm_medium');
-  const utmCampaign = pick('utm_campaign');
-  return {
-    referrer_host: referrerHost,
-    ...(utmSource ? { utm_source: utmSource } : {}),
-    ...(utmMedium ? { utm_medium: utmMedium } : {}),
-    ...(utmCampaign ? { utm_campaign: utmCampaign } : {}),
-  };
+  const context = { referrer_host: referrerHost };
+  for (const key of INBOUND_UTM_KEYS) {
+    const value = pick(key);
+    if (value) context[key] = value;
+  }
+  return context;
 }
 
 function ctaLocation(link) {
