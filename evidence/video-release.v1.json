@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "mode": "video",
+  "reviewedOn": "2026-09-13",
+  "approvalSource": "User-directed Site A activation on 2026-09-13",
+  "provider": {
+    "name": "YouTube",
+    "videoId": "MTSrOoTlZss",
+    "watchUrl": "https://www.youtube.com/watch?v=MTSrOoTlZss",
+    "embedUrl": "https://www.youtube-nocookie.com/embed/MTSrOoTlZss?autoplay=1&rel=0",
+    "availability": "unlisted",
+    "publishedOn": "2026-09-04"
+  },
+  "verifiedContent": {
+    "title": "레바(Leva) 90초 소개 — 사수 없는 0~3년차 개발자의 첫 AI 사수",
+    "durationSeconds": 90.046984,
+    "dimensions": {
+      "width": 1280,
+      "height": 720
+    },
+    "brand": "Leva",
+    "captions": "Burned-in Korean captions reviewed from the retrieved rendition",
+    "retrievedRenditionSha256": "6baee6e3c02507942cfd49a2b2932015b448ee0d2f42ee6371d3871cd9bf18fd"
+  },
+  "poster": {
+    "path": "assets/video-poster.jpg",
+    "sourceTimestampSeconds": 48,
+    "width": 1280,
+    "height": 720,
+    "sha256": "19e381d5262035bee953af0809cd1b6cb2c16a894c33f3c1490b2c65fe1222f1"
+  },
+  "privacy": {
+    "preInteractionThirdPartyRequests": 0,
+    "facadeRequired": true
+  }
+}

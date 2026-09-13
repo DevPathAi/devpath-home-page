@@ -128,3 +128,11 @@ describe('수집 항목의 필수·선택이 실제와 맞는다', () => {
     expect(nextItem).not.toContain('출생연도');
   });
 });
+
+describe('외부 미디어 재생 고지', () => {
+  it('YouTube 소개 영상의 재생 시점 개인정보 처리방침 적용을 알린다', () => {
+    expect(text(html)).toContain(
+      '홈페이지의 소개 영상은 YouTube(Google LLC)로 재생되며, 재생 시 YouTube의 개인정보 처리방침이 적용됩니다.',
+    );
+  });
+});

@@ -21,6 +21,7 @@ const WIDGET_LOADERS = {
   'traction': () => import('./widgets/traction.js'),
   'scrollytelling': () => import('./widgets/scrollytelling.js'),
   'lead-form': () => import('./widgets/lead-form.js'),
+  'video-facade': () => import('./widgets/video-facade.js'),
 };
 
 async function hydrate(el) {

@@ -28,10 +28,15 @@ describe('Phase 0 승인 홈페이지 계약', () => {
     expect(founderSection).toContain('href="/about"');
   });
 
-  it('영상이 없는 동안 시간 약속 대신 실제 화면 흐름으로 소개한다', () => {
-    expect(html).toContain('실제 화면으로 보는 전체 흐름');
-    expect(html).not.toContain('90초로 보는 전체 흐름');
+  it('검증된 90초 영상을 자체 호스팅 포스터 뒤에서만 준비한다', () => {
+    expect(html).toContain('실녹화 영상 · 90초');
+    expect(html).toContain('90초로 보는 전체 흐름');
+    expect(html).toContain('data-video-id="MTSrOoTlZss"');
+    expect(html).toContain('src="/assets/video-poster.jpg"');
+    expect(html).toContain('width="1280" height="720"');
+    expect(html).toContain('게시일 · 2026.09.04');
     expect(html).not.toMatch(/<(?:iframe|video)\b/i);
+    expect(html).not.toMatch(/(?:youtube|ytimg)\.com/i);
   });
 
   it('같은 질문을 한 번만 보여 주고 After에만 자동 맥락을 둔다', () => {
