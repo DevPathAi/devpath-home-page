@@ -295,10 +295,6 @@
     .record h3 { margin: 0; }
     .record span { color: var(--green-text); font-weight: 900; }
 
-    .founder-grid { display: grid; grid-template-columns: minmax(240px, .7fr) minmax(0, 1.3fr); gap: 64px; align-items: center; }
-    .founder-profile { padding: 34px 0; border-block: 2px solid var(--ink); }
-    .founder-profile strong { display: block; font-size: 26px; line-height: 1.3; }
-    .founder-profile .fine { max-width: 280px; margin: 14px 0 0; }
     blockquote { margin: 0 0 28px; font-size: clamp(28px, 3vw, 44px); font-weight: 850; line-height: 1.35; letter-spacing: -.035em; }
     .text-link { display: inline-flex; min-height: 44px; align-items: center; }
 
@@ -333,11 +329,10 @@
       .mobile-nav { display: block; flex-basis: 100%; }
       .mobile-nav summary { position: absolute; top: 14px; right: 0; display: flex; }
       section { padding: 76px 0; }
-      .hero-grid, .control-grid, .pricing-grid, .founder-grid { grid-template-columns: 1fr; }
+      .hero-grid, .control-grid, .pricing-grid { grid-template-columns: 1fr; }
       .hero-actions { margin-bottom: 40px; }
       .filmstrip { grid-template-columns: 1fr; }
       .stage-grid, .roadmap-grid { grid-template-columns: 1fr 1fr; }
-      .founder-grid { gap: 30px; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 599px) {
@@ -562,8 +557,7 @@
     </section>
 
     <section id="about">
-      <div class="wrap founder-grid">
-        <aside class="founder-profile" aria-label="만드는 사람의 배경"><p class="eyebrow">창업자 배경</p><strong>12년차 백엔드 개발자</strong><p class="fine">2년제에서 시작해 학원과 독학을 거쳐 현업에서 제품을 만들어 왔습니다.</p></aside>
+      <div class="wrap founder__inner">
         <div><p class="eyebrow">만드는 사람</p><blockquote>“제가 겪은 막막함을 다음 사람은 덜 겪게 하는 것이 이걸 만드는 이유입니다.”</blockquote><p class="lead">배우는 사람이 매번 맥락을 처음부터 설명하지 않아도 되도록, 레바를 혼자 만들고 운영하고 있습니다.</p><a class="text-link" href="/about">만드는 사람 이야기 →</a></div>
       </div>
     </section>
