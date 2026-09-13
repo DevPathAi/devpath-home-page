@@ -68,6 +68,29 @@ test.describe('확정 홈페이지 스모크', () => {
     await expect(page.locator('.shot .badge').first()).toContainText('캡처일 · 2026.09.05');
   });
 
+  test('90초 영상은 클릭 전 외부 요청 없이 facade로 시작한다', async ({ page }) => {
+    const thirdPartyRequests = [];
+    page.on('request', (request) => {
+      if (/youtube|ytimg/i.test(new URL(request.url()).hostname)) {
+        thirdPartyRequests.push(request.url());
+      }
+    });
+
+    await page.goto('/');
+    const embed = page.locator('[data-video-id="MTSrOoTlZss"]');
+    await embed.scrollIntoViewIfNeeded();
+    await expect(embed).toHaveAttribute('data-hydrated', 'true');
+    await expect(embed.locator('iframe')).toHaveCount(0);
+    await expect(embed.locator('img')).toHaveAttribute('src', /^\/assets\/video-poster(?:\.[a-f0-9]{8})?\.jpg$/);
+    expect(thirdPartyRequests).toEqual([]);
+
+    await embed.locator('.video-facade').click();
+    await expect(embed.locator('iframe')).toHaveAttribute(
+      'src',
+      'https://www.youtube-nocookie.com/embed/MTSrOoTlZss?autoplay=1&rel=0',
+    );
+  });
+
   test('CTA 클릭 직전에 canonical 진단 경로를 journeyId로 장식한다', async ({ page }) => {
     await page.goto('/');
     const cta = page.locator('.hero [data-diagnostic-cta="primary"]');

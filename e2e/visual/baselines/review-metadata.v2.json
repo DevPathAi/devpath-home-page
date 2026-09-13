@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "vitest-build-timeout-20260913",
+  "review_id": "video-activation-20260913",
   "reviewer": "codex",
-  "reason": "Confirmed the test-only timeout update changes no built homepage bytes and preserves the approved landing layout.",
-  "reviewed_at": "2026-09-13T07:11:01.559Z",
-  "rendered_product_sha": "836768b3c5527a2c3e7baf21570473d90b3e0791",
-  "rendered_product_tree_sha256": "2c6add6678c54e030e746fb0b83edd7ff7c4cc72eb8b91d0f237a757e186ad11",
-  "candidate_spec_sha256": "73370d34eff553f8fd4386acfd86e802934015081ec1445fda72ae5a18eb8c61",
+  "reason": "Reviewed the self-hosted video poster and facade at desktop and compact widths; layout, copy, focus, and overflow match the approved Home.",
+  "reviewed_at": "2026-09-13T08:18:04.639Z",
+  "rendered_product_sha": "a734bf8dccccf72a25aeaa01924e2d66595fc677",
+  "rendered_product_tree_sha256": "a1bdfcd24728f6c5f4bc2a27a224400e49220041388bfd2441540810ec58c6c1",
+  "candidate_spec_sha256": "ac032b1673b7d5ecdbcf67489a24d49bb7ca65a969815f7bce76b8223f52fed6",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "c66f468e1c81dac79bba74c3f1e417665a8b5bf566f12d1d60e3c7469d08a281"
+      "sha256": "08d341da33a74bbfc4043441f34ea48c1c5f4be3ab629b0c1b7144677b21c658"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "3abbb553c2ccf9775040ba6720c9ddfc03aed15718c30531c4296259741e3a50"
+      "sha256": "68293bd0c1281602916e86da50e770f61e9e794f7daa98a2fa75c65b6aa678d2"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "52486aa244a05710a5885505b5cef47bbcb54f860f683b50dcc387ef75198bcb"
+      "sha256": "9c911cc7d459eb6ef4d909ce8c6a175f04118d36d0616b2c804792e969e56f86"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "b5aa0e4b8bad29e018cc2cdab59b12621a3a469b46ec6436c3fc79dbf3ae7188"
+      "sha256": "61a66dc4289e662ede63f7da9de78fa301f1645c44fa5c8a9c922e194366b975"
     }
   ]
 }
