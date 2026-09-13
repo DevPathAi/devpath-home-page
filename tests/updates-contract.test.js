@@ -49,7 +49,7 @@ describe('공지·변경 기록 source 계약', () => {
     const source = readFileSync(root('content/updates/2026-09-05-mentor-invitations.md'), 'utf8');
     expect(source).not.toContain('1일 안에');
     expect(source).not.toContain('https://app.leva.ai.kr/mentor');
-    expect(source).toContain('https://app.leva.ai.kr/login');
+    expect(source).toContain('https://app.leva.ai.kr/login?utm_source=leva.ai.kr&utm_medium=cta&utm_content=updates_mentor_login');
   });
 
   it('실제 발송 성공 집계만 N차 로그 문구로 표시한다', () => {

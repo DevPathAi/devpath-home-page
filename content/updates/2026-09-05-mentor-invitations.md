@@ -7,7 +7,7 @@ bannerEnabled: true
 startsAt: 2026-09-05T00:00:00+09:00
 endsAt: 2026-10-05T23:59:59+09:00
 ctaLabel: AI 멘토 초대 신청
-ctaHref: https://app.leva.ai.kr/login
+ctaHref: https://app.leva.ai.kr/login?utm_source=leva.ai.kr&utm_medium=cta&utm_content=updates_mentor_login
 ---
 AI 멘토는 신청 순서대로 승인합니다. 승인 상태는 로그인 후 확인할 수 있습니다.
 

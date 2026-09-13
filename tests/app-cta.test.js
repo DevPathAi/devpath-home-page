@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = (p) => fileURLToPath(new URL(`../${p}`, import.meta.url));
 const read = (p) => readFileSync(root(p), 'utf-8');
 
-const APP = 'https://app.leva.ai.kr/diagnostic';
+const APP = 'https://app.leva.ai.kr/diagnostic?';
 
 // 게스트 진단은 앱에서 이미 동작한다(로그인 없이 앱을 열면 진단 화면이 뜬다).
 // 그런데 랜딩의 모든 CTA가 이메일 폼으로 향해, 지금 써볼 수 있는 제품을
@@ -21,25 +21,25 @@ describe('진단 CTA는 앱으로 보낸다', () => {
   it('히어로 1차 CTA가 앱으로 간다', () => {
     const hero = html.slice(html.indexOf('class="hero-actions"'), html.indexOf('class="hero-proof"'));
 
-    expect(hero).toContain(`href="${APP}"`);
+    expect(hero).toContain(`href="${APP}`);
   });
 
   it('헤더 CTA가 앱으로 간다', () => {
     const header = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
 
-    expect(header).toContain(`href="${APP}"`);
+    expect(header).toContain(`href="${APP}`);
   });
 
   it('요금의 AI 멘토 초대 CTA는 앱 로그인으로 간다', () => {
     const pricing = html.slice(html.indexOf('id="pricing"'), html.indexOf('id="faq"'));
 
-    expect(pricing).toContain('href="https://app.leva.ai.kr/login"');
+    expect(pricing).toContain('href="https://app.leva.ai.kr/login?');
   });
 
   it('최종 진단 CTA가 앱으로 간다', () => {
     const finalCta = html.slice(html.indexOf('final-cta'), html.indexOf('</main>'));
 
-    expect(finalCta).toContain(`href="${APP}"`);
+    expect(finalCta).toContain(`href="${APP}`);
   });
 });
 
@@ -48,6 +48,6 @@ describe('AI 멘토 초대는 앱에서 신청한다', () => {
 
   it('Home 리드폼 없이 로그인으로 직결한다', () => {
     expect(html).not.toContain('data-widget="lead-form"');
-    expect(html).toContain('href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
+    expect(html).toMatch(/href="https:\/\/app\.leva\.ai\.kr\/login\?[^\"]+">AI 멘토 초대 신청<\/a>/);
   });
 });

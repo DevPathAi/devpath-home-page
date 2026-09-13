@@ -31,11 +31,11 @@ describe('/beta 페이지', () => {
 
   it('Home 리드폼 없이 앱 로그인에서 초대를 신청한다', () => {
     expect(html).not.toContain('data-widget="lead-form"');
-    expect(html).toContain('href="https://app.leva.ai.kr/login"');
+    expect(html).toContain('href="https://app.leva.ai.kr/login?');
   });
 
   it('공개 진단과 AI 멘토 초대 경로를 명확히 구분한다', () => {
-    expect(html).toContain('href="https://app.leva.ai.kr/diagnostic"');
+    expect(html).toContain('href="https://app.leva.ai.kr/diagnostic?');
     expect(html).toContain('AI 멘토 베타 초대받기');
     expect(html).toContain('초대 대기 명단에 등록');
     expect(html).not.toContain('진단 초대');
@@ -44,6 +44,11 @@ describe('/beta 페이지', () => {
   it('초대 처리 기준과 대기 중 가능한 행동을 알린다', () => {
     expect(html).toContain('승인 상태는 로그인 후 확인할 수 있습니다.');
     expect(html).toContain('로드맵 첫 주차 미션을 시작');
+  });
+
+  it('최신 기준일과 수락 기반 경로 보정의 한계를 명시한다', () => {
+    expect(html).toContain('2026년 9월 13일 기준');
+    expect(html).toContain('경로는 제안을 받아들일 때 바뀝니다. 자동 재편은 아직 없습니다.');
   });
 
   it.each(FORBIDDEN)('$name을(를) 담지 않는다', ({ re }) => {

@@ -4,6 +4,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { installHostBoundRunHeaders } from './release/support/staging-control.js';
 
 const DIAGNOSTIC_URL = 'https://app.leva.ai.kr/diagnostic';
+const LANDING_ATTRIBUTION = 'utm_source=leva.ai.kr&utm_medium=cta';
 
 async function listenOnLoopback(server) {
   await new Promise((resolve, reject) => {
@@ -44,7 +45,10 @@ test.describe('확정 홈페이지 스모크', () => {
 
     const ctas = page.locator('[data-diagnostic-cta="primary"]');
     await expect(ctas).toHaveCount(4);
-    await expect(ctas.first()).toHaveAttribute('href', DIAGNOSTIC_URL);
+    await expect(ctas.first()).toHaveAttribute(
+      'href',
+      `${DIAGNOSTIC_URL}?${LANDING_ATTRIBUTION}&utm_content=header_diagnostic`,
+    );
   });
 
   test('canonical semantic 팔레트와 실제 화면 출처 배지를 사용한다', async ({ page }) => {
@@ -74,7 +78,7 @@ test.describe('확정 홈페이지 스모크', () => {
 
     await expect(cta).toHaveAttribute(
       'href',
-      /^https:\/\/app\.leva\.ai\.kr\/diagnostic\?journeyId=[A-Za-z0-9_-]{22}$/,
+      /^https:\/\/app\.leva\.ai\.kr\/diagnostic\?utm_source=leva\.ai\.kr&utm_medium=cta&utm_content=hero_diagnostic&journeyId=[A-Za-z0-9_-]{22}$/,
     );
   });
 
@@ -206,7 +210,10 @@ test.describe('확정 홈페이지 스모크', () => {
     await page.goto('/');
     await expect(page.locator('#faq details')).toHaveCount(6);
     await expect(page.locator('footer').getByRole('link', { name: '제품 Q&A' }))
-      .toHaveAttribute('href', 'https://app.leva.ai.kr/community');
+      .toHaveAttribute(
+        'href',
+        `https://app.leva.ai.kr/community?${LANDING_ATTRIBUTION}&utm_content=footer_community`,
+      );
     await expect(page.locator('footer').getByRole('link', { name: '공지·변경 기록' }))
       .toHaveAttribute('href', '/updates');
     await expect(page.locator('footer').getByRole('link', { name: '문의·오류 신고' }))

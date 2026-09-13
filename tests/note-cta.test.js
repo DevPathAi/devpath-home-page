@@ -21,8 +21,9 @@ const NOTE = {
 describe('개발 기록 CTA', () => {
   const html = renderNote(NOTE, template);
 
-  it('AI 멘토 신청을 앱 로그인으로 보낸다', () => {
-    expect(html).toContain('href="https://app.leva.ai.kr/login"');
+  it('가입 없는 진단을 앱으로 보낸다', () => {
+    expect(html).toContain('href="https://app.leva.ai.kr/diagnostic?utm_source=leva.ai.kr&amp;utm_medium=cta&amp;utm_content=note_end_diagnostic"');
+    expect(html).toContain('가입 없이 진단 시작');
   });
 
   // 본문을 다 읽은 자리가 전환 의도가 가장 높다. 목록 링크보다 먼저 와야 한다.
@@ -31,11 +32,12 @@ describe('개발 기록 CTA', () => {
     expect(html.indexOf('note__cta')).toBeLessThan(html.indexOf('note__back'));
   });
 
-  it('멘토 신청 버튼이 진단을 약속하지 않는다', () => {
-    const anchor = html.match(/<a[^>]*href="https:\/\/app\.leva\.ai\.kr\/login"[^>]*>([^<]*)<\/a>/);
+  it('로그인을 요구하지 않는다', () => {
+    const anchor = html.match(/<a[^>]*href="https:\/\/app\.leva\.ai\.kr\/diagnostic\?[^\"]+"[^>]*>([^<]*)<\/a>/);
 
     expect(anchor).not.toBeNull();
-    expect(anchor[1]).not.toContain('진단');
+    expect(anchor[1]).toContain('가입 없이 진단 시작');
+    expect(html).not.toContain('https://app.leva.ai.kr/login');
   });
 
   it('목록으로 돌아가는 길은 그대로 남는다', () => {
@@ -54,7 +56,7 @@ describe('원고 전체 반영', () => {
 
   it('모든 글에 CTA가 실린다', () => {
     const missing = notes
-      .filter((n) => !renderNote(n, template).includes('href="https://app.leva.ai.kr/login"'))
+      .filter((n) => !renderNote(n, template).includes('utm_content=note_end_diagnostic'))
       .map((n) => n.slug);
 
     expect(missing).toEqual([]);

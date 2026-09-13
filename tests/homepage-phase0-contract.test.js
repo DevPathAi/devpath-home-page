@@ -18,6 +18,18 @@ describe('Phase 0 승인 홈페이지 계약', () => {
     expect(html).toContain('진행을 확인하고 다음 미션을 제안합니다. 받아들이면 경로가 바뀝니다.');
   });
 
+  it('창업자 섹션은 공개 준비 중인 사진·이름 플레이스홀더를 노출하지 않는다', () => {
+    expect(html).not.toMatch(/창업자 (?:사진|이름) 플레이스홀더|실제 (?:사진|자료)로 교체 예정/);
+    expect(html).toContain('12년차 백엔드 개발자');
+    expect(html).toContain('href="/about"');
+  });
+
+  it('영상이 없는 동안 시간 약속 대신 실제 화면 흐름으로 소개한다', () => {
+    expect(html).toContain('실제 화면으로 보는 전체 흐름');
+    expect(html).not.toContain('90초로 보는 전체 흐름');
+    expect(html).not.toMatch(/<(?:iframe|video)\b/i);
+  });
+
   it('같은 질문을 한 번만 보여 주고 After에만 자동 맥락을 둔다', () => {
     const question = 'Spring Boot에서 같은 이메일을 저장할 때 duplicate key 오류가 나는 이유는 무엇인가요?';
     expect(html.split(question)).toHaveLength(2);
@@ -44,11 +56,11 @@ describe('Phase 0 승인 홈페이지 계약', () => {
   });
 
   it('Footer의 제품 Q&A와 지원 경로가 분리돼 있다', () => {
-    expect(html).toContain('href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
+    expect(html).toMatch(/href="https:\/\/app\.leva\.ai\.kr\/community\?[^\"]+">제품 Q&amp;A<\/a>/);
     expect(html).toContain('href="#faq">FAQ</a>');
     expect(html).toContain('href="/updates">공지·변경 기록</a>');
     expect(html).toContain('href="/contact">문의·오류 신고</a>');
-    expect(html).toContain('href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
+    expect(html).toMatch(/href="https:\/\/app\.leva\.ai\.kr\/login\?[^\"]+">AI 멘토 초대 신청<\/a>/);
   });
 
   it('개발용 편집 UI와 내부 용어를 공개하지 않는다', () => {

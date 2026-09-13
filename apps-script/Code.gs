@@ -169,7 +169,7 @@ function applicantMailBody_(lead, admin) {
   return [
     'AI 멘토 베타 초대 대기자 등록이 접수됐습니다.',
     '',
-    '게스트 진단은 지금 바로 이용할 수 있습니다: https://app.leva.ai.kr/diagnostic',
+    '게스트 진단은 지금 바로 이용할 수 있습니다: https://app.leva.ai.kr/diagnostic?utm_source=leva.ai.kr&utm_medium=cta&utm_content=waitlist_email_diagnostic',
     'AI 멘토는 남겨주신 내용을 확인한 뒤 순차 초대하며, 일정을 이메일로 안내해 드립니다.',
     '베타 기간에는 순차적으로 초대를 보내고 있어 며칠 걸릴 수 있습니다.',
     '',

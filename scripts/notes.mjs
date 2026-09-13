@@ -111,22 +111,25 @@ export function renderHomepageNotes(notes) {
 }
 
 const SITE = 'https://leva.ai.kr';
-// 원고와 무관하게 항상 존재하는 페이지. 날짜를 고정값으로 둬 빌드마다
-// sitemap이 흔들리지 않게 한다(Date.now를 쓰지 않는 이유).
+// 원고와 무관하게 항상 존재하는 페이지. lastmod는 build.mjs가 배포 소스
+// 커밋 날짜를 한 번 계산해 주입한다. 같은 커밋은 언제 다시 빌드해도 같다.
 const STATIC_PAGES = [
-  { path: '/', lastmod: '2026-08-10' },
-  { path: '/privacy', lastmod: '2026-08-12' },
-  { path: '/terms', lastmod: '2026-08-12' },
-  { path: '/beta', lastmod: '2026-08-11' },
-  { path: '/about', lastmod: '2026-08-11' },
-  { path: '/contact', lastmod: '2026-09-05' },
-  { path: '/updates', lastmod: '2026-09-05' },
+  '/',
+  '/privacy',
+  '/terms',
+  '/beta',
+  '/about',
+  '/contact',
+  '/updates',
 ];
 
-export function renderSitemap(notes) {
+export function renderSitemap(notes, { staticLastmod = '2026-08-10' } = {}) {
+  if (!DATE_RE.test(staticLastmod)) {
+    throw new Error(`sitemap staticLastmod는 YYYY-MM-DD여야 한다 — ${staticLastmod}`);
+  }
   const latest = notes.length > 0 ? notes[0].date : '2026-08-10';
   const entries = [
-    ...STATIC_PAGES.map((p) => ({ loc: `${SITE}${p.path}`, lastmod: p.lastmod })),
+    ...STATIC_PAGES.map((path) => ({ loc: `${SITE}${path}`, lastmod: staticLastmod })),
     // Pages는 디렉터리 인덱스를 /notes → /notes/로 308 리다이렉트한다(라이브 실측).
     // 슬래시 없는 형태를 담으면 크롤러가 홉을 한 번 더 탄다.
     { loc: `${SITE}/notes/`, lastmod: latest },

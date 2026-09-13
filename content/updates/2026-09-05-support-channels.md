@@ -5,6 +5,6 @@ date: 2026-09-05
 type: change
 bannerEnabled: false
 ---
-제품 사용법과 학습 질문은 [앱 커뮤니티](https://app.leva.ai.kr/community)에서 나눕니다.
+제품 사용법과 학습 질문은 [앱 커뮤니티](https://app.leva.ai.kr/community?utm_source=leva.ai.kr&utm_medium=cta&utm_content=updates_support_community)에서 나눕니다.
 
 개인 확인이 필요하거나 공개하기 어려운 문의와 오류 신고는 [문의·오류 신고](/contact)로 보내 주세요. 자주 묻는 내용은 [FAQ](/#faq)에서 먼저 확인할 수 있습니다.
