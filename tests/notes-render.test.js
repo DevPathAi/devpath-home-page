@@ -145,4 +145,31 @@ describe('renderSitemap', () => {
   it('/notes/의 lastmod가 가장 최근 글 날짜다', () => {
     expect(xml).toMatch(/<loc>https:\/\/leva\.ai\.kr\/notes\/<\/loc>\s*<lastmod>2026-08-10<\/lastmod>/);
   });
+
+  it('페이지별 실제 변경일을 독립적으로 쓴다', () => {
+    const lastmods = {
+      '/': '2026-09-13',
+      '/about': '2026-08-11',
+      '/beta': '2026-09-13',
+      '/contact': '2026-09-05',
+      '/privacy': '2026-08-12',
+      '/terms': '2026-08-12',
+      '/updates': '2026-09-05',
+      '/notes/': '2026-09-13',
+      '/notes/newer': '2026-09-13',
+      '/notes/older': '2026-09-13',
+    };
+    const built = renderSitemap(NOTES, { lastmods });
+    for (const [path, lastmod] of Object.entries(lastmods)) {
+      expect(built).toMatch(
+        new RegExp(`<loc>https://leva\\.ai\\.kr${path}<\\/loc>\\s*<lastmod>${lastmod}<\\/lastmod>`),
+      );
+    }
+  });
+
+  it('페이지별 lastmod가 YYYY-MM-DD 형식이 아니면 거부한다', () => {
+    expect(() => renderSitemap(NOTES, {
+      lastmods: { '/about': '2026/09/13' },
+    })).toThrow('YYYY-MM-DD');
+  });
 });

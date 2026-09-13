@@ -443,14 +443,10 @@ test.describe('Home production-dist automated accessibility evidence', () => {
       const motion = await page.evaluate(() => ({
         scroll: getComputedStyle(document.documentElement).scrollBehavior,
         transition: getComputedStyle(document.querySelector('.btn')).transitionDuration,
-        founderOpacity: getComputedStyle(document.querySelector('.portrait')).opacity,
-        founderTransform: getComputedStyle(document.querySelector('.portrait')).transform,
         runningAnimations: document.getAnimations().filter((animation) => animation.playState === 'running').length,
       }));
       expect(motion.scroll).toBe('auto');
       expect(motion.transition.split(',').every((duration) => duration.trim() === '0s')).toBe(true);
-      expect(motion.founderOpacity).toBe('1');
-      expect(motion.founderTransform).toBe('none');
       expect(motion.runningAnimations).toBe(0);
       return { checkCount: entry.checks.length, violationCounts: violationCounts() };
     });

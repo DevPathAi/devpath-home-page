@@ -18,6 +18,22 @@ describe('Phase 0 승인 홈페이지 계약', () => {
     expect(html).toContain('진행을 확인하고 다음 미션을 제안합니다. 받아들이면 경로가 바뀝니다.');
   });
 
+  it('창업자 섹션은 사진 영역 없이 텍스트만 노출한다', () => {
+    const founderSection = html.match(/<section id="about">[\s\S]*?<\/section>/)?.[0];
+
+    expect(founderSection).toBeTruthy();
+    expect(html).not.toMatch(/창업자 (?:사진|이름) 플레이스홀더|실제 (?:사진|자료)로 교체 예정/);
+    expect(founderSection).not.toMatch(/<(?:img|picture|aside)\b/i);
+    expect(founderSection).not.toContain('founder-profile');
+    expect(founderSection).toContain('href="/about"');
+  });
+
+  it('영상이 없는 동안 시간 약속 대신 실제 화면 흐름으로 소개한다', () => {
+    expect(html).toContain('실제 화면으로 보는 전체 흐름');
+    expect(html).not.toContain('90초로 보는 전체 흐름');
+    expect(html).not.toMatch(/<(?:iframe|video)\b/i);
+  });
+
   it('같은 질문을 한 번만 보여 주고 After에만 자동 맥락을 둔다', () => {
     const question = 'Spring Boot에서 같은 이메일을 저장할 때 duplicate key 오류가 나는 이유는 무엇인가요?';
     expect(html.split(question)).toHaveLength(2);

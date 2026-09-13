@@ -15,6 +15,50 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="https://leva.ai.kr/assets/og-image.png">
   <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": "https://leva.ai.kr/#org",
+    "name": "레바",
+    "alternateName": ["Leva"],
+    "url": "https://leva.ai.kr/",
+    "logo": "https://leva.ai.kr/assets/og-image.png",
+    "foundingDate": "2026-07-10",
+    "areaServed": "KR",
+    "description": "사수 없는 0~3년차 개발자의 첫 AI 사수, 레바. 학습 이력과 직전 오류를 질문에 자동으로 붙입니다.",
+    "contactPoint": {
+      "@type": "ContactPoint",
+      "contactType": "customer support",
+      "url": "https://leva.ai.kr/contact",
+      "availableLanguage": "ko"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "@id": "https://leva.ai.kr/#app",
+    "name": "레바",
+    "alternateName": ["Leva"],
+    "url": "https://app.leva.ai.kr/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "browserRequirements": "Requires JavaScript",
+    "inLanguage": "ko",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "KRW",
+      "availability": "https://schema.org/InStock",
+      "description": "베타 기간 무료. 정식 전환 시 월 9,900원 예정."
+    },
+    "publisher": { "@id": "https://leva.ai.kr/#org" },
+    "description": "사수 없는 0~3년차 개발자의 첫 AI 사수, 레바. 학습 이력과 직전 오류를 질문에 자동으로 붙입니다."
+  }
+  </script>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2785578834914321" crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" media="print" onload="this.media='all'">
@@ -47,7 +91,6 @@
       --dark-surface-line: var(--dp-color-rail-border);
       --dark-line: var(--dp-color-rail-border);
       --dark-muted: var(--dp-color-rail-muted);
-      --portrait-line: var(--dp-color-border);
       --footer-link: var(--dp-color-rail-text);
       --footer-copy: var(--dp-color-rail-muted);
       --max: var(--dp-layout-content-max);
@@ -263,10 +306,7 @@
     .record h3 { margin: 0; }
     .record span { color: var(--green-text); font-weight: 900; }
 
-    .founder-grid { display: grid; grid-template-columns: 360px 1fr; gap: 64px; align-items: center; }
-    .portrait { display: grid; min-height: 400px; place-items: center; border: 1px dashed var(--portrait-line); background: var(--soft); color: var(--muted); text-align: center; }
     blockquote { margin: 0 0 28px; font-size: clamp(28px, 3vw, 44px); font-weight: 850; line-height: 1.35; letter-spacing: -.035em; }
-    .founder-name { margin-top: 26px; font-weight: 900; }
     .text-link { display: inline-flex; min-height: 44px; align-items: center; }
 
     .faq { background: var(--soft); }
@@ -300,12 +340,10 @@
       .mobile-nav { display: block; flex-basis: 100%; }
       .mobile-nav summary { position: absolute; top: 14px; right: 0; display: flex; }
       section { padding: 76px 0; }
-      .hero-grid, .control-grid, .pricing-grid, .founder-grid { grid-template-columns: 1fr; }
+      .hero-grid, .control-grid, .pricing-grid { grid-template-columns: 1fr; }
       .hero-actions { margin-bottom: 40px; }
       .filmstrip { grid-template-columns: 1fr; }
       .stage-grid, .roadmap-grid { grid-template-columns: 1fr 1fr; }
-      .founder-grid { gap: 30px; }
-      .portrait { min-height: 300px; }
       .footer-grid { grid-template-columns: 1fr 1fr; }
     }
     @media (max-width: 599px) {
@@ -436,7 +474,7 @@
     <section>
       <div class="wrap">
         <div class="video-head">
-          <div><p class="eyebrow">실제 화면 · 3단계</p><h2>90초로 보는 전체 흐름</h2><p class="lead">진단부터 경로 보정까지, 실제 화면으로 확인합니다.</p></div>
+          <div><p class="eyebrow">실제 화면 · 3단계</p><h2>실제 화면으로 보는 전체 흐름</h2><p class="lead">진단부터 경로 보정까지, 실제 화면으로 확인합니다.</p></div>
           <a class="btn" href="#how">4단계 자세히 보기</a>
         </div>
         <div class="filmstrip">
@@ -530,9 +568,8 @@
     </section>
 
     <section id="about">
-      <div class="wrap founder-grid">
-        <div class="portrait"><div><strong>창업자 사진 플레이스홀더</strong><br><span class="fine">실제 사진으로 교체 예정</span></div></div>
-        <div><p class="eyebrow">만드는 사람</p><blockquote>“제가 겪은 막막함을 다음 사람은 덜 겪게 하는 것이 이걸 만드는 이유입니다.”</blockquote><p class="lead">2년제로 시작해 학원을 거쳐 대부분을 독학으로 메웠습니다. 12년차 백엔드 개발자가 혼자 만들어 운영 중입니다.</p><p class="founder-name">창업자 이름 플레이스홀더 · 실제 자료로 교체 예정</p><a class="text-link" href="/about">만드는 사람 이야기 →</a></div>
+      <div class="wrap founder__inner">
+        <div><p class="eyebrow">만드는 사람</p><blockquote>“제가 겪은 막막함을 다음 사람은 덜 겪게 하는 것이 이걸 만드는 이유입니다.”</blockquote><p class="lead">배우는 사람이 매번 맥락을 처음부터 설명하지 않아도 되도록, 레바를 혼자 만들고 운영하고 있습니다.</p><a class="text-link" href="/about">만드는 사람 이야기 →</a></div>
       </div>
     </section>
 

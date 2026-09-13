@@ -9,6 +9,14 @@ const html = readFileSync(
 
 const SITE = 'https://leva.ai.kr';
 
+function jsonLdEntities() {
+  return [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+    .flatMap(([, source]) => {
+      const document = JSON.parse(source);
+      return document['@graph'] ?? [document];
+    });
+}
+
 describe('index.html <head> 메타', () => {
   it('canonical이 leva.ai.kr을 가리킨다', () => {
     expect(html).toContain(`<link rel="canonical" href="${SITE}/">`);
@@ -52,6 +60,47 @@ describe('index.html <head> 메타', () => {
   it('워드마크가 레바 한 조각이다', () => {
     expect(html).toContain('<a class="brand" href="/">레바</a>');
     expect(html).not.toContain('wordmark__ai');
+  });
+
+  it('레바 조직과 웹 애플리케이션을 JSON-LD로 설명한다', () => {
+    const entities = jsonLdEntities();
+    const organization = entities.find((entity) => entity['@type'] === 'Organization');
+    const application = entities.find((entity) => entity['@type'] === 'SoftwareApplication');
+
+    expect(html.match(/<script type="application\/ld\+json">/g)).toHaveLength(2);
+    expect(organization).toMatchObject({
+      '@id': `${SITE}/#org`,
+      name: '레바',
+      alternateName: ['Leva'],
+      url: `${SITE}/`,
+      logo: `${SITE}/assets/og-image.png`,
+      foundingDate: '2026-07-10',
+      areaServed: 'KR',
+      contactPoint: {
+        '@type': 'ContactPoint',
+        contactType: 'customer support',
+        url: `${SITE}/contact`,
+        availableLanguage: 'ko',
+      },
+    });
+    expect(application).toMatchObject({
+      '@id': `${SITE}/#app`,
+      name: '레바',
+      alternateName: ['Leva'],
+      url: 'https://app.leva.ai.kr/',
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Web',
+      browserRequirements: 'Requires JavaScript',
+      inLanguage: 'ko',
+      isAccessibleForFree: true,
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'KRW',
+        availability: 'https://schema.org/InStock',
+      },
+      publisher: { '@id': `${SITE}/#org` },
+    });
   });
 });
 

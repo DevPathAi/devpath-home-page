@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { collectNotes, renderNote, renderIndex, renderSitemap, renderHomepageNotes } from './scripts/notes.mjs';
+import { resolveSitemapLastmods } from './scripts/sitemap-lastmod.mjs';
 import { collectUpdates, renderUpdatesFeed, renderUpdatesPage } from './scripts/updates.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
@@ -36,13 +37,20 @@ for (const entry of DEPLOY_ENTRIES) {
 const notes = collectNotes(root + 'content/notes');
 const noteTemplate = readFileSync(root + 'templates/note.html', 'utf-8');
 const indexTemplate = readFileSync(root + 'templates/notes-index.html', 'utf-8');
+const sitemapLastmods = resolveSitemapLastmods(notes, {
+  root,
+  overrideDate: process.env.SITEMAP_BUILD_DATE?.trim() || undefined,
+});
 
 await mkdir(dist + '/notes', { recursive: true });
 for (const note of notes) {
   await writeFile(dist + `/notes/${note.slug}.html`, renderNote(note, noteTemplate));
 }
 await writeFile(dist + '/notes/index.html', renderIndex(notes, indexTemplate));
-await writeFile(dist + '/sitemap.xml', renderSitemap(notes));
+await writeFile(
+  dist + '/sitemap.xml',
+  renderSitemap(notes, { lastmods: sitemapLastmods }),
+);
 console.log(`rendered ${notes.length} notes`);
 
 const homepagePath = dist + '/index.html';

@@ -21,8 +21,12 @@ const NOTE = {
 describe('개발 기록 CTA', () => {
   const html = renderNote(NOTE, template);
 
-  it('AI 멘토 신청을 앱 로그인으로 보낸다', () => {
-    expect(html).toContain('href="https://app.leva.ai.kr/login"');
+  it('제품 소개와 가입 없는 진단을 앱으로 보낸다', () => {
+    expect(html).toContain('aria-label="레바 시작하기"');
+    expect(html).toContain('<p class="eyebrow">이 글의 제품</p>');
+    expect(html).toContain('레바는 사수 없는 0~3년차 개발자의 첫 AI 사수입니다.');
+    expect(html).toContain('href="https://app.leva.ai.kr/diagnostic"');
+    expect(html).toContain('가입 없이 진단 시작');
   });
 
   // 본문을 다 읽은 자리가 전환 의도가 가장 높다. 목록 링크보다 먼저 와야 한다.
@@ -31,11 +35,12 @@ describe('개발 기록 CTA', () => {
     expect(html.indexOf('note__cta')).toBeLessThan(html.indexOf('note__back'));
   });
 
-  it('멘토 신청 버튼이 진단을 약속하지 않는다', () => {
-    const anchor = html.match(/<a[^>]*href="https:\/\/app\.leva\.ai\.kr\/login"[^>]*>([^<]*)<\/a>/);
+  it('진단을 주 CTA로 두고 초대 신청을 보조 링크로 남긴다', () => {
+    const anchor = html.match(/<a[^>]*href="https:\/\/app\.leva\.ai\.kr\/diagnostic"[^>]*>([^<]*)<\/a>/);
 
     expect(anchor).not.toBeNull();
-    expect(anchor[1]).not.toContain('진단');
+    expect(anchor[1]).toContain('가입 없이 진단 시작');
+    expect(html).toContain('<a class="text-link" href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
   });
 
   it('목록으로 돌아가는 길은 그대로 남는다', () => {
@@ -54,10 +59,21 @@ describe('원고 전체 반영', () => {
 
   it('모든 글에 CTA가 실린다', () => {
     const missing = notes
-      .filter((n) => !renderNote(n, template).includes('href="https://app.leva.ai.kr/login"'))
+      .filter((n) => !renderNote(n, template).includes('href="https://app.leva.ai.kr/diagnostic"'))
       .map((n) => n.slug);
 
     expect(missing).toEqual([]);
+  });
+});
+
+describe('개발 기록 목록 CTA', () => {
+  const indexTemplate = read('templates/notes-index.html');
+
+  it('목록 마지막에도 같은 진단·초대 경로를 둔다', () => {
+    expect(indexTemplate).toContain('aria-label="레바 시작하기"');
+    expect(indexTemplate).toContain('href="https://app.leva.ai.kr/diagnostic"');
+    expect(indexTemplate).toContain('href="https://app.leva.ai.kr/login"');
+    expect(indexTemplate.indexOf('note__cta')).toBeLessThan(indexTemplate.indexOf('</main>'));
   });
 });
 
