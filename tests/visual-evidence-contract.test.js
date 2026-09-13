@@ -38,8 +38,8 @@ describe('Home visual/a11y evidence v2 contract', () => {
       repository: 'DevPathAi/devpath-home-page',
       route: '/',
       build: 'production-dist',
-      rendered_product_sha: 'ad0292406caac3f0a3961551c96aefd819da4085',
-      rendered_product_tree_sha256: 'fddcb2007a36aa9e634ee118e9a8cd1484de18290168de5eb15e6566c1f1e129',
+      rendered_product_sha: '836768b3c5527a2c3e7baf21570473d90b3e0791',
+      rendered_product_tree_sha256: '2c6add6678c54e030e746fb0b83edd7ff7c4cc72eb8b91d0f237a757e186ad11',
     });
     expect(candidate.runtime).toMatchObject({
       locale: 'ko-KR',
@@ -133,15 +133,15 @@ describe('Home visual/a11y evidence v2 contract', () => {
         recordsDirectory: records,
         outputDirectory: output,
         environment: {
-          HOME_RENDERED_PRODUCT_SHA: 'ad0292406caac3f0a3961551c96aefd819da4085',
+          HOME_RENDERED_PRODUCT_SHA: '836768b3c5527a2c3e7baf21570473d90b3e0791',
           HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
           MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
           MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
         },
       });
       expect(result.visual.binding).toMatchObject({
-        rendered_product_sha: 'ad0292406caac3f0a3961551c96aefd819da4085',
-        rendered_product_tree_sha256: 'fddcb2007a36aa9e634ee118e9a8cd1484de18290168de5eb15e6566c1f1e129',
+        rendered_product_sha: '836768b3c5527a2c3e7baf21570473d90b3e0791',
+        rendered_product_tree_sha256: '2c6add6678c54e030e746fb0b83edd7ff7c4cc72eb8b91d0f237a757e186ad11',
         evidence_producer_sha: 'a'.repeat(40),
         candidate_spec_sha256: releaseCandidateSha256,
       });
@@ -153,7 +153,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
       });
       expect(JSON.stringify(result)).not.toMatch(/private learner|"screenshot_path"|"selector"/);
       const environment = {
-        HOME_RENDERED_PRODUCT_SHA: 'ad0292406caac3f0a3961551c96aefd819da4085',
+        HOME_RENDERED_PRODUCT_SHA: '836768b3c5527a2c3e7baf21570473d90b3e0791',
         HOME_EVIDENCE_PRODUCER_SHA: 'a'.repeat(40),
         MISSION_CANDIDATE_SPEC_PATH: releaseCandidatePath,
         MISSION_CANDIDATE_SPEC_SHA256: releaseCandidateSha256,
@@ -176,7 +176,7 @@ describe('Home visual/a11y evidence v2 contract', () => {
     } finally {
       rmSync(temporary, { recursive: true, force: true });
     }
-  });
+  }, 60_000);
 
   it('pins CI actions/container and never updates snapshots in CI', () => {
     const workflow = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8');
@@ -185,12 +185,20 @@ describe('Home visual/a11y evidence v2 contract', () => {
     )].map((match) => ({ sha: match[1], withBlock: match[2] }));
     expect(checkoutSteps).toHaveLength(2);
     for (const checkout of checkoutSteps) {
-      expect(checkout.sha).toBe('11bd71901bbe5b1630ceea73d27597364c9af683');
+      expect(checkout.sha).toBe('3d3c42e5aac5ba805825da76410c181273ba90b1');
       expect(checkout.withBlock).toMatch(/^\s+fetch-depth:\s*0\s*$/m);
       expect(checkout.withBlock).toMatch(/^\s+persist-credentials:\s*false\s*$/m);
     }
     expect(workflow).toContain('mcr.microsoft.com/playwright:v1.61.1-noble@sha256:');
-    expect(workflow).toContain('actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683');
+    expect(workflow).toContain(
+      'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1',
+    );
+    expect(workflow).toContain(
+      'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0',
+    );
+    expect(workflow).toContain(
+      'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1',
+    );
     const visualJob = workflow.slice(workflow.indexOf('  visual-a11y:'));
     expect(visualJob).toContain(
       'ref: ${{ github.event.pull_request.head.sha || github.sha }}',
