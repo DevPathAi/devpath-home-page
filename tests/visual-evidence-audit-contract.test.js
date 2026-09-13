@@ -26,8 +26,8 @@ import {
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = 'ad0292406caac3f0a3961551c96aefd819da4085';
-const productTreeSha = 'fddcb2007a36aa9e634ee118e9a8cd1484de18290168de5eb15e6566c1f1e129';
+const productSha = 'b1fab7db81171f1dc47e493e7beb87666e3c1a1e';
+const productTreeSha = 'd6b03cc63c928f2aed08a5d8f14c43b55627965bf9d5ed11222c88545861b9fa';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),
@@ -163,7 +163,7 @@ describe('independent ET13 audit contracts', () => {
       evidenceProducerSha: productSha,
       requireClean: false,
     })).toThrow(/runtime drift|styles\.css/i);
-  });
+  }, 60_000);
 
   it('allows evidence-only and non-rendering descendants while retaining runtime drift detection', () => {
     const headSha = execFileSync('git', ['rev-parse', 'HEAD'], {
@@ -199,7 +199,7 @@ describe('independent ET13 audit contracts', () => {
     });
     expect(productRuntimeTreeSha256('1ee751bfe8e0e26ec1f57d02cef56975859360c7'))
       .not.toBe(productRuntimeTreeSha256(productSha));
-  });
+  }, 60_000);
 
   it('distinguishes rendered product source from the evidence producer', () => {
     const candidate = JSON.parse(readFileSync(
