@@ -370,6 +370,7 @@ describe('Mission Spine Home distribution producer', () => {
     expect(workflow).toContain('test "${GITHUB_RUN_ATTEMPT}" = 1');
     expect(workflow).toContain('test "${GITHUB_REF}" = refs/heads/master');
     expect(workflow).toContain("node-version: '24.12.0'");
+    expect(workflow).toContain('fetch-depth: 0');
     expect(workflow).toContain('npm ci');
     expect(workflow).toContain('npm run build');
     expect(workflow).toContain('test -z "$(git status --porcelain=v1 --untracked-files=all)"');
