@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "adsense-readiness-20260913",
+  "review_id": "founder-text-only-20260913",
   "reviewer": "codex",
-  "reason": "Reviewed landing structured-data, copy, CTA, and founder text-only visual changes.",
-  "reviewed_at": "2026-09-13T01:55:05.269Z",
-  "rendered_product_sha": "c79e44da8b8585a38768946ef6035dfe3127431c",
-  "rendered_product_tree_sha256": "2960604afe597d9011c5edcbf3221429ea000d5f6281efe37a5a60afae1c4f32",
-  "candidate_spec_sha256": "a9d3bd0dd81325409dfe88e90fae471ab4b0b077e444f3b065892714aa3808da",
+  "reason": "Reviewed removal of the founder photo/profile column and resulting text-only responsive layout.",
+  "reviewed_at": "2026-09-13T03:21:33.562Z",
+  "rendered_product_sha": "b181bff28ec57374156be2a351f1bbb1b8288722",
+  "rendered_product_tree_sha256": "a2cb31777165f2e42cb35d5fb8fd5302a4ae8b372416f7170374d69bd2f88c60",
+  "candidate_spec_sha256": "ec96ba391d28844621aa7bb890158043fdf55fdd2df2590cc4e2a3074f6fa931",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "f781d923846967b8c60e806249d196ac1db81c7f03b81a0d57cb78d34bfc78af"
+      "sha256": "c66f468e1c81dac79bba74c3f1e417665a8b5bf566f12d1d60e3c7469d08a281"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "f0dae9ff39d23b359889b42ad1f4bbd7e0fd21b0690fea3b508d357aa3e83446"
+      "sha256": "3abbb553c2ccf9775040ba6720c9ddfc03aed15718c30531c4296259741e3a50"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "2bab647e572bc1631ed2bfad891bf07f7af99c09840d688850734457c0215a68"
+      "sha256": "52486aa244a05710a5885505b5cef47bbcb54f860f683b50dcc387ef75198bcb"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "bdad7c5bd75e6633aa7e68dbf392a4e06ebccfe0a62b3019f84e1984738c4fae"
+      "sha256": "b5aa0e4b8bad29e018cc2cdab59b12621a3a469b46ec6436c3fc79dbf3ae7188"
     }
   ]
 }
