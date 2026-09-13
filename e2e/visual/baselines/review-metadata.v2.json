@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "homepage-responsive-contract-20260907",
+  "review_id": "adsense-readiness-20260913",
   "reviewer": "codex",
-  "reason": "Responsive boundary and reduced-motion evidence refreshed after code review.",
-  "reviewed_at": "2026-09-07T04:48:12.020Z",
-  "rendered_product_sha": "a29deace4c50e8efc9ecfc4fdea18de8f8bca7ee",
-  "rendered_product_tree_sha256": "6fbec7d69a1025429d827935f4d7b4b48856ad397e3f77459b0b2bbf310a6546",
-  "candidate_spec_sha256": "b13c5919fb53b97a06bb2207e671722f1de3620728a3268e814fb113a2a0d4f2",
+  "reason": "Reviewed landing structured-data, copy, CTA, and founder text-only visual changes.",
+  "reviewed_at": "2026-09-13T01:55:05.269Z",
+  "rendered_product_sha": "c79e44da8b8585a38768946ef6035dfe3127431c",
+  "rendered_product_tree_sha256": "2960604afe597d9011c5edcbf3221429ea000d5f6281efe37a5a60afae1c4f32",
+  "candidate_spec_sha256": "a9d3bd0dd81325409dfe88e90fae471ab4b0b077e444f3b065892714aa3808da",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "7070315886ba747f6e9ebdecca36a92ac3228b1b094c40116fcc7ee540ac72ae"
+      "sha256": "f781d923846967b8c60e806249d196ac1db81c7f03b81a0d57cb78d34bfc78af"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "8cf60210e151b09d1e3d0e4a60c20a083596f66b95afd48b6100eadfeb13c40d"
+      "sha256": "f0dae9ff39d23b359889b42ad1f4bbd7e0fd21b0690fea3b508d357aa3e83446"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "617a63aceb7592089307747f69567010241e1dd6a22faf341cf7269ea08be249"
+      "sha256": "2bab647e572bc1631ed2bfad891bf07f7af99c09840d688850734457c0215a68"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "ea529469a3be3e34af1689968308d4cb273dbad6660f0f493bac8563eb0e50ce"
+      "sha256": "bdad7c5bd75e6633aa7e68dbf392a4e06ebccfe0a62b3019f84e1984738c4fae"
     }
   ]
 }
