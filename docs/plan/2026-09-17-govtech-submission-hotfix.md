@@ -105,3 +105,13 @@
 2. 멘토·경로 실캡처용 로그인 세션(Task 2.2) — 불가 시 데모 데이터 캡처로 대체(배지 명시).
 3. AdSense 유지/제거 결정(Task 5.5).
 4. 앱 쪽 수정을 제출 전에 운영 반영하려면 ET13 baseline 승인 + Cloudflare 토큰(N01) 이 필요하다.
+
+## 실행 기록 (2026-09-17)
+
+- 홈 핫픽스 PR #85 → develop 머지(`9e0f122`). 토큰 미러 1.1.0 재동기화 PR #86 → develop 머지(`24c6e74`) — 앱 시맨틱 토큰 계약 1.1.0(devpath-frontend #219)과 같은 값.
+- 게이트(develop `24c6e74`): `npm test` 47 files / 467 passed · `npm run build`(runtime config `appVersion=24c6e748`, `production`) · `npm run test:e2e` 64 passed.
+- 프리뷰: `https://preview-govtech-20260917.devpath-home-page.pages.dev`(배포 `7e5c2eee`) 검증 후 운영 반영.
+- **운영 배포**: Cloudflare Pages `devpath-home-page` Production(`--branch develop`) 직접 업로드, wrangler 4.133.0, 배포 id `005cf175-6e3e-4400-a201-1987ce9d8d84`, source `24c6e74`, 2026-09-17 19:40 KST 경.
+- 라이브 검증(`https://leva.ai.kr`): `assets/tokens.dc0cd99b.css` = manifest `1.1.0` · primary `#5653E7` · content-max `1360px`, 포스터 200, `/updates` 200, `/api/invite-rounds` 200, `window.LEVA_CONFIG.appVersion` = `24c6e748…`.
+- **gitops landing-last 주의(Task 4.3)**: 이 직접 배포로 Production 의 직전 배포가 바뀌었다. 다음 landing 의 prior deployment 기대값은 위 배포 id 다.
+- 남은 사람 단계: YouTube 재업로드(Task 1.3) · 멘토/경로 실캡처용 로그인 세션(Task 2.2) · AdSense 유지/제거(Task 5.5) · 앱 승격 게이트.
