@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "govtech-hotfix-20260917",
+  "review_id": "token-mirror-1-1-0-20260917",
   "reviewer": "claude-fable-5.1",
-  "reason": "GovTech submission hotfix: hero shows a real guest diagnostic result (100% confidence) on the 2026-09-16 redesign, poster frame without the review placeholder, aligned copy; layout unchanged.",
-  "reviewed_at": "2026-09-17T06:38:50.856Z",
-  "rendered_product_sha": "6698eee0c065e646901f1bbadf32bda0c5efb730",
-  "rendered_product_tree_sha256": "1a3148683fe94b7230abfd873b9fccfc43b312f359150efccf5c5a9968e3ce40",
-  "candidate_spec_sha256": "3dca4407725277f0d63cbf12dac69379870be883023831db5ad2dbb4e360fc9f",
+  "reason": "Token mirror resynced to app contract 1.1.0: indigo palette, radii 999/12/18/12/20, headline/title slots, content 1360/readable 760; same composition and copy as the GovTech hotfix baseline.",
+  "reviewed_at": "2026-09-17T10:06:41.000Z",
+  "rendered_product_sha": "16cda0cfb3d1e9a496167873196fa50b4d45eb16",
+  "rendered_product_tree_sha256": "03586003c2b231837de5acd6eccf38f0f11ed42bbb21d1869e30fc14349de05a",
+  "candidate_spec_sha256": "d78be94ef1c1a6e9e757833bbf02e955691f88b30a47770421fbd3c4c4bfe9cc",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "b04b9d7174b2fb168083d4b67c371997eb270153c92771a9a6c2018971d8596f"
+      "sha256": "e76b2cd7c6da26684ae74f8faaa32fd3874912df5fee6bc4f97d5bfcd85613a0"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "ecd2dc3e0fd623500efce49db82730e928bfbf85d5b07be317e2ac0d95d7b482"
+      "sha256": "b249102a94c23e3b9e219a4cc530763e62c9cd16e4ce6fc30241ce3d396b15a0"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "db32baec9b3c8cdbd66ca07e79fa79adf9c8c43970e3c9d753255b00572f8c54"
+      "sha256": "f570c43ec420e762da85405812ffc4f52f6969a0ef03323db2331450064e0416"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "7d29996d3e100d1393a19bca0e5051eb84c7e854811d64f867c212bf1bda47ac"
+      "sha256": "a4390be07f4943df316682638f2feb5ae7be19ad34cbb108855ad32cb8bd396e"
     }
   ]
 }
