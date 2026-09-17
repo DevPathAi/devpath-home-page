@@ -1,4 +1,5 @@
-const ENDPOINT = 'https://api.leva.ai.kr/mentor-access/invite-rounds';
+// 동일 출처 Pages Function(functions/api/invite-rounds.js)이 API 를 대신 읽는다 — 브라우저 CORS 무관.
+const ENDPOINT = '/api/invite-rounds';
 
 export function formatInviteRound(round) {
   const number = Number(round?.roundNumber);

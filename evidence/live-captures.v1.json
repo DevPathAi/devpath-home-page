@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "description": "Home 에 게시하는 실제 앱 화면의 출처. 허용 파생은 crop·resize 뿐이며 값·문구·상태를 합성하거나 지우지 않는다.",
+  "captures": [
+    {
+      "asset": "assets/live-diagnostic-result.png",
+      "status": "current",
+      "role": "guest",
+      "route": "/diagnostic",
+      "scenario": "트랙 백엔드 (Spring) 선택 → 15문항을 각 문항의 첫 번째 보기로 응답(스킵 없음) → 진단 결과",
+      "viewport": { "width": 1440, "height": 900, "deviceScaleFactor": 2 },
+      "capturedAt": "2026-09-17T06:12:26Z",
+      "tool": "tools/capture-live.mjs diagnostic",
+      "app": {
+        "origin": "https://app.leva.ai.kr",
+        "sourceSha": "8d19a0bf1170085fa238eaddeae40aa7b8f08b90",
+        "release": "ms-20260916-community-ia",
+        "imageDigest": "sha256:a204810fb509a9e68090b078d5720a23aab1feba53625943de038290733f839e"
+      },
+      "observed": { "level": "JUNIOR", "confidence": "100%" },
+      "original": { "path": "evidence/captures/live-diagnostic-result.original.png", "width": 2880, "height": 1800, "sha256": "231028eaea6c13275a674b2cb7bb69b8650b421f4adba636857650a66b726458" },
+      "derivation": ["crop", "resize"],
+      "derived": { "cropBox": [660, 330, 2160, 1372], "width": 1440, "height": 1000, "sha256": "bb9735631e1a59907e5148d16a77a8b86f265ccf03f17a9c4abe9a5349bf4ccd" }
+    },
+    {
+      "asset": "assets/live-mentor.png",
+      "status": "pending_recapture",
+      "role": "member",
+      "route": "/mentor",
+      "capturedAt": "2026-09-05",
+      "note": "2026-09-16 화면 개편 전 테마. 로그인(초대 계정) 세션이 있어야 맥락 패널·질문·응답이 보이는 화면을 재캡처할 수 있다.",
+      "derived": { "width": 1440, "height": 1000, "sha256": "9ac4a962463a438f92a2d3525f815767ec4967c829f30f3cab5f030c9f9b8aea" }
+    },
+    {
+      "asset": "assets/live-backend-path.png",
+      "status": "pending_recapture",
+      "role": "member",
+      "route": "/path",
+      "capturedAt": "2026-09-05",
+      "note": "2026-09-16 화면 개편 전 테마. 다음 미션 제안이 보이는 진행 상태의 로그인 계정이 필요하다.",
+      "derived": { "width": 1440, "height": 1000, "sha256": "11fce7d999e140080949035f061d8a74522e8b6005cde64827313195200f2349" }
+    }
+  ]
+}

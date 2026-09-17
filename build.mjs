@@ -5,6 +5,7 @@ import { cp, rm, mkdir, writeFile, readdir, readFile, rename } from 'node:fs/pro
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { collectNotes, renderNote, renderIndex, renderSitemap, renderHomepageNotes } from './scripts/notes.mjs';
 import { resolveSitemapLastmods } from './scripts/sitemap-lastmod.mjs';
 import { collectUpdates, renderUpdatesFeed, renderUpdatesPage } from './scripts/updates.mjs';
@@ -65,6 +66,29 @@ await mkdir(dist + '/updates', { recursive: true });
 await writeFile(dist + '/updates/index.html', renderUpdatesPage(updates, updatesTemplate));
 await writeFile(dist + '/updates/feed.json', renderUpdatesFeed(updates));
 console.log(`rendered ${updates.length} updates`);
+
+// 운영 analytics identity. src/config.js 는 window.LEVA_CONFIG 가 없으면 development/dev 로
+// 떨어져 방문자를 분석에서 제외한다(2026-09-17 운영 실측). appVersion 은 소스 SHA, 환경은
+// production 이 기본이며 로컬 검증에서는 ANALYTICS_ENVIRONMENT 로 바꿀 수 있다.
+const appVersion = (process.env.APP_VERSION || execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' })).trim();
+if (!/^[0-9a-f]{40}$/.test(appVersion)) throw new Error(`APP_VERSION 이 40자 SHA 가 아니다: ${appVersion}`);
+const analyticsEnvironment = process.env.ANALYTICS_ENVIRONMENT || 'production';
+const runtimeConfig = `<script>window.LEVA_CONFIG=${JSON.stringify({ appVersion, analyticsEnvironment })};</script>`;
+async function injectRuntimeConfig(dir) {
+  for (const entry of await readdir(dir, { withFileTypes: true })) {
+    const path = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) { await injectRuntimeConfig(path); continue; }
+    if (!entry.name.endsWith('.html')) continue;
+    const html = await readFile(path, 'utf8');
+    if (html.includes('window.LEVA_CONFIG')) continue;
+    // </head> 앞에 둔다: 어떤 스크립트보다 먼저 평가되고, 모듈 스크립트가 없는 페이지에도 같은 계약을 준다.
+    const at = html.indexOf('</head>');
+    if (at === -1) throw new Error(`${path}: </head> 가 없어 런타임 설정을 주입할 수 없다`);
+    await writeFile(path, html.slice(0, at) + runtimeConfig + '\n' + html.slice(at));
+  }
+}
+await injectRuntimeConfig(dist);
+console.log(`injected runtime config appVersion=${appVersion.slice(0, 8)} env=${analyticsEnvironment}`);
 
 // _headers 는 /assets/* 를 max-age=31536000, immutable 로 선언한다. 그런데 파일명이
 // styles.css 로 고정이면 내용을 고쳐도 이미 받아 간 브라우저는 1년간 옛 파일을 쓴다 —

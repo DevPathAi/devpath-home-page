@@ -127,7 +127,7 @@ describe('초대 회차 API', () => {
     expect(result).toHaveLength(12);
     expect(result[0]).toEqual({ round: rounds[0], label: '1차 초대 0명 발송 · 2026.09.05' });
     expect(fetcher).toHaveBeenCalledWith(
-      'https://api.leva.ai.kr/mentor-access/invite-rounds',
+      '/api/invite-rounds',
       { method: 'GET', headers: { Accept: 'application/json' }, credentials: 'omit' },
     );
   });

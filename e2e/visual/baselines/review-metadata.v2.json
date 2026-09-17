@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "video-activation-20260913",
-  "reviewer": "codex",
-  "reason": "Reviewed the self-hosted video poster and facade at desktop and compact widths; layout, copy, focus, and overflow match the approved Home.",
-  "reviewed_at": "2026-09-13T08:18:04.639Z",
-  "rendered_product_sha": "a734bf8dccccf72a25aeaa01924e2d66595fc677",
-  "rendered_product_tree_sha256": "a1bdfcd24728f6c5f4bc2a27a224400e49220041388bfd2441540810ec58c6c1",
-  "candidate_spec_sha256": "ac032b1673b7d5ecdbcf67489a24d49bb7ca65a969815f7bce76b8223f52fed6",
+  "review_id": "govtech-hotfix-20260917",
+  "reviewer": "claude-fable-5.1",
+  "reason": "GovTech submission hotfix: hero shows a real guest diagnostic result (100% confidence) on the 2026-09-16 redesign, poster frame without the review placeholder, aligned copy; layout unchanged.",
+  "reviewed_at": "2026-09-17T06:38:50.856Z",
+  "rendered_product_sha": "6698eee0c065e646901f1bbadf32bda0c5efb730",
+  "rendered_product_tree_sha256": "1a3148683fe94b7230abfd873b9fccfc43b312f359150efccf5c5a9968e3ce40",
+  "candidate_spec_sha256": "3dca4407725277f0d63cbf12dac69379870be883023831db5ad2dbb4e360fc9f",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "08d341da33a74bbfc4043441f34ea48c1c5f4be3ab629b0c1b7144677b21c658"
+      "sha256": "b04b9d7174b2fb168083d4b67c371997eb270153c92771a9a6c2018971d8596f"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "68293bd0c1281602916e86da50e770f61e9e794f7daa98a2fa75c65b6aa678d2"
+      "sha256": "ecd2dc3e0fd623500efce49db82730e928bfbf85d5b07be317e2ac0d95d7b482"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "9c911cc7d459eb6ef4d909ce8c6a175f04118d36d0616b2c804792e969e56f86"
+      "sha256": "db32baec9b3c8cdbd66ca07e79fa79adf9c8c43970e3c9d753255b00572f8c54"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "61a66dc4289e662ede63f7da9de78fa301f1645c44fa5c8a9c922e194366b975"
+      "sha256": "7d29996d3e100d1393a19bca0e5051eb84c7e854811d64f867c212bf1bda47ac"
     }
   ]
 }
