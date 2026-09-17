@@ -25,7 +25,8 @@ describe('90초 영상 릴리스 증거', () => {
       .digest('hex');
 
     expect(evidence.poster).toMatchObject({
-      sourceTimestampSeconds: 48,
+      // 2026-09-17: 48 s(컷 6)는 게시본에 검수용 자리표시자 문구가 있어 74 s(컷 10)로 교체했다.
+      sourceTimestampSeconds: 74,
       width: 1280,
       height: 720,
     });

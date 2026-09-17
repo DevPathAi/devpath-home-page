@@ -24,10 +24,11 @@
   },
   "poster": {
     "path": "assets/video-poster.jpg",
-    "sourceTimestampSeconds": 48,
+    "sourceTimestampSeconds": 74,
+    "sourceNote": "게시 렌디션(720p) 74 s, 컷 10 프레임. 이전 48 s 프레임(컷 6)은 검수용 자리표시자 문구를 담고 있어 교체(2026-09-17).",
     "width": 1280,
     "height": 720,
-    "sha256": "19e381d5262035bee953af0809cd1b6cb2c16a894c33f3c1490b2c65fe1222f1"
+    "sha256": "52507b5cb1773c78b49fd02d2c704659d297ec3d71cee61ef0df56a59030253f"
   },
   "privacy": {
     "preInteractionThirdPartyRequests": 0,
