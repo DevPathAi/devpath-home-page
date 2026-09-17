@@ -59,9 +59,9 @@ test.describe('확정 홈페이지 스모크', () => {
     }));
 
     expect(colors).toEqual({
-      ink: 'rgb(26, 24, 21)',
-      cta: 'rgb(180, 83, 9)',
-      accent: 'rgb(180, 83, 9)',
+      ink: 'rgb(23, 25, 35)',
+      cta: 'rgb(86, 83, 231)',
+      accent: 'rgb(86, 83, 231)',
     });
     await expect(page.locator('.shot .badge')).toHaveCount(3);
     await expect(page.locator('.shot .badge').first()).toContainText('출처 · 레바 앱 화면');

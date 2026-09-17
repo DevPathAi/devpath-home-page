@@ -63,7 +63,7 @@ describe('확정된 홈페이지 활성화 계약', () => {
     expect(html).toContain('--green: var(--dp-color-primary)');
     expect(html).toContain('--amber: var(--dp-color-warning)');
     expect(html).not.toMatch(/--(?:ink|green|amber):\s*#[0-9a-f]{6}/i);
-    expect(tokensCss).toContain('--dp-color-primary: #B45309');
+    expect(tokensCss).toContain('--dp-color-primary: #5653E7');
   });
 
   it('Home 리드폼 없이 앱 로그인으로 AI 멘토 초대를 신청한다', () => {
