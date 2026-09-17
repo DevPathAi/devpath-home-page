@@ -26,8 +26,8 @@ import {
 } from '../scripts/visual-evidence.mjs';
 
 const root = join(import.meta.dirname, '..');
-const productSha = '6698eee0c065e646901f1bbadf32bda0c5efb730';
-const productTreeSha = '1a3148683fe94b7230abfd873b9fccfc43b312f359150efccf5c5a9968e3ce40';
+const productSha = '16cda0cfb3d1e9a496167873196fa50b4d45eb16';
+const productTreeSha = '03586003c2b231837de5acd6eccf38f0f11ed42bbb21d1869e30fc14349de05a';
 const producerSha = 'a'.repeat(40);
 const baselineHashes = new Map(JSON.parse(readFileSync(
   join(root, 'e2e/visual/baselines/review-metadata.v2.json'),

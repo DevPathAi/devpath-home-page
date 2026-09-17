@@ -1,7 +1,7 @@
 # DESIGN.md — Leva 홈페이지 디자인 계약
 
 > 이 문서는 홈페이지에 적용되는 마케팅 사용 규칙을 설명한다. semantic token 값의
-> 기준은 앱 코드의 `DpSemanticTokenManifest 1.0.0`, layout 폭의 기준은
+> 기준은 앱 코드의 `DpSemanticTokenManifest 1.1.0`, layout 폭의 기준은
 > `AppTokens.standard`, breakpoint의 기준은 `src/layout/dp_window_class.dart`다.
 > 홈페이지는 이를 `assets/tokens.css`에 그대로 mirror한다.
 
@@ -16,10 +16,10 @@
 
 ## 분류와 미감
 
-**MARKETING / LANDING PAGE.** 앱과 같은 warm neutral ground, ink hierarchy, amber accent를 쓰되 마케팅 화면은 더 에디토리얼하게 구성할 수 있다.
+**MARKETING / LANDING PAGE.** 앱과 같은 cool neutral ground, ink hierarchy, 인디고 accent를 쓰되 마케팅 화면은 더 에디토리얼하게 구성할 수 있다.
 
 - 장식 그림자보다 surface와 1px border로 위계를 만든다.
-- amber는 primary action, 현재 진행, 획득한 완료에만 쓴다.
+- 인디고는 primary action, 현재 진행, 획득한 완료에만 쓴다.
 - warning은 실제 경고에만 쓴다. 강조가 필요하다는 이유로 warning을 대신 쓰지 않는다.
 - 장식용 gradient, 균등 아이콘 카드, blob, glass effect, 과도한 pill, AI orb를 쓰지 않는다.
 
@@ -45,9 +45,9 @@
 ## 간격과 형태
 
 - 간격은 4/8/12/16/24/32/48px scale만 사용한다. 더 큰 section 간격은 이 값의 `calc()` 조합으로 만든다.
-- button/input radius는 8px, panel/card는 10px, compact tag는 12px를 기준으로 한다.
+- button/input radius는 12px, panel/card는 18px, dialog는 20px, compact tag/chip은 999px(pill)을 기준으로 한다.
 - pill은 tag/status처럼 작은 상태 표현에만 허용한다.
-- 콘텐츠 최대폭은 1440px, 읽기 최대폭은 880px다.
+- 콘텐츠 최대폭은 1360px, 읽기 최대폭은 760px다.
 - 독립된 링크와 control의 hit target은 최소 44×44px다.
 
 ## 반응형 계약

@@ -21,41 +21,41 @@ function declarations(selector) {
 }
 
 const colors = {
-  '--dp-color-primary': ['#B45309', '#F59E0B'],
-  '--dp-color-primary-text': ['#92400E', '#FBBF24'],
-  '--dp-color-primary-text-strong': ['#78350F', '#FCD34D'],
-  '--dp-color-on-primary': ['#FFFFFF', '#1A1200'],
-  '--dp-color-accent-soft': ['#FDF1E0', '#2E2007'],
-  '--dp-color-accent-line': ['#F2D0A0', '#5C400E'],
-  '--dp-color-bg': ['#FAF9F7', '#0F0E0C'],
-  '--dp-color-surface': ['#FFFFFF', '#1A1815'],
-  '--dp-color-surface-muted': ['#F2F0EC', '#231F1B'],
-  '--dp-color-border': ['#E2DED7', '#332E28'],
-  '--dp-color-text-primary': ['#1A1815', '#EAE7E2'],
-  '--dp-color-text-secondary': ['#615C54', '#A09991'],
-  '--dp-color-text-faint': ['#918B81', '#6F6961'],
-  '--dp-color-rail-bg': ['#1A1815', '#221E1A'],
-  '--dp-color-rail-text': ['#F2F0EC', '#EAE7E2'],
-  '--dp-color-rail-muted': ['#A9A298', '#A09991'],
-  '--dp-color-rail-faint': ['#9C958B', '#9A938A'],
-  '--dp-color-rail-active': ['#2F2B24', '#332E28'],
-  '--dp-color-rail-border': ['#2B2823', '#3A342D'],
-  '--dp-color-success': ['#15803D', '#4ADE80'],
-  '--dp-color-warning': ['#A16207', '#FCD34D'],
-  '--dp-color-danger': ['#B91C1C', '#F87171'],
-  '--dp-color-tag-bg': ['#F2F0EC', '#231F1B'],
-  '--dp-color-tag-text': ['#524D45', '#A09991'],
-  '--dp-color-chart1': ['#1D4ED8', '#60A5FA'],
-  '--dp-color-chart2': ['#BE185D', '#F472B6'],
-  '--dp-color-chart3': ['#7E22CE', '#D8B4FE'],
-  '--dp-color-chart4': ['#0F766E', '#2DD4BF'],
-  '--dp-color-chart5': ['#8B857D', '#8B857D'],
+  '--dp-color-primary': ['#5653E7', '#9B99FF'],
+  '--dp-color-primary-text': ['#4338CA', '#B9B8FF'],
+  '--dp-color-primary-text-strong': ['#312E81', '#D8D8FF'],
+  '--dp-color-on-primary': ['#FFFFFF', '#17163D'],
+  '--dp-color-accent-soft': ['#EEF2FF', '#24244A'],
+  '--dp-color-accent-line': ['#C7D2FE', '#454589'],
+  '--dp-color-bg': ['#F6F7FB', '#0D0F15'],
+  '--dp-color-surface': ['#FFFFFF', '#171922'],
+  '--dp-color-surface-muted': ['#F0F2F7', '#222530'],
+  '--dp-color-border': ['#DDE1EA', '#343846'],
+  '--dp-color-text-primary': ['#171923', '#F4F5F8'],
+  '--dp-color-text-secondary': ['#5E6472', '#B6BCC8'],
+  '--dp-color-text-faint': ['#818998', '#858C99'],
+  '--dp-color-rail-bg': ['#11131B', '#090B10'],
+  '--dp-color-rail-text': ['#F5F7FB', '#F4F5F8'],
+  '--dp-color-rail-muted': ['#B7BDCA', '#B6BCC8'],
+  '--dp-color-rail-faint': ['#959DAD', '#929AA8'],
+  '--dp-color-rail-active': ['#272B3F', '#23263B'],
+  '--dp-color-rail-border': ['#2A2F3C', '#292D38'],
+  '--dp-color-success': ['#137A48', '#5DD39E'],
+  '--dp-color-warning': ['#9A5B00', '#F6C177'],
+  '--dp-color-danger': ['#C12C36', '#FF7B84'],
+  '--dp-color-tag-bg': ['#EEF0F5', '#262A36'],
+  '--dp-color-tag-text': ['#4F5664', '#C3C8D2'],
+  '--dp-color-chart1': ['#2563EB', '#77A5FF'],
+  '--dp-color-chart2': ['#C026D3', '#E287F4'],
+  '--dp-color-chart3': ['#D97706', '#F6B864'],
+  '--dp-color-chart4': ['#0F766E', '#4DD4C4'],
+  '--dp-color-chart5': ['#64748B', '#A1AAB8'],
   '--dp-color-code-editor-bg': ['#1E1E1E', '#1E1E1E'],
   '--dp-color-code-log-bg': ['#0D1117', '#0D1117'],
   '--dp-color-code-text': ['#D4D4D4', '#C9D1D9'],
 };
 
-describe('Landing/App semantic token contract 1.0.0', () => {
+describe('Landing/App semantic token contract 1.1.0', () => {
   const light = declarations(':root');
   const dark = { ...light, ...declarations('[data-theme="dark"]') };
 
@@ -68,7 +68,7 @@ describe('Landing/App semantic token contract 1.0.0', () => {
 
   it('mirrors spacing, radii, durations, layout, and window classes', () => {
     expect(light).toMatchObject({
-      '--dp-token-manifest-version': '"1.0.0"',
+      '--dp-token-manifest-version': '"1.1.0"',
       '--dp-space-xs': '4px',
       '--dp-space-sm': '8px',
       '--dp-space-md': '12px',
@@ -76,20 +76,20 @@ describe('Landing/App semantic token contract 1.0.0', () => {
       '--dp-space-xl': '24px',
       '--dp-space-xxl': '32px',
       '--dp-space-xxxl': '48px',
-      '--dp-radius-chip': '12px',
-      '--dp-radius-button': '8px',
-      '--dp-radius-panel': '10px',
-      '--dp-radius-input': '8px',
-      '--dp-radius-dialog': '12px',
+      '--dp-radius-chip': '999px',
+      '--dp-radius-button': '12px',
+      '--dp-radius-panel': '18px',
+      '--dp-radius-input': '12px',
+      '--dp-radius-dialog': '20px',
       '--dp-duration-stage-reveal': '200ms',
       '--dp-duration-skeleton-crossfade': '150ms',
       '--dp-duration-hover': '120ms',
       '--dp-duration-select': '180ms',
       '--dp-duration-panel-expand': '220ms',
-      '--dp-layout-content-max': '1440px',
-      '--dp-layout-readable-max': '880px',
-      '--dp-layout-rail': '256px',
-      '--dp-layout-rail-collapsed': '72px',
+      '--dp-layout-content-max': '1360px',
+      '--dp-layout-readable-max': '760px',
+      '--dp-layout-rail': '280px',
+      '--dp-layout-rail-collapsed': '80px',
       '--dp-breakpoint-medium': '600px',
       '--dp-breakpoint-expanded': '840px',
       '--dp-breakpoint-large': '1240px',
@@ -99,8 +99,8 @@ describe('Landing/App semantic token contract 1.0.0', () => {
   it('mirrors every typography slot as a CSS font shorthand', () => {
     expect(light).toMatchObject({
       '--dp-type-display-small': '400 36px/44px "Pretendard"',
-      '--dp-type-headline-small': '600 24px/32px "Pretendard"',
-      '--dp-type-title-large': '700 20px/28px "Pretendard"',
+      '--dp-type-headline-small': '700 28px/36px "Pretendard"',
+      '--dp-type-title-large': '700 22px/30px "Pretendard"',
       '--dp-type-title-medium': '600 16px/24px "Pretendard"',
       '--dp-type-title-small': '600 14px/20px "Pretendard"',
       '--dp-type-body-large': '400 16px/25.6px "Pretendard"',
@@ -116,22 +116,22 @@ describe('Landing/App semantic token contract 1.0.0', () => {
   it('mirrors every interaction-state projection for light and dark', () => {
     const expected = {
       light: {
-        default: ['#FFFFFF', '#1A1815', '#E2DED7'],
-        hover: ['#F2F0EC', '#1A1815', '#E2DED7'],
-        pressed: ['#F2F0EC', '#1A1815', '#78350F'],
-        focus: ['#FFFFFF', '#1A1815', '#E2DED7'],
-        selected: ['#FDF1E0', '#78350F', '#F2D0A0'],
-        disabled: ['#F2F0EC', '#615C54', '#E2DED7'],
-        error: ['#FFFFFF', '#B91C1C', '#B91C1C'],
+        default: ['#FFFFFF', '#171923', '#DDE1EA'],
+        hover: ['#F0F2F7', '#171923', '#DDE1EA'],
+        pressed: ['#F0F2F7', '#171923', '#312E81'],
+        focus: ['#FFFFFF', '#171923', '#DDE1EA'],
+        selected: ['#EEF2FF', '#312E81', '#C7D2FE'],
+        disabled: ['#F0F2F7', '#5E6472', '#DDE1EA'],
+        error: ['#FFFFFF', '#C12C36', '#C12C36'],
       },
       dark: {
-        default: ['#1A1815', '#EAE7E2', '#332E28'],
-        hover: ['#231F1B', '#EAE7E2', '#332E28'],
-        pressed: ['#231F1B', '#EAE7E2', '#FCD34D'],
-        focus: ['#1A1815', '#EAE7E2', '#332E28'],
-        selected: ['#2E2007', '#FCD34D', '#5C400E'],
-        disabled: ['#231F1B', '#A09991', '#332E28'],
-        error: ['#1A1815', '#F87171', '#F87171'],
+        default: ['#171922', '#F4F5F8', '#343846'],
+        hover: ['#222530', '#F4F5F8', '#343846'],
+        pressed: ['#222530', '#F4F5F8', '#D8D8FF'],
+        focus: ['#171922', '#F4F5F8', '#343846'],
+        selected: ['#24244A', '#D8D8FF', '#454589'],
+        disabled: ['#222530', '#B6BCC8', '#343846'],
+        error: ['#171922', '#FF7B84', '#FF7B84'],
       },
     };
 
@@ -142,14 +142,14 @@ describe('Landing/App semantic token contract 1.0.0', () => {
         expect(values[`--dp-state-${state}-border`]).toBe(border);
       }
     }
-    expect(light['--dp-state-focus-ring']).toBe('#92400E');
-    expect(dark['--dp-state-focus-ring']).toBe('#FBBF24');
+    expect(light['--dp-state-focus-ring']).toBe('#4338CA');
+    expect(dark['--dp-state-focus-ring']).toBe('#B9B8FF');
     expect(light['--dp-state-focus-ring-width']).toBe('2px');
     expect(light['--dp-state-disabled-opacity']).toBe('0.56');
   });
 
-  it('keeps stale Indigo/Slate design tokens out of the canonical contract', () => {
-    expect(css).not.toMatch(/--(?:indigo|slate)-/i);
+  it('keeps pre-contract palette aliases out of the canonical contract', () => {
+    expect(css).not.toMatch(/--(?:indigo|slate|amber|warm)-/i);
   });
 
   it('does not invent or omit any manifest, layout, or breakpoint property', () => {
@@ -199,7 +199,7 @@ describe('Landing/App semantic token contract 1.0.0', () => {
   });
 
   it('documents code-value ownership and the shared usage contract without stale directions', () => {
-    expect(design).toContain('DpSemanticTokenManifest 1.0.0');
+    expect(design).toContain('DpSemanticTokenManifest 1.1.0');
     expect(design).toContain('AppTokens.standard');
     expect(design).toContain('dp_window_class.dart');
     expect(design).toContain('frontend `DESIGN.md`');
@@ -208,6 +208,6 @@ describe('Landing/App semantic token contract 1.0.0', () => {
     expect(design).toContain('Medium: 600–839px');
     expect(design).toContain('Expanded: 840–1239px');
     expect(design).toContain('Large: 1240px 이상');
-    expect(design).not.toMatch(/인디고|slate|4단계|Jaspr/i);
+    expect(design).not.toMatch(/amber|앰버|warm neutral|slate|4단계|Jaspr/i);
   });
 });
