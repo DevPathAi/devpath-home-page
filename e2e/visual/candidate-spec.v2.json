@@ -6,8 +6,8 @@
     "repository": "DevPathAi/devpath-home-page",
     "route": "/",
     "build": "production-dist",
-    "rendered_product_sha": "a734bf8dccccf72a25aeaa01924e2d66595fc677",
-    "rendered_product_tree_sha256": "a1bdfcd24728f6c5f4bc2a27a224400e49220041388bfd2441540810ec58c6c1"
+    "rendered_product_sha": "16cda0cfb3d1e9a496167873196fa50b4d45eb16",
+    "rendered_product_tree_sha256": "03586003c2b231837de5acd6eccf38f0f11ed42bbb21d1869e30fc14349de05a"
   },
   "runtime": {
     "browser": "chromium",
