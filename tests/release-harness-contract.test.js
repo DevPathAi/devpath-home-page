@@ -50,10 +50,11 @@ function validCandidateSpec(overrides = {}) {
     'web-mentor-context-preview',
     'admin-kpi-dashboard',
     'admin-support-long-wire',
-    'mobile-today-available',
-    'mobile-content-reading',
     'dp-design-mission-ledger',
     'dp-design-context-payload-preview',
+    'web-community-free',
+    'web-community-qna',
+    'web-community-feedback',
   ];
   const component = (repository, name, sourceCharacter, digestCharacter) => ({
     repository,
@@ -196,8 +197,8 @@ function validCandidateSpec(overrides = {}) {
           case_catalog_schema_version: 'leva.et13.visual-cases.v1',
           projection_contract_sha256: '8'.repeat(64),
           fixture_ids: fixtureIds,
-          case_count: 96,
-          surface_case_counts: { web: 48, admin: 16, mobile: 16, dp_design: 16 },
+          case_count: 104,
+          surface_case_counts: { web: 72, admin: 16, dp_design: 16 },
           capture_surface: 'flutter_web_release_projection',
           device_evidence: false,
           evidence_mode: 'release_ready',
@@ -227,8 +228,8 @@ function validCandidateSpec(overrides = {}) {
           case_catalog_schema_version: 'leva.et13.a11y-cases.v1',
           projection_contract_sha256: '8'.repeat(64),
           fixture_ids: fixtureIds,
-          case_count: 24,
-          surface_case_counts: { web: 12, admin: 4, mobile: 4, dp_design: 4 },
+          case_count: 26,
+          surface_case_counts: { web: 18, admin: 4, dp_design: 4 },
           capture_surface: 'flutter_web_release_projection',
           device_evidence: false,
           evidence_mode: 'release_ready',
@@ -254,14 +255,6 @@ function validCandidateSpec(overrides = {}) {
           case_count: 2,
           provenance_sha256: '6'.repeat(64),
         },
-        'manual-talkback': {
-          repository: 'DevPathAi/devpath-frontend',
-          source_sha: '2'.repeat(40),
-          path: 'tool/release-evidence/catalogs/manual-talkback.v1.json',
-          sha256: '7'.repeat(64),
-          case_count: 4,
-          provenance_sha256: '8'.repeat(64),
-        },
       },
       frontend_projection_contract: {
         schema_version: 'leva.et13.projection-contract.v1',
@@ -272,23 +265,6 @@ function validCandidateSpec(overrides = {}) {
           source_widget: 'FixtureProjection',
           substitutions: ['approved deterministic fixture'],
         })),
-      },
-      mobile_test_artifacts: {
-        schema_version: 'leva.mission-spine.signed-android-build-binding.v2',
-        repository: 'DevPathAi/devpath-frontend',
-        source_sha: '2'.repeat(40),
-        event: 'workflow_dispatch',
-        workflow_path: '.github/workflows/mission-spine-signed-mobile-build.yml',
-        workflow_sha256: '9'.repeat(64),
-        workflow_run_id: 123456,
-        run_attempt: 1,
-        artifact_id: 654321,
-        artifact_name: 'ms-20990101-contract-fixture-signed-android-build',
-        artifact_archive_sha256: 'a'.repeat(64),
-        build_provenance_file: 'build-provenance.v2.json',
-        build_provenance_sha256: 'b'.repeat(64),
-        signed_apk_file: 'mobile/android/leva-release.apk',
-        signed_apk_sha256: 'c'.repeat(64),
       },
     },
     rollout: {
@@ -483,7 +459,52 @@ describe('release context fail-closed contract', () => {
       'unknown post-run field nested in quality inputs',
       () => {
         const candidate = validCandidateSpec();
-        candidate.quality_evidence_inputs.mobile_test_artifacts.result = 'passed';
+        candidate.quality_evidence_inputs.catalogs['manual-nvda'].result = 'passed';
+        return candidate;
+      },
+    ],
+    [
+      'legacy signed mobile build binding',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.quality_evidence_inputs.mobile_test_artifacts = {
+          schema_version: 'leva.mission-spine.signed-android-build-binding.v2',
+        };
+        return candidate;
+      },
+    ],
+    [
+      'legacy manual TalkBack catalog',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.quality_evidence_inputs.catalogs['manual-talkback'] = {
+          ...candidate.quality_evidence_inputs.catalogs['manual-nvda'],
+          path: 'tool/release-evidence/catalogs/manual-talkback.v1.json',
+          case_count: 4,
+        };
+        return candidate;
+      },
+    ],
+    [
+      'legacy mobile surface case count',
+      () => {
+        const candidate = validCandidateSpec();
+        candidate.quality_evidence_inputs.catalogs['frontend-visual'].surface_case_counts = {
+          web: 72, admin: 16, mobile: 0, dp_design: 16,
+        };
+        return candidate;
+      },
+    ],
+    [
+      'legacy mobile projection fixture',
+      () => {
+        const candidate = validCandidateSpec();
+        const inputs = candidate.quality_evidence_inputs;
+        const legacy = [...inputs.catalogs['frontend-visual'].fixture_ids];
+        legacy[legacy.length - 1] = 'mobile-today-available';
+        inputs.catalogs['frontend-visual'].fixture_ids = legacy;
+        inputs.catalogs['frontend-automated-a11y'].fixture_ids = legacy;
+        inputs.frontend_projection_contract.projection_matrix.at(-1).fixture_id = 'mobile-today-available';
         return candidate;
       },
     ],
