@@ -96,6 +96,7 @@ function fixture() {
   writeFileSync(join(dist, 'z-last.txt'), 'last\n');
   writeFileSync(join(dist, 'nested', 'a-first.txt'), 'first\n');
   writeFileSync(join(dist, 'index.html'), '<!doctype html>\n');
+  writeFileSync(join(dist, '_worker.js'), 'export default { fetch: (request, env) => env.ASSETS.fetch(request) };\n');
   return { temporary, dist, output };
 }
 
@@ -112,11 +113,18 @@ describe('Mission Spine Home distribution producer', () => {
       expect([...first.subarray(4, 8)]).toEqual([0, 0, 0, 0]);
       const entries = inspectCanonicalHomeTar(first);
       expect(entries.map((entry) => entry.path)).toEqual([
+        'dist/_worker.js',
         'dist/index.html',
         'dist/nested/a-first.txt',
         'dist/z-last.txt',
       ]);
       expect(entries.every((entry) => entry.mode === 0o644)).toBe(true);
+
+      // 릴리스는 봉인된 dist 만 배포한다. 함수가 dist 밖(functions/)에 있으면 운영에서 /api/* 가
+      // 통째로 빠진다(2026-09-21 실측) — 함수가 묶이지 않은 dist 는 봉인을 거부한다.
+      rmSync(join(dist, '_worker.js'));
+      expect(() => createCanonicalHomeArchive(dist)).toThrow(/dist\/_worker\.js/i);
+      writeFileSync(join(dist, '_worker.js'), 'export default {};\n');
 
       rmSync(join(dist, 'index.html'));
       expect(() => createCanonicalHomeArchive(dist)).toThrow(/dist\/index\.html/i);

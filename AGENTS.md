@@ -58,7 +58,7 @@
 - `assets/`: CSS, JavaScript, 폰트와 공개 이미지.
 - `content/`, `scripts/notes.mjs`: 개발 기록 원문과 생성 규칙.
 - `templates/`: 빌드 시 사용하는 정적 템플릿.
-- `functions/`: 롤백 기간에 유지되는 Pages Functions. 새 Home waitlist backend를 만들지 않는다.
+- `functions/`: 롤백 기간에 유지되는 Pages Functions 의 **원천**. 새 Home waitlist backend를 만들지 않는다. 배포물은 `build.mjs` 가 만드는 `dist/_worker.js`(Pages advanced mode, `scripts/pages-worker.mjs`)다 — 릴리스는 봉인된 `dist` 만 올리므로 함수는 dist 안에 있어야 한다(2026-09-21: dist 밖에 있던 함수가 운영에서 빠져 `/api/*` 가 404). 함수는 import 없는 자기완결 파일이어야 하고, `dist/_worker.js` 가 없는 dist 는 `scripts/mission-spine-home-dist.mjs` 가 봉인을 거부한다.
 - `build.mjs`: source를 `dist/`로 만드는 유일한 배포 빌드 진입점.
 - `tests/`: Vitest 계약·단위 테스트.
 - `e2e/`: Playwright 기능·접근성·시각 검증.
