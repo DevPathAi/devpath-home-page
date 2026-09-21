@@ -78,10 +78,11 @@ const PROJECTION_FIXTURE_IDS = Object.freeze([
   'web-mentor-context-preview',
   'admin-kpi-dashboard',
   'admin-support-long-wire',
-  'mobile-today-available',
-  'mobile-content-reading',
   'dp-design-mission-ledger',
   'dp-design-context-payload-preview',
+  'web-community-free',
+  'web-community-qna',
+  'web-community-feedback',
 ]);
 
 const FORBIDDEN_CANDIDATE_KEYS = new Set([
@@ -649,7 +650,7 @@ function validateFixtureIds(value, path) {
 }
 
 function validateSurfaceCounts(value, expected, path) {
-  exactKeys(value, ['web', 'admin', 'mobile', 'dp_design'], path);
+  exactKeys(value, ['web', 'admin', 'dp_design'], path);
   if (JSON.stringify(value) !== JSON.stringify(expected)) {
     throw new Error(`${path} must match the canonical surface counts`);
   }
@@ -785,53 +786,9 @@ function validateProjectionContract(value, expectedSha256) {
   validateFixtureIds(fixtureIds, `${path}.projection_matrix fixture IDs`);
 }
 
-function validateMobileArtifacts(value, frontendSha) {
-  const path = 'quality_evidence_inputs.mobile_test_artifacts';
-  exactKeys(value, [
-    'schema_version',
-    'repository',
-    'source_sha',
-    'event',
-    'workflow_path',
-    'workflow_sha256',
-    'workflow_run_id',
-    'run_attempt',
-    'artifact_id',
-    'artifact_name',
-    'artifact_archive_sha256',
-    'build_provenance_file',
-    'build_provenance_sha256',
-    'signed_apk_file',
-    'signed_apk_sha256',
-  ], path);
-  if (
-    value.schema_version !== 'leva.mission-spine.signed-android-build-binding.v2'
-    || value.repository !== 'DevPathAi/devpath-frontend'
-    || value.source_sha !== frontendSha
-    || value.event !== 'workflow_dispatch'
-    || value.workflow_path !== '.github/workflows/mission-spine-signed-mobile-build.yml'
-    || value.run_attempt !== 1
-    || value.build_provenance_file !== 'build-provenance.v2.json'
-    || value.signed_apk_file !== 'mobile/android/leva-release.apk'
-  ) {
-    throw new Error(`${path} does not match the canonical signed Android build binding`);
-  }
-  positiveInteger(value.workflow_run_id, `${path}.workflow_run_id`);
-  positiveInteger(value.artifact_id, `${path}.artifact_id`);
-  exactString(value.artifact_name, `${path}.artifact_name`, SAFE_IDENTIFIER);
-  for (const field of [
-    'workflow_sha256',
-    'artifact_archive_sha256',
-    'build_provenance_sha256',
-    'signed_apk_sha256',
-  ]) {
-    exactString(value[field], `${path}.${field}`, SHA256);
-  }
-}
-
 function validateQualityEvidenceInputs(value, frontendSha, homeSha) {
   const path = 'quality_evidence_inputs';
-  exactKeys(value, ['catalogs', 'frontend_projection_contract', 'mobile_test_artifacts'], path);
+  exactKeys(value, ['catalogs', 'frontend_projection_contract'], path);
   const catalogs = value.catalogs;
   exactKeys(catalogs, [
     'frontend-visual',
@@ -839,7 +796,6 @@ function validateQualityEvidenceInputs(value, frontendSha, homeSha) {
     'frontend-automated-a11y',
     'home-axe-browser-a11y',
     'manual-nvda',
-    'manual-talkback',
   ], `${path}.catalogs`);
   const projectionSha256 = validateFrontendCatalog(
     catalogs['frontend-visual'],
@@ -849,8 +805,8 @@ function validateQualityEvidenceInputs(value, frontendSha, homeSha) {
       visual: true,
       path: 'evidence/et13/generated/visual-cases.v1.json',
       schema: 'leva.et13.visual-cases.v1',
-      caseCount: 96,
-      surfaceCounts: { web: 48, admin: 16, mobile: 16, dp_design: 16 },
+      caseCount: 104,
+      surfaceCounts: { web: 72, admin: 16, dp_design: 16 },
     },
   );
   const a11yProjectionSha256 = validateFrontendCatalog(
@@ -861,8 +817,8 @@ function validateQualityEvidenceInputs(value, frontendSha, homeSha) {
       visual: false,
       path: 'evidence/et13/generated/a11y-cases.v1.json',
       schema: 'leva.et13.a11y-cases.v1',
-      caseCount: 24,
-      surfaceCounts: { web: 12, admin: 4, mobile: 4, dp_design: 4 },
+      caseCount: 26,
+      surfaceCounts: { web: 18, admin: 4, dp_design: 4 },
     },
   );
   if (projectionSha256 !== a11yProjectionSha256) {
@@ -882,15 +838,7 @@ function validateQualityEvidenceInputs(value, frontendSha, homeSha) {
     'tool/release-evidence/catalogs/manual-nvda.v1.json',
     2,
   );
-  validateManualCatalog(
-    catalogs['manual-talkback'],
-    `${path}.catalogs.manual-talkback`,
-    frontendSha,
-    'tool/release-evidence/catalogs/manual-talkback.v1.json',
-    4,
-  );
   validateProjectionContract(value.frontend_projection_contract, projectionSha256);
-  validateMobileArtifacts(value.mobile_test_artifacts, frontendSha);
 }
 
 function validateRollout(value) {
