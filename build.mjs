@@ -9,6 +9,7 @@ import { execFileSync } from 'node:child_process';
 import { collectNotes, renderNote, renderIndex, renderSitemap, renderHomepageNotes } from './scripts/notes.mjs';
 import { resolveSitemapLastmods } from './scripts/sitemap-lastmod.mjs';
 import { collectUpdates, renderUpdatesFeed, renderUpdatesPage } from './scripts/updates.mjs';
+import { renderPagesWorker } from './scripts/pages-worker.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const outputDir = process.env.BUILD_OUTPUT_DIR || 'dist';
@@ -33,6 +34,12 @@ for (const entry of DEPLOY_ENTRIES) {
     // 없는 엔트리는 조용히 건너뛴다(빌드 초기 단계 허용).
   }
 }
+// Pages Functions 를 dist 안에 묶는다(advanced mode). functions/ 는 dist 밖이라, dist 만 배포하는
+// 릴리스 파이프라인에서는 /api/* 가 통째로 빠진다(2026-09-21 운영 실측). 묶을 수 없는 함수가
+// 있으면 여기서 예외가 나 빌드가 중단된다.
+await writeFile(dist + '/_worker.js', renderPagesWorker(root + 'functions'));
+console.log('bundled Pages Functions into _worker.js');
+
 // 개발 기록 렌더. 원고 검증에 실패하면 여기서 예외가 나 빌드가 중단된다 —
 // 조용히 누락되는 것보다 시끄럽게 실패하는 쪽을 택한다.
 const notes = collectNotes(root + 'content/notes');
