@@ -225,6 +225,11 @@ function collectDistFiles(distRoot) {
   if (!files.some((file) => file.path === 'dist/index.html')) {
     fail('dist/index.html is absent from the canonical distribution');
   }
+  // The release deploys the sealed dist alone. Pages Functions outside dist (functions/) vanish in
+  // production (measured 2026-09-21: /api/* answered 404), so they must be bundled into the dist.
+  if (!files.some((file) => file.path === 'dist/_worker.js')) {
+    fail('dist/_worker.js is absent: the sealed distribution must carry its Pages Functions');
+  }
   return files;
 }
 
