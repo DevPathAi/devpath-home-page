@@ -1,13 +1,13 @@
 /*
  * Leva semantic design-token mirror.
- * Contract: DpSemanticTokenManifest 1.1.0
+ * Contract: DpSemanticTokenManifest 2.0.0
  * Semantic values come from DpSemanticTokenManifest; layout widths come from
  * AppTokens.standard and breakpoints from src/layout/dp_window_class.dart.
  * This file is the only place where the Landing may assign semantic token values.
  */
 
 :root {
-  --dp-token-manifest-version: "1.1.0";
+  --dp-token-manifest-version: "2.0.0";
 
   /* Color — DpColors.light. Primary is fill-only; use primary-text for text/focus. */
   --dp-color-primary: #5653E7;
@@ -23,12 +23,12 @@
   --dp-color-text-primary: #171923;
   --dp-color-text-secondary: #5E6472;
   --dp-color-text-faint: #818998;
-  --dp-color-rail-bg: #11131B;
-  --dp-color-rail-text: #F5F7FB;
-  --dp-color-rail-muted: #B7BDCA;
-  --dp-color-rail-faint: #959DAD;
-  --dp-color-rail-active: #272B3F;
-  --dp-color-rail-border: #2A2F3C;
+  --dp-color-header-bg: #11131B;
+  --dp-color-header-text: #F5F7FB;
+  --dp-color-header-muted: #B7BDCA;
+  --dp-color-header-faint: #959DAD;
+  --dp-color-header-active: #272B3F;
+  --dp-color-header-border: #2A2F3C;
   --dp-color-success: #137A48;
   --dp-color-warning: #9A5B00;
   --dp-color-danger: #C12C36;
@@ -43,7 +43,7 @@
   --dp-color-code-log-bg: #0D1117;
   --dp-color-code-text: #D4D4D4;
 
-  /* Spacing and shape — DpSpacing, DpRadius, AppTokens.standard. */
+  /* Spacing, shape and density — DpSpacing, DpRadius, DpDensity, AppTokens.standard. */
   --dp-space-xs: 4px;
   --dp-space-sm: 8px;
   --dp-space-md: 12px;
@@ -51,11 +51,17 @@
   --dp-space-xl: 24px;
   --dp-space-xxl: 32px;
   --dp-space-xxxl: 48px;
-  --dp-radius-chip: 999px;
-  --dp-radius-button: 12px;
-  --dp-radius-panel: 18px;
-  --dp-radius-input: 12px;
-  --dp-radius-dialog: 20px;
+  --dp-radius-chip: 4px;
+  --dp-radius-button: 6px;
+  --dp-radius-panel: 8px;
+  --dp-radius-input: 6px;
+  --dp-radius-dialog: 12px;
+
+  /* Density — DpDensity (contract 2.0.0): pointer controls 30px, table row padding 8px,
+     minimum target 24px (WCAG 2.2 AA 2.5.8). */
+  --dp-density-control-height: 30px;
+  --dp-density-row-padding: 8px;
+  --dp-density-min-target: 24px;
 
   /* Motion — DpDurations. Components must remove non-essential motion for reduced motion. */
   --dp-duration-stage-reveal: 200ms;
@@ -78,8 +84,9 @@
   --dp-type-label-small: 500 11px/16px "Pretendard";
   --dp-type-code: 400 14px/21px "D2Coding";
 
-  --dp-layout-content-max: 1360px;
+  --dp-layout-content-max: 1120px;
   --dp-layout-readable-max: 760px;
+  --dp-layout-header-height: 56px;
   --dp-layout-rail: 280px;
   --dp-layout-rail-collapsed: 80px;
   --dp-breakpoint-medium: 600px;
@@ -127,12 +134,12 @@
   --dp-color-text-primary: #F4F5F8;
   --dp-color-text-secondary: #B6BCC8;
   --dp-color-text-faint: #858C99;
-  --dp-color-rail-bg: #090B10;
-  --dp-color-rail-text: #F4F5F8;
-  --dp-color-rail-muted: #B6BCC8;
-  --dp-color-rail-faint: #929AA8;
-  --dp-color-rail-active: #23263B;
-  --dp-color-rail-border: #292D38;
+  --dp-color-header-bg: #090B10;
+  --dp-color-header-text: #F4F5F8;
+  --dp-color-header-muted: #B6BCC8;
+  --dp-color-header-faint: #929AA8;
+  --dp-color-header-active: #23263B;
+  --dp-color-header-border: #292D38;
   --dp-color-success: #5DD39E;
   --dp-color-warning: #F6C177;
   --dp-color-danger: #FF7B84;

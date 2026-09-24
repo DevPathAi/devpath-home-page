@@ -34,12 +34,12 @@ const colors = {
   '--dp-color-text-primary': ['#171923', '#F4F5F8'],
   '--dp-color-text-secondary': ['#5E6472', '#B6BCC8'],
   '--dp-color-text-faint': ['#818998', '#858C99'],
-  '--dp-color-rail-bg': ['#11131B', '#090B10'],
-  '--dp-color-rail-text': ['#F5F7FB', '#F4F5F8'],
-  '--dp-color-rail-muted': ['#B7BDCA', '#B6BCC8'],
-  '--dp-color-rail-faint': ['#959DAD', '#929AA8'],
-  '--dp-color-rail-active': ['#272B3F', '#23263B'],
-  '--dp-color-rail-border': ['#2A2F3C', '#292D38'],
+  '--dp-color-header-bg': ['#11131B', '#090B10'],
+  '--dp-color-header-text': ['#F5F7FB', '#F4F5F8'],
+  '--dp-color-header-muted': ['#B7BDCA', '#B6BCC8'],
+  '--dp-color-header-faint': ['#959DAD', '#929AA8'],
+  '--dp-color-header-active': ['#272B3F', '#23263B'],
+  '--dp-color-header-border': ['#2A2F3C', '#292D38'],
   '--dp-color-success': ['#137A48', '#5DD39E'],
   '--dp-color-warning': ['#9A5B00', '#F6C177'],
   '--dp-color-danger': ['#C12C36', '#FF7B84'],
@@ -55,7 +55,7 @@ const colors = {
   '--dp-color-code-text': ['#D4D4D4', '#C9D1D9'],
 };
 
-describe('Landing/App semantic token contract 1.1.0', () => {
+describe('Landing/App semantic token contract 2.0.0', () => {
   const light = declarations(':root');
   const dark = { ...light, ...declarations('[data-theme="dark"]') };
 
@@ -68,7 +68,7 @@ describe('Landing/App semantic token contract 1.1.0', () => {
 
   it('mirrors spacing, radii, durations, layout, and window classes', () => {
     expect(light).toMatchObject({
-      '--dp-token-manifest-version': '"1.1.0"',
+      '--dp-token-manifest-version': '"2.0.0"',
       '--dp-space-xs': '4px',
       '--dp-space-sm': '8px',
       '--dp-space-md': '12px',
@@ -76,18 +76,22 @@ describe('Landing/App semantic token contract 1.1.0', () => {
       '--dp-space-xl': '24px',
       '--dp-space-xxl': '32px',
       '--dp-space-xxxl': '48px',
-      '--dp-radius-chip': '999px',
-      '--dp-radius-button': '12px',
-      '--dp-radius-panel': '18px',
-      '--dp-radius-input': '12px',
-      '--dp-radius-dialog': '20px',
+      '--dp-radius-chip': '4px',
+      '--dp-radius-button': '6px',
+      '--dp-radius-panel': '8px',
+      '--dp-radius-input': '6px',
+      '--dp-radius-dialog': '12px',
+      '--dp-density-control-height': '30px',
+      '--dp-density-row-padding': '8px',
+      '--dp-density-min-target': '24px',
       '--dp-duration-stage-reveal': '200ms',
       '--dp-duration-skeleton-crossfade': '150ms',
       '--dp-duration-hover': '120ms',
       '--dp-duration-select': '180ms',
       '--dp-duration-panel-expand': '220ms',
-      '--dp-layout-content-max': '1360px',
+      '--dp-layout-content-max': '1120px',
       '--dp-layout-readable-max': '760px',
+      '--dp-layout-header-height': '56px',
       '--dp-layout-rail': '280px',
       '--dp-layout-rail-collapsed': '80px',
       '--dp-breakpoint-medium': '600px',
@@ -148,6 +152,13 @@ describe('Landing/App semantic token contract 1.1.0', () => {
     expect(light['--dp-state-disabled-opacity']).toBe('0.56');
   });
 
+  it('reads the dark block through the exact selector the app dump does not emit', () => {
+    const darkOnly = declarations('[data-theme="dark"]');
+    expect(darkOnly['--dp-color-header-bg']).toBe('#090B10');
+    expect(darkOnly['--dp-color-header-text']).toBe('#F4F5F8');
+    expect(css).not.toMatch(/--dp-color-rail-/);
+  });
+
   it('keeps pre-contract palette aliases out of the canonical contract', () => {
     expect(css).not.toMatch(/--(?:indigo|slate|amber|warm)-/i);
   });
@@ -156,6 +167,7 @@ describe('Landing/App semantic token contract 1.1.0', () => {
     const dimensions = [
       ...['xs', 'sm', 'md', 'lg', 'xl', 'xxl', 'xxxl'].map((name) => `--dp-space-${name}`),
       ...['chip', 'button', 'panel', 'input', 'dialog'].map((name) => `--dp-radius-${name}`),
+      ...['control-height', 'row-padding', 'min-target'].map((name) => `--dp-density-${name}`),
       ...['stage-reveal', 'skeleton-crossfade', 'hover', 'select', 'panel-expand']
         .map((name) => `--dp-duration-${name}`),
       ...[
@@ -180,6 +192,7 @@ describe('Landing/App semantic token contract 1.1.0', () => {
     const layout = [
       '--dp-layout-content-max',
       '--dp-layout-readable-max',
+      '--dp-layout-header-height',
       '--dp-layout-rail',
       '--dp-layout-rail-collapsed',
       '--dp-breakpoint-medium',
@@ -199,7 +212,7 @@ describe('Landing/App semantic token contract 1.1.0', () => {
   });
 
   it('documents code-value ownership and the shared usage contract without stale directions', () => {
-    expect(design).toContain('DpSemanticTokenManifest 1.1.0');
+    expect(design).toContain('DpSemanticTokenManifest 2.0.0');
     expect(design).toContain('AppTokens.standard');
     expect(design).toContain('dp_window_class.dart');
     expect(design).toContain('frontend `DESIGN.md`');

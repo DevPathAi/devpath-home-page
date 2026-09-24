@@ -69,11 +69,11 @@ textarea { min-height: 180px; resize: vertical; }
 .update__type { padding: 4px 9px; background: var(--soft); color: var(--green-text); font-weight: 800; }
 .update__summary { color: var(--muted); font-size: 17px; }
 .update__body { max-width: 700px; }
-.site-footer { padding: 44px 0; border-top: 1px solid var(--line); background: var(--dp-color-rail-bg); color: var(--dp-color-rail-text); }
+.site-footer { padding: 44px 0; border-top: 1px solid var(--line); background: var(--dp-color-header-bg); color: var(--dp-color-header-text); }
 .site-footer__inner { display: grid; gap: 18px; }
 .site-footer__brand { margin: 0; font-size: 20px; font-weight: 900; }
 .site-footer__links { display: flex; flex-wrap: wrap; gap: 12px 20px; }
-.site-footer__biz, .site-footer__copy { margin: 0; color: var(--dp-color-rail-muted); font-size: 13px; }
+.site-footer__biz, .site-footer__copy { margin: 0; color: var(--dp-color-header-muted); font-size: 13px; }
 
 .contact-turnstile { min-block-size: 65px; }
 
