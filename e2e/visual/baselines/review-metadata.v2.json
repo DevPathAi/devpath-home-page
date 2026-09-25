@@ -2,30 +2,30 @@
   "schema_version": 2,
   "document_type": "home-visual-baseline-review",
   "status": "approved",
-  "review_id": "functions-in-dist-20260921",
-  "reviewer": "claude-fable-5.1",
-  "reason": "Pages Functions are bundled into dist/_worker.js by build.mjs; pages, styles and assets are unchanged, so the render must stay identical to the token-mirror 1.1.0 baseline.",
-  "reviewed_at": "2026-09-21T11:22:51.000Z",
-  "rendered_product_sha": "3995dfc7730bdf564db3ea564ea4835b61c33c50",
-  "rendered_product_tree_sha256": "c1d42d9ce3e030d32ed9a5c1798f433733ccc0cf18434511a1cfc531cd1f0c54",
-  "candidate_spec_sha256": "fb9573075ae898f738916ae1cfef2cee2f63360dc3bd4e7db8d0b1d71e08c21f",
+  "review_id": "tokens-mirror-2-0-0-20260926",
+  "reviewer": "claude-opus-5",
+  "reason": "Semantic token contract 2.0.0 mirror: radii 4/6/8/6/12 and content max 1120 are the only rendered changes. Colours, copy, order and imagery are unchanged, and the 44x44 hit-target checks still pass at all four widths.",
+  "reviewed_at": "2026-09-25T23:42:07.000Z",
+  "rendered_product_sha": "44b82121e2372937e6057652d42e52339aa9f74b",
+  "rendered_product_tree_sha256": "4e4ec2bda6babd6bd43b0d8d17f770f2c5eec046eb2a60645d7eafe586c2b726",
+  "candidate_spec_sha256": "df3202016695fdd112fce172accbb88ed1f70ca540f3032722ff6b2ecdaaf0f1",
   "case_catalog_sha256": "a3c338c6dd9da493df0ee660772359bed76440ecf693e64ef5486f79eb3b6078",
   "artifacts": [
     {
       "case_id": "home-light-compact-320",
-      "sha256": "e76b2cd7c6da26684ae74f8faaa32fd3874912df5fee6bc4f97d5bfcd85613a0"
+      "sha256": "6baab73dda75b49b3f02376458cf037b005e33c3a00f2e2a6d6944f6c011470b"
     },
     {
       "case_id": "home-light-medium-600",
-      "sha256": "b249102a94c23e3b9e219a4cc530763e62c9cd16e4ce6fc30241ce3d396b15a0"
+      "sha256": "1617303996336ac501173e15f09cadf1273cde769457be6f973215eb143c9a7e"
     },
     {
       "case_id": "home-light-expanded-840",
-      "sha256": "f570c43ec420e762da85405812ffc4f52f6969a0ef03323db2331450064e0416"
+      "sha256": "6088f95d3e47fb2f34dba518910c62cef64db865c3bc58c12517d25f75675f86"
     },
     {
       "case_id": "home-light-large-1240",
-      "sha256": "a4390be07f4943df316682638f2feb5ae7be19ad34cbb108855ad32cb8bd396e"
+      "sha256": "3094f4f0658cb44f2e47fd7c0e144fe99610b4515405069641db8f1ded07ceaa"
     }
   ]
 }
