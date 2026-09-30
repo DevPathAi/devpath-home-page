@@ -37,8 +37,10 @@ async function refreshFlutter(page, pathname) {
 }
 
 async function chooseBackendTrack(page) {
-  await page.getByRole('button', { name: /진단할 트랙/ }).click();
-  await page.getByRole('menuitem', { name: /백엔드.*Spring/i }).click();
+  // S3 웹 재구성이 트랙 선택을 드롭다운에서 **보이는 라디오 그룹**으로 바꿨다:
+  // `Semantics(role: SemanticsRole.radioGroup, label: '진단할 트랙')` 안의
+  // `DpOptionRow` 들이다. 여는 단계가 없어졌으므로 라디오를 바로 고른다.
+  await page.getByRole('radio', { name: /백엔드.*Spring/i }).click();
 }
 
 async function completeFifteenQuestions(page) {
@@ -213,7 +215,9 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
     });
 
     await evidence.step({ page, step: 'oauth-callback-replay' }, async () => {
-      await page.getByRole('button', { name: '저장하고 계속', exact: true }).click();
+      // `DpNextActionBand` 는 접근성 이름에 「, 예상 결과: …」를 덧붙인다. S3 가 이
+      // 버튼을 그 밴드로 옮겼으므로 exact 가 아니라 접두로 맞춘다.
+      await page.getByRole('button', { name: /^저장하고 계속/ }).click();
       await page.waitForURL((url) => (
         url.hostname === 'app.leva.ai.kr' && url.pathname === '/consent'
       ));
@@ -305,7 +309,9 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      const progressLabel = page.getByText(/^\d+% 진행$|^완료$/);
+      // S3 가 진행률을 옆 패널(`ContentProgressPanel`)로 옮기면서 문구도 바꿨다:
+      // '12% · 끝까지 읽으면 완료로 저장됩니다' / '완료 · 끝까지 읽어 완료로 저장됐어요'.
+      const progressLabel = page.getByText(/^\d+% · 끝까지 읽으면|^완료 · 끝까지 읽어/);
       await waitForFlutterSemanticsTarget(page, progressLabel);
       await control.checkpoint(JOURNEY, prepared.runKey, 'content-linked-below-threshold');
       const [progressResponse] = await Promise.all([

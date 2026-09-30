@@ -129,7 +129,11 @@ test('Today workspace recovers durable runtime evidence and sends only approved 
       await page.getByRole('button', { name: /^미션 열기/ }).click();
       await page.waitForURL((url) => /^\/mission\/\d+\/content\/\d+$/.test(url.pathname));
       await activateFlutterSemantics(page);
-      await waitForFlutterSemanticsTarget(page, page.getByRole('checkbox').first());
+      // 예전에는 개념 태그를 그리던 Material `Chip` 이 Flutter 웹에서 `role=checkbox`
+      // 로 새어 나왔고, 이 줄은 그 유령 역할을 「본문이 그려졌다」 신호로 쓰고 있었다.
+      // S3 가 같은 태그를 비상호작용 `DpTag` 로 바꿔 그 역할이 사라졌다(접근성 개선).
+      // 진행률 표시는 개편 전후 모두 있으므로 그것을 신호로 쓴다.
+      await waitForFlutterSemanticsTarget(page, page.getByRole('progressbar').first());
       const contentPath = new URL(page.url()).pathname;
       const taskMatch = /^\/mission\/(\d+)\/content\/\d+$/.exec(contentPath);
       if (taskMatch === null) throw new Error('canonical content route is invalid');

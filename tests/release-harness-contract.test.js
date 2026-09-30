@@ -1066,7 +1066,7 @@ describe('staging control contract', () => {
       /async function openToday[\s\S]*attempt < 3[\s\S]*locator\('flt-semantics'\)\.first\(\)\.focus\(\)[\s\S]*keyboard\.press\('Control\+K'\)[\s\S]*waitForFlutterSemanticsTarget\(page, commandSearch/,
     );
     expect(source).toMatch(
-      /step: 'content-linked-completion-replay'[\s\S]*const progressLabel = page\.getByText\(\/\^\\d\+% 진행\$\|\^완료\$\/[\s\S]*waitForResponse\(async[\s\S]*endsWith\('\/progress'\)[\s\S]*body\.completed === true[\s\S]*timeout: 75_000[\s\S]*scrollFlutterSemanticsToEnd\(page, progressLabel\)[\s\S]*completed\)\.toBe\(true\)[\s\S]*goBack\(\{ waitUntil: 'domcontentloaded' \}\)[\s\S]*activateFlutterSemantics\(page\)/,
+      /step: 'content-linked-completion-replay'[\s\S]*const progressLabel = page\.getByText\(\/\^\\d\+% · 끝까지 읽으면\|\^완료 · 끝까지 읽어\/[\s\S]*waitForResponse\(async[\s\S]*endsWith\('\/progress'\)[\s\S]*body\.completed === true[\s\S]*timeout: 75_000[\s\S]*scrollFlutterSemanticsToEnd\(page, progressLabel\)[\s\S]*completed\)\.toBe\(true\)[\s\S]*goBack\(\{ waitUntil: 'domcontentloaded' \}\)[\s\S]*activateFlutterSemantics\(page\)/,
     );
     expect(source).not.toMatch(/const highProgress = page\.getByText/);
   });
