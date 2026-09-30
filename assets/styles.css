@@ -807,22 +807,22 @@ textarea {
   gap: var(--dp-space-xl);
   align-items: center;
   padding: var(--dp-space-xxl);
-  color: var(--dp-color-rail-text);
-  background: var(--dp-color-rail-bg);
+  color: var(--dp-color-header-text);
+  background: var(--dp-color-header-bg);
   border-radius: var(--dp-radius-panel);
 }
 
 .final-cta__inner h2 {
-  color: var(--dp-color-rail-text);
+  color: var(--dp-color-header-text);
 }
 
 .final-cta__inner p:not(.eyebrow) {
   margin: 0;
-  color: var(--dp-color-rail-muted);
+  color: var(--dp-color-header-muted);
 }
 
 .final-cta__inner .eyebrow {
-  color: var(--dp-color-rail-text);
+  color: var(--dp-color-header-text);
 }
 
 .founder__more a {

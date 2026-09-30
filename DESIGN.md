@@ -1,7 +1,7 @@
 # DESIGN.md — Leva 홈페이지 디자인 계약
 
 > 이 문서는 홈페이지에 적용되는 마케팅 사용 규칙을 설명한다. semantic token 값의
-> 기준은 앱 코드의 `DpSemanticTokenManifest 1.1.0`, layout 폭의 기준은
+> 기준은 앱 코드의 `DpSemanticTokenManifest 2.0.0`, layout 폭의 기준은
 > `AppTokens.standard`, breakpoint의 기준은 `src/layout/dp_window_class.dart`다.
 > 홈페이지는 이를 `assets/tokens.css`에 그대로 mirror한다.
 
