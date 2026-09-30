@@ -1073,7 +1073,7 @@ describe('staging control contract', () => {
 
   it('accepts both authoritative path branches and extended mission action names', () => {
     const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
-    expect(source).toMatch(/name: \/\^\(\?:학습\|기존\) 경로로 계속\$\//);
+    expect(source).toMatch(/name: \/\^\(\?:학습\|기존\) 경로로 계속\//);
     expect(source.match(/name: \/\^미션 완료\//g)).toHaveLength(2);
     expect(source).not.toContain("name: '학습 경로로 계속', exact: true");
     expect(source).not.toContain("name: '미션 완료', exact: true");

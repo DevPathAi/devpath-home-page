@@ -277,8 +277,10 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
 
     await evidence.step({ page, step: 'explicit-path-to-today' }, async () => {
       await refreshFlutter(page, '/diagnostic');
+      // 이 버튼도 `DpNextActionBand` 라 접근성 이름에 「, 예상 결과: …」가 붙는다
+      // (`diagnostic_page.dart` 의 밴드 6개 중 하나). 끝 앵커를 떼어 접두로 맞춘다.
       await page.getByRole('button', {
-        name: /^(?:학습|기존) 경로로 계속$/,
+        name: /^(?:학습|기존) 경로로 계속/,
       }).click();
       await page.waitForURL((url) => url.pathname === '/path');
       await activateFlutterSemantics(page);
