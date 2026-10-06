@@ -22,6 +22,7 @@ import {
   StagingControl,
   activateFlutterSemantics,
   assertAnalyticsSequence,
+  fillFlutterTextField,
   scrollFlutterSemanticsToEnd,
   waitForFlutterSemanticsTarget,
 } from '../e2e/release/support/staging-control.js';
@@ -670,6 +671,65 @@ describe('staging control contract', () => {
     expect(waits).toContain(600);
   });
 
+  // Flutter attaches its text-editing strategy a frame or two after a field takes focus. Text
+  // inserted before that never reaches the framework, which then writes its own value back over
+  // the DOM. `writeBackAfterWaits[n]` is the number of settle waits after the n-th fill at which
+  // the fake framework overwrites the DOM (0 = that fill reached the framework).
+  const flutterTextField = (writeBackAfterWaits) => {
+    const state = { dom: '', fills: 0, waitsSinceFill: 0 };
+    const field = {
+      async fill(value) {
+        state.fills += 1;
+        state.waitsSinceFill = 0;
+        state.dom = value;
+      },
+      async inputValue() {
+        return state.dom;
+      },
+    };
+    const page = {
+      async waitForTimeout() {
+        state.waitsSinceFill += 1;
+        const writeBack = writeBackAfterWaits[
+          Math.min(state.fills, writeBackAfterWaits.length) - 1
+        ];
+        if (writeBack > 0 && state.waitsSinceFill === writeBack) state.dom = '';
+      },
+    };
+    return { field, page, state };
+  };
+
+  it('refills a Flutter text field whose first fill never reached the framework', async () => {
+    const { field, page, state } = flutterTextField([1, 0]);
+
+    await expect(fillFlutterTextField(page, field, '1995')).resolves.toBeUndefined();
+    expect(state.fills).toBe(2);
+    expect(state.dom).toBe('1995');
+  });
+
+  it('refills a Flutter text field whose value is written back one settle window late', async () => {
+    const { field, page, state } = flutterTextField([2, 0]);
+
+    await expect(fillFlutterTextField(page, field, '1995')).resolves.toBeUndefined();
+    expect(state.fills).toBe(2);
+    expect(state.dom).toBe('1995');
+  });
+
+  it('fills a Flutter text field once when the framework keeps the value', async () => {
+    const { field, page, state } = flutterTextField([0]);
+
+    await expect(fillFlutterTextField(page, field, '1995')).resolves.toBeUndefined();
+    expect(state.fills).toBe(1);
+  });
+
+  it('fails when a Flutter text field never keeps the filled value', async () => {
+    const { field, page, state } = flutterTextField([1]);
+
+    await expect(fillFlutterTextField(page, field, '1995', { timeout: 20 }))
+      .rejects.toThrow('Flutter text field did not keep the filled value');
+    expect(state.fills).toBeGreaterThan(1);
+  });
+
   it('requires OAuth, analytics spy, durable service and fault controls', async () => {
     const candidateSpecSha256 = 'e'.repeat(64);
     const responseBody = {
@@ -1077,6 +1137,23 @@ describe('staging control contract', () => {
     expect(source.match(/name: \/\^미션 완료\//g)).toHaveLength(2);
     expect(source).not.toContain("name: '학습 경로로 계속', exact: true");
     expect(source).not.toContain("name: '미션 완료', exact: true");
+  });
+
+  it('proves the consent form state before pressing the always-enabled submit button', () => {
+    // The consent button validates on press: an unticked consent or an empty birth year sends no
+    // request at all, which the journey only saw as a 30s `POST /consents` timeout (2026-10-06).
+    const source = readFileSync(root('e2e/release/mission-spine-onboarding.spec.js'), 'utf8');
+    const start = source.indexOf("step: 'required-consent-claim-replay'");
+    const end = source.indexOf("step: 'explicit-path-to-today'", start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const step = source.slice(start, end);
+
+    expect(step).toMatch(/fillFlutterTextField\(page, birthYear, '1995'\)/);
+    expect(step).not.toMatch(/\.fill\('1995'\)/);
+    expect(step).toMatch(
+      /expect\(termsConsent\)\.toBeChecked\(\)[\s\S]*expect\(privacyConsent\)\.toBeChecked\(\)[\s\S]*expect\(birthYear\)\.toHaveValue\('1995'\)[\s\S]*consentButton\.evaluate\(/,
+    );
   });
 
   it('waits for committed onboarding analytics and contentless completion before replay', () => {

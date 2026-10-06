@@ -371,6 +371,27 @@ export async function waitForFlutterSemanticsTarget(
   throw new Error('Flutter semantics target did not become visible');
 }
 
+export async function fillFlutterTextField(
+  page,
+  field,
+  value,
+  { timeout = 15_000, settle = 300 } = {},
+) {
+  // Flutter attaches its text-editing strategy a frame or two after the field takes focus. Text
+  // inserted before that never reaches the framework, which then writes its own value back over
+  // the DOM. Refill until the value survives two settle windows.
+  const deadline = Date.now() + timeout;
+  do {
+    await field.fill(value);
+    await page.waitForTimeout(settle);
+    if (await field.inputValue() === value) {
+      await page.waitForTimeout(settle);
+      if (await field.inputValue() === value) return;
+    }
+  } while (Date.now() < deadline);
+  throw new Error('Flutter text field did not keep the filled value');
+}
+
 export async function scrollFlutterSemanticsToEnd(
   page,
   anchor,
