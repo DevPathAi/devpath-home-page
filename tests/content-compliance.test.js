@@ -30,9 +30,16 @@ describe('가격 — 사업계획서 정합', () => {
 // href="#"는 클릭해도 아무 일이 없는 죽은 링크다. 심사위원이 클릭할 자리다.
 // 내비게이션의 href="#pricing" 같은 앵커는 정확 일치가 아니라 무관하다.
 describe('끊어진 링크', () => {
-  it('문의와 제품 Q&A를 승인된 경로로 분리한다', () => {
+  it('문의·오류 신고를 로그인 없이 열리는 경로로 둔다', () => {
     expect(html).toContain('<a href="/contact">문의·오류 신고</a>');
-    expect(html).toContain('<a href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
+    expect(html).not.toContain('<a href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
+  });
+
+  // AI 멘토 승인 메일을 보내는 곳이 없다(mentor.access.activated 소비자 없음,
+  // 공지 2026-09-05 도 「승인 상태는 로그인 후 확인」으로만 쓴다). 약속하지 않는다.
+  it('AI 멘토 승인 이메일을 약속하지 않는다', () => {
+    expect(html).not.toMatch(/승인되면 이메일로/);
+    expect(html).toContain('승인 상태는 로그인 후 확인할 수 있습니다.');
   });
 
   it('제거하기로 한 과거 프로젝트 링크가 없다', () => {

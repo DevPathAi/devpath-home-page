@@ -231,11 +231,8 @@ test.describe('확정 홈페이지 스모크', () => {
   test('FAQ와 푸터의 지원 경로가 확정 목적지로 연결된다', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('#faq details')).toHaveCount(6);
-    await expect(page.locator('footer').getByRole('link', { name: '제품 Q&A' }))
-      .toHaveAttribute(
-        'href',
-        'https://app.leva.ai.kr/community',
-      );
+    // 점검 H-1: 비로그인 방문자를 로그인으로 막는 앱 커뮤니티 링크는 푸터에 두지 않는다.
+    await expect(page.locator('footer').getByRole('link', { name: '제품 Q&A' })).toHaveCount(0);
     await expect(page.locator('footer').getByRole('link', { name: '공지·변경 기록' }))
       .toHaveAttribute('href', '/updates');
     await expect(page.locator('footer').getByRole('link', { name: '문의·오류 신고' }))
