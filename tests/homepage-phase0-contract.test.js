@@ -64,12 +64,16 @@ describe('Phase 0 승인 홈페이지 계약', () => {
     expect(html).not.toMatch(/코드 파일|DB 스키마|설정 파일/);
   });
 
-  it('Footer의 제품 Q&A와 지원 경로가 분리돼 있다', () => {
-    expect(html).toContain('href="https://app.leva.ai.kr/community">제품 Q&amp;A</a>');
+  // 점검 H-1: 제품 Q&A(앱 커뮤니티)는 비로그인 방문자를 로그인으로 막는다.
+  // 푸터에서는 빼고 같은 열의 FAQ·문의·오류 신고로 안내한다.
+  it('Footer는 로그인 없이 열리는 지원 경로만 둔다', () => {
+    const footer = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+    expect(footer).not.toContain('app.leva.ai.kr/community');
+    expect(footer).not.toContain('제품 Q&amp;A');
     expect(html).toContain('href="#faq">FAQ</a>');
     expect(html).toContain('href="/updates">공지·변경 기록</a>');
     expect(html).toContain('href="/contact">문의·오류 신고</a>');
-    expect(html).toContain('href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
+    expect(html).toContain('href="https://app.leva.ai.kr/login?intent=invite">AI 멘토 초대 신청</a>');
   });
 
   it('개발용 편집 UI와 내부 용어를 공개하지 않는다', () => {

@@ -31,7 +31,7 @@ describe('/beta 페이지', () => {
 
   it('Home 리드폼 없이 앱 로그인에서 초대를 신청한다', () => {
     expect(html).not.toContain('data-widget="lead-form"');
-    expect(html).toContain('href="https://app.leva.ai.kr/login"');
+    expect(html).toContain('href="https://app.leva.ai.kr/login?intent=invite"');
   });
 
   it('공개 진단과 AI 멘토 초대 경로를 명확히 구분한다', () => {

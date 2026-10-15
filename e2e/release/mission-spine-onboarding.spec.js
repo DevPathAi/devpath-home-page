@@ -8,6 +8,7 @@ import {
   activateFlutterSemantics,
   assertAnalyticsSequence,
   assertProductionTlsNavigation,
+  fillFlutterTextField,
   scrollFlutterSemanticsToEnd,
   waitForFlutterSemanticsTarget,
 } from './support/staging-control.js';
@@ -248,9 +249,12 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
 
     await evidence.step({ page, step: 'required-consent-claim-replay' }, async () => {
       await refreshFlutter(page, '/consent');
-      await page.getByRole('checkbox', { name: /서비스 이용약관 동의/ }).click();
-      await page.getByRole('checkbox', { name: /개인정보 수집·이용 동의/ }).click();
-      await page.getByLabel('출생 연도 (필수)').fill('1995');
+      const termsConsent = page.getByRole('checkbox', { name: /서비스 이용약관 동의/ });
+      const privacyConsent = page.getByRole('checkbox', { name: /개인정보 수집·이용 동의/ });
+      const birthYear = page.getByLabel('출생 연도 (필수)');
+      await termsConsent.click();
+      await privacyConsent.click();
+      await fillFlutterTextField(page, birthYear, '1995');
       await control.command(JOURNEY, prepared.runKey, 'replay-claim');
       const consentButton = page.getByRole('button', {
         name: '동의하고 계속하기',
@@ -258,6 +262,11 @@ test('Landing guest diagnosis is claimed once and advances authoritative Today',
       });
       await waitForFlutterSemanticsTarget(page, consentButton);
       await expect(consentButton).toBeEnabled();
+      // 이 버튼은 항상 활성이고 누를 때 검증한다. 필수 동의나 출생 연도가 Flutter 상태에
+      // 없으면 요청 없이 에러 문구만 뜨므로, 누르기 전에 폼 상태를 단언한다.
+      await expect(termsConsent).toBeChecked();
+      await expect(privacyConsent).toBeChecked();
+      await expect(birthYear).toHaveValue('1995');
       await Promise.all([
         page.waitForURL((url) => url.pathname === '/diagnostic'),
         page.waitForRequest((browserRequest) => (

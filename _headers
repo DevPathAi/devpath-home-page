@@ -1,9 +1,11 @@
 # Cloudflare Pages _headers — 보안 헤더 + 정적 자산 캐시
+# HSTS 는 점검 H-3(2026-10-11)에서 추가. CSP 는 Turnstile·애널리틱스·광고 출처 실측 뒤 Report-Only 로 시작한다.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 # 폰트/이미지 등 불변 자산은 장기 캐시
 /assets/*
