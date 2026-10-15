@@ -40,7 +40,7 @@ describe('개발 기록 CTA', () => {
 
     expect(anchor).not.toBeNull();
     expect(anchor[1]).toContain('가입 없이 진단 시작');
-    expect(html).toContain('<a class="text-link" href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
+    expect(html).toContain('<a class="text-link" href="https://app.leva.ai.kr/login?intent=invite">AI 멘토 초대 신청</a>');
   });
 
   it('목록으로 돌아가는 길은 그대로 남는다', () => {
@@ -72,7 +72,7 @@ describe('개발 기록 목록 CTA', () => {
   it('목록 마지막에도 같은 진단·초대 경로를 둔다', () => {
     expect(indexTemplate).toContain('aria-label="레바 시작하기"');
     expect(indexTemplate).toContain('href="https://app.leva.ai.kr/diagnostic"');
-    expect(indexTemplate).toContain('href="https://app.leva.ai.kr/login"');
+    expect(indexTemplate).toContain('href="https://app.leva.ai.kr/login?intent=invite"');
     expect(indexTemplate.indexOf('note__cta')).toBeLessThan(indexTemplate.indexOf('</main>'));
   });
 });

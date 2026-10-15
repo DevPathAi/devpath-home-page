@@ -30,10 +30,12 @@ describe('진단 CTA는 앱으로 보낸다', () => {
     expect(header).toContain(`href="${APP}"`);
   });
 
-  it('요금의 AI 멘토 초대 CTA는 앱 로그인으로 간다', () => {
+  // 점검 A-1: 앱 로그인 화면이 초대 신청 진입임을 알아야 「다시 만나서 반가워요」
+  // 대신 초대 대기 명단을 안내한다.
+  it('요금의 AI 멘토 초대 CTA는 초대 의도를 담아 앱 로그인으로 간다', () => {
     const pricing = html.slice(html.indexOf('id="pricing"'), html.indexOf('id="faq"'));
 
-    expect(pricing).toContain('href="https://app.leva.ai.kr/login"');
+    expect(pricing).toContain('href="https://app.leva.ai.kr/login?intent=invite"');
   });
 
   it('최종 진단 CTA가 앱으로 간다', () => {
@@ -48,6 +50,6 @@ describe('AI 멘토 초대는 앱에서 신청한다', () => {
 
   it('Home 리드폼 없이 로그인으로 직결한다', () => {
     expect(html).not.toContain('data-widget="lead-form"');
-    expect(html).toContain('href="https://app.leva.ai.kr/login">AI 멘토 초대 신청</a>');
+    expect(html).toContain('href="https://app.leva.ai.kr/login?intent=invite">AI 멘토 초대 신청</a>');
   });
 });
